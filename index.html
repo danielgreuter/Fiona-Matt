@@ -1386,6 +1386,11 @@ let currentDisc = '100m';
 let mainChart = null;
 
 function selectDisc(disc) {
+  // Update WA score chart when discipline changes
+  if (window.waScoreByDisc) {
+    const chartDisc = disc === 'Long Jump' ? 'Long Jump' : disc;
+    renderWAScoreChartDynamic(chartDisc);
+  }
   currentDisc = disc;
   // Highlight selected PB card
   ['100m','60m','Long Jump','200m'].forEach(d => {
@@ -2170,15 +2175,19 @@ function updateWAScoreChart(results) {
   // Store for chart rendering
   window.waScoreByDisc = byDisc;
 
-  // Re-render if chart is visible
-  const chartEl = document.getElementById('wa-score-chart');
+  // Re-render chart with live data
+  const chartEl = document.getElementById('score-chart-svg');
   if (chartEl) renderWAScoreChartDynamic(window.currentWAScoreDisc || '60m');
 }
 
 function renderWAScoreChartDynamic(disc) {
   window.currentWAScoreDisc = disc;
-  const chartEl = document.getElementById('wa-score-chart');
-  if (!chartEl || !window.waScoreByDisc) return;
+  const chartEl = document.getElementById('score-chart-svg');
+  if (!chartEl) return;
+  if (!window.waScoreByDisc || !window.waScoreByDisc[disc]) {
+    // No live data yet — keep existing static chart
+    return;
+  }
 
   const data = window.waScoreByDisc[disc] || [];
   if (!data.length) return;
