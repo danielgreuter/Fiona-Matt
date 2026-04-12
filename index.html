@@ -11,11 +11,6 @@
   <meta name="application-name" content="Fiona Matt">
   <meta name="theme-color" content="#002B7F">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<link rel="manifest" href="/Fiona-Matt/manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Fiona Matt">
 <title>Fiona Matt · Athletics Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -917,7 +912,7 @@ body {
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div class="card-title" style="margin:0">📅 Wettkampf-Kalender 2026</div>
-          <button id="cal-refresh-btn" onclick="loadCalendarFromKV(true)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer">↻ Aktualisieren</button>
+          <button id="cal-refresh-btn" onclick="loadCalendarData(true)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer">↻ Aktualisieren</button>
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">
           Wettkämpfe werden aus dem <strong>Google Kalender «Leichtathletik Fiona»</strong> geladen. Neuen Wettkampf hinzufügen: Titel mit «WK:» beginnen.
@@ -2958,7 +2953,7 @@ let calendarEvents = []; // loaded from KV
 
 let chCalendarEvents = []; // All Swiss Athletics competitions
 
-async function loadCalendarFromKV(force) {
+async function loadCalendarFromKV() {
   const status = document.getElementById('cal-status');
   
   // Always show static data first (immediate)
@@ -2969,7 +2964,7 @@ async function loadCalendarFromKV(force) {
     if (status) { status.style.display = 'block'; status.textContent = '⏳ Lade Kalender...'; status.style.color = 'var(--text-dim)'; }
     
     const [googleRes, chRes] = await Promise.allSettled([
-      fetch(PROXY_URL + '?action=calendar' + (force?'&force=1':'')).then(r => r.json()),
+      fetch(PROXY_URL + '?action=calendar').then(r => r.json()),
       fetch(PROXY_URL + '?action=chcalendar').then(r => r.json()),
     ]);
 
@@ -3094,27 +3089,20 @@ const CANTON_WAPPEN = {
 
 
 
-// Toggle collapsible calendar sections
-function toggleSection(id, iconId, labelOpen, labelClosed) {
-  const el = document.getElementById(id);
-  const icon = document.getElementById(iconId);
-  if (!el) return;
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  if (icon) icon.textContent = isOpen ? labelClosed : labelOpen;
-}
-
 function renderCalendarWithKV() {
   const container = document.getElementById('calendar-list');
   if (!container) return;
   const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
   const today = new Date(); today.setHours(0,0,0,0);
 
-  // Categorize events from Google Calendar
-  const past       = [];
-  const angemeldet = [];
-  const ausstehend = [];
+  // Combine KV events + static past events from FIONA.upcoming
+  const staticPast = FIONA.upcoming.filter(e => e.past && e.fionaStarted);
+  
+  const past = [];
+  const fionaFuture = [];
+  const generalFuture = [];
 
+  // Categorize KV events
   calendarEvents.forEach(e => {
     const parts = e.date.split('.').map(Number);
     const d = new Date(parts[2], parts[1]-1, parts[0]);
@@ -3122,145 +3110,19 @@ function renderCalendarWithKV() {
     if (isPast) {
       past.push({...e, past:true});
     } else if (e.fionaStarting) {
-      angemeldet.push(e);
+      fionaFuture.push(e);
     } else {
-      ausstehend.push(e);
+      generalFuture.push(e);
     }
   });
 
-  // Also add static past events
-  const staticPast = FIONA.upcoming.filter(e => e.past && e.fionaStarted);
-  const allPast = [...staticPast.map(e=>({...e,id:null})), ...past]
-    .sort((a,b) => {
-      const pa=a.date.split('.'), pb=b.date.split('.');
-      return new Date(pb[2],pb[1]-1,pb[0]) - new Date(pa[2],pa[1]-1,pa[0]);
-    });
-
-  // Country flag emoji from ISO code
-  function countryFlag(code) {
-    if (!code) return '';
-    const flags = {
-      'SUI':'🇨🇭','LIE':'🇱🇮','GER':'🇩🇪','AUT':'🇦🇹','ITA':'🇮🇹','FRA':'🇫🇷',
-      'GBR':'🇬🇧','USA':'🇺🇸','MKD':'🇲🇰','MON':'🇲🇨','SEN':'🇸🇳','ESP':'🇪🇸',
-      'NED':'🇳🇱','BEL':'🇧🇪','POL':'🇵🇱','HUN':'🇭🇺','CZE':'🇨🇿','SVK':'🇸🇰',
-      'SLO':'🇸🇮','CRO':'🇭🇷','SRB':'🇷🇸','ROU':'🇷🇴','TUR':'🇹🇷','NOR':'🇳🇴',
-      'SWE':'🇸🇪','DEN':'🇩🇰','FIN':'🇫🇮','POR':'🇵🇹','FL':'🇱🇮',
-    };
-    return flags[code] || '';
-  }
-
-  function renderEvent(e, showBadge) {
+  function renderEvent(e) {
     const parts = e.date.split('.').map(Number);
     const d = parts[0], m = parts[1], y = parts[2];
     const diffDays = e.past ? -1 : Math.ceil((new Date(y,m-1,d) - today) / 86400000);
     const soon = !e.past && diffDays >= 0 && diffDays <= 7;
     const discs = Array.isArray(e.disciplines) ? e.disciplines : [e.disciplines||''];
-
-    // Deadline countdown
-    let deadlineHtml = '';
-    if (e.deadline && !e.past) {
-      const dlParts = e.deadline.split('.').map(Number);
-      const dlDate = new Date(dlParts[2], dlParts[1]-1, dlParts[0]);
-      const dlDays = Math.ceil((dlDate - today) / 86400000);
-      const dlColor = dlDays <= 3 ? 'var(--red)' : dlDays <= 7 ? 'var(--orange)' : 'var(--text-dim)';
-      const dlCountdown = dlDays < 0 ? 'abgelaufen' : dlDays === 0 ? 'heute!' : `noch ${dlDays}d`;
-      deadlineHtml = `<div style="font-size:10px;color:${dlColor};margin-top:2px">📋 Meldeschluss: <strong>${e.deadline}</strong> <span style="font-weight:700">(${dlCountdown})</span></div>`;
-    }
-
-    // Wappen/Flag — from canton/country field OR detect from venue string
-    let wappenHtml = '';
-    if (showBadge) {
-      // Try canton from event data first
-      let canton  = e.canton  || '';
-      let country = e.country || '';
-      
-      // Fallback: extract from full location string using PLZ or country name
-      if (!canton && !country) {
-        const fullLoc = (e.venue||'') + ' ' + (e.location||'');
-        // Try PLZ
-        const plzM = fullLoc.match(/\b(\d{4})\b/);
-        const plz = plzM ? parseInt(plzM[1]) : 0;
-        // Try country name
-        const COUNTRY_MAP = {
-          'schweiz':'SUI','switzerland':'SUI',
-          'österreich':'AUT','austria':'AUT',
-          'deutschland':'GER','germany':'GER',
-          'italien':'ITA','italy':'ITA','italia':'ITA',
-          'frankreich':'FRA','france':'FRA',
-          'liechtenstein':'LIE',
-          'monaco':'MON',
-          'senegal':'SEN',
-          'spanien':'ESP','spain':'ESP',
-          'nordmazedonien':'MKD',
-          'ungarn':'HUN','hungary':'HUN',
-          'tschechien':'CZE',
-          'slowakei':'SVK',
-          'slowenien':'SLO',
-          'kroatien':'CRO',
-          'serbien':'SRB',
-          'rumänien':'ROU',
-          'türkei':'TUR',
-          'norwegen':'NOR',
-          'schweden':'SWE',
-          'grossbritannien':'GBR',
-          'niederlande':'NED',
-          'belgien':'BEL',
-          'portugal':'POR',
-        };
-        for (const [name, code] of Object.entries(COUNTRY_MAP)) {
-          if (fullLoc.toLowerCase().includes(name)) { country = code; break; }
-        }
-        // PLZ → Canton (Swiss)
-        if (!country || country === 'SUI') {
-          if (plz >= 8000 && plz <= 8999) canton = plz >= 8200 && plz <= 8299 ? 'SH' : plz >= 8500 && plz <= 8599 ? 'TG' : 'ZH';
-          else if (plz >= 9000 && plz <= 9299) canton = plz >= 9100 && plz <= 9199 ? 'AR' : 'SG';
-          else if (plz >= 9400 && plz <= 9699) canton = 'SG';
-          else if (plz >= 1000 && plz <= 1999) canton = plz >= 1200 && plz <= 1299 ? 'GE' : plz >= 1600 && plz <= 1799 ? 'FR' : plz >= 1900 ? 'VS' : 'VD';
-          else if (plz >= 2000 && plz <= 2499) canton = 'NE';
-          else if (plz >= 2500 && plz <= 2699) canton = 'BE';
-          else if (plz >= 2700 && plz <= 2999) canton = plz >= 2800 ? 'JU' : 'SO';
-          else if (plz >= 3000 && plz <= 3999) canton = 'BE';
-          else if (plz >= 4000 && plz <= 4099) canton = 'BS';
-          else if (plz >= 4100 && plz <= 4199) canton = 'BL';
-          else if (plz >= 4200 && plz <= 4799) canton = plz >= 4300 && plz <= 4399 ? 'AG' : 'SO';
-          else if (plz >= 4800 && plz <= 5999) canton = 'AG';
-          else if (plz >= 6000 && plz <= 6299) canton = 'LU';
-          else if (plz >= 6300 && plz <= 6399) canton = 'ZG';
-          else if (plz >= 6400 && plz <= 6499) canton = 'OW';
-          else if (plz >= 6500 && plz <= 6999) canton = 'TI';
-          else if (plz >= 7000 && plz <= 7999) canton = 'GR';
-          if (canton) country = '';
-        }
-        if (country === 'LIE') canton = '';
-      }
-
-      if (canton && CANTON_WAPPEN[canton]) {
-        wappenHtml = `<img src="${CANTON_WAPPEN[canton]}" style="width:22px;height:26px;flex-shrink:0" onerror="this.style.display='none'">`;
-      } else if (country) {
-        const flag = countryFlag(country);
-        if (flag) wappenHtml = `<span style="font-size:22px;line-height:1">${flag}</span>`;
-      }
-    }
-
-    // Bemerkung + Event-Countdown für angemeldete Events
-    let bemerkung = '', bemerkungColor = 'var(--text-dim)', eventCountdown = '';
-    if (!e.past && showBadge) {
-      if (e.fionaStarting) {
-        bemerkung = '✅ Angemeldet';
-        bemerkungColor = 'var(--green)';
-        // Countdown bis zum Wettkampf
-        const evDays = Math.ceil((new Date(y,m-1,d) - today) / 86400000);
-        const evColor = evDays <= 7 ? 'var(--red)' : evDays <= 14 ? 'var(--orange)' : 'var(--green)';
-        if (evDays > 0) eventCountdown = `<span style="font-size:10px;color:${evColor};font-weight:700;margin-left:8px">⏱ noch ${evDays} Tage</span>`;
-        else if (evDays === 0) eventCountdown = `<span style="font-size:10px;color:var(--red);font-weight:700;margin-left:8px">🏃 Heute!</span>`;
-      } else if (e.comment) {
-        bemerkung = '💬 ' + e.comment;
-        bemerkungColor = 'var(--orange)';
-      } else {
-        bemerkung = '⏳ Anmeldung ausstehend';
-        bemerkungColor = 'var(--orange)';
-      }
-    }
+    const isKV = !!e.id;
 
     return `<div class="upcoming-item${e.fionaStarting||soon?' highlight':''}" ${e.past?'style="opacity:0.78"':''}>
       <div class="upcoming-date-col">
@@ -3274,71 +3136,60 @@ function renderCalendarWithKV() {
           ${discs.map(disc=>`<span class="disc-pill">${disc}</span>`).join('')}
           ${soon?`<span class="disc-pill" style="background:var(--orange-light);color:var(--orange)">⚡ in ${diffDays}d</span>`:''}
         </div>
-        ${bemerkung?`<div style="font-size:10px;color:${bemerkungColor};margin-top:3px;font-weight:600">${bemerkung}${eventCountdown}</div>`:''}
-        ${e.fionaStarting ? '' : deadlineHtml}
+        ${e.deadline?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px">📋 Meldeschluss: <strong>${e.deadline}</strong></div>`:''}
       </div>
-      ${wappenHtml?`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">${wappenHtml}</div>`:''}
-    </div>`;
-  }
 
-  function sectionHeader(id, iconId, label, color, defaultOpen) {
-    const icon = defaultOpen ? '▼' : '▶';
-    const display = defaultOpen ? 'block' : 'none';
-    return `<div class="section-label" style="margin-top:14px;color:${color};cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between"
-      onclick="document.getElementById('${id}').style.display=document.getElementById('${id}').style.display==='none'?'block':'none';document.getElementById('${iconId}').textContent=document.getElementById('${id}').style.display==='none'?'▶':'▼'">
-      <span>${label}</span>
-      <span id="${iconId}" style="font-size:12px;color:var(--text-dim)">${icon}</span>
-    </div><div id="${id}" style="display:${display}">`;
+    </div>`;
   }
 
   let html = '';
 
-  // ── Fiona's Wettkämpfe ──────────────────────────────────────────────
-  html += `<div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid var(--blue)">🏃‍♀️ Fiona's Wettkämpfe</div>`;
-
-  // Abgeschlossen (zugeklappt)
+  // Past events (collapsed)
+  const allPast = [...staticPast.map(e=>({...e,id:null})), ...past];
   if (allPast.length) {
-    html += `<div class="section-label" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between"
-      onclick="document.getElementById('sec-past').style.display=document.getElementById('sec-past').style.display==='none'?'block':'none';document.getElementById('icon-past').textContent=document.getElementById('sec-past').style.display==='none'?'▶ '+${allPast.length}+' Starts':'▼ einklappen'">
+    html += `<div class="section-label" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between" onclick="togglePast(this)">
       <span>✓ Abgeschlossen 2026</span>
-      <span id="icon-past" style="font-size:12px;color:var(--text-dim)">▶ ${allPast.length} Starts</span>
-    </div><div id="sec-past" style="display:none">`;
-    allPast.forEach(e => { html += renderEvent(e); });
+      <span id="past-toggle-icon" style="font-size:12px;color:var(--text-dim)">▶ ${allPast.length} Starts</span>
+    </div>`;
+    html += `<div id="past-events" style="display:none">`;
+    allPast.slice().reverse().forEach(e => { html += renderEvent(e); });
     html += `</div>`;
   }
 
-  // Angemeldet (aufgeklappt)
-  html += sectionHeader('sec-angemeldet','icon-angemeldet','📌 Angemeldet','var(--blue)', true);
-  if (angemeldet.length) {
-    angemeldet.forEach(e => { html += renderEvent(e, true); });
+  // Fiona angemeldet
+  html += `<div class="section-label" style="margin-top:14px;color:var(--blue)">📌 Fiona angemeldet</div>`;
+  if (fionaFuture.length) {
+    fionaFuture.forEach(e => { html += renderEvent(e); });
   } else {
     html += `<div style="font-size:12px;color:var(--text-dim);padding:10px 0">Keine bestätigten Anmeldungen.</div>`;
   }
-  html += `</div>`;
 
-  // Anmeldung ausstehend (aufgeklappt)
-  if (ausstehend.length) {
-    html += sectionHeader('sec-ausstehend','icon-ausstehend','⏳ Anmeldung ausstehend','var(--orange)', true);
-    ausstehend.forEach(e => { html += renderEvent(e, true); });
-    html += `</div>`;
+  // Weitere Anlässe (aus Google Kalender)
+  if (generalFuture.length) {
+    html += `<div class="section-label" style="margin-top:14px;color:var(--text-dim)">📅 Weitere Anlässe</div>`;
+    generalFuture.forEach(e => { html += renderEvent(e); });
   }
 
-  // ── Alle CH Wettkämpfe ───────────────────────────────────────────────
-  if (chCalendarEvents.length || CH_CALENDAR_STATIC.length) {
+  // CH Wettkampfkalender (Swiss Athletics)
+  if (chCalendarEvents.length) {
+    // Merge dynamic (from KV) with static (curated list), deduplicate
     const chMerged = [...CH_CALENDAR_STATIC];
     const staticKeys = new Set(CH_CALENDAR_STATIC.map(e => e.date + e.name));
     for (const e of chCalendarEvents) {
       if (!staticKeys.has(e.date + e.name)) chMerged.push(e);
     }
     chMerged.sort((a,b) => {
-      const pa=a.date.split('.'), pb=b.date.split('.');
+      const pa = a.date.split('.'); const pb = b.date.split('.');
       return new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
     });
     const chFuture = chMerged.filter(e => !e.past);
     if (chFuture.length) {
-      html += `<div style="font-size:13px;font-weight:800;color:var(--text);margin-top:20px;margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid var(--blue)">🇨🇭 Alle CH-Wettkämpfe <span style="font-weight:400;font-size:10px;color:var(--text-dim)">(Swiss Athletics · ${chFuture.length} Anlässe)</span></div>`;
-      html += sectionHeader('sec-ch','icon-ch','📅 Wettkampfkalender Schweiz','var(--text-dim)', true);
+      html += `<div class="section-label" style="margin-top:18px;color:var(--text-dim);display:flex;align-items:center;justify-content:space-between">
+        <span>🇨🇭 Alle CH Wettkämpfe <span style="font-weight:400;font-size:10px">(Swiss Athletics)</span></span>
+        <span style="font-size:10px;color:var(--text-dim)">${chFuture.length} Anlässe</span>
+      </div>`;
       chFuture.forEach(e => {
+        const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
         const parts = e.date.split('.').map(Number);
         const d = parts[0], m = parts[1];
         const wappenUrl = e.canton ? CANTON_WAPPEN[e.canton] : '';
@@ -3349,22 +3200,22 @@ function renderCalendarWithKV() {
           </div>
           <div class="upcoming-info">
             <div class="upcoming-name" style="font-size:12px">${e.name}</div>
-            <div class="upcoming-venue" style="font-size:11px;margin-top:2px">${e.venue}${e.canton?` (${e.canton})`:''}</div>
-            ${e.deadline?`<div style="font-size:10px;color:var(--text-dim)">📋 Meldeschluss: ${e.deadline}</div>`:''}
+            <div class="upcoming-venue" style="font-size:11px;margin-top:2px">
+              ${e.venue}${e.canton ? ` (${e.canton})` : ''}
+            </div>
+            ${e.deadline ? `<div style="font-size:10px;color:var(--text-dim)">📋 Meldeschluss: ${e.deadline}</div>` : ''}
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-            ${wappenUrl?`<img src="${wappenUrl}" style="width:22px;height:26px;flex-shrink:0" onerror="this.style.display='none'">` : ''}
+            ${wappenUrl ? `<img src="${wappenUrl}" style="width:22px;height:26px;flex-shrink:0" onerror="this.style.display='none'">` : ''}
             <span style="font-size:10px;color:var(--text-dim);text-align:right">${e.organizer||''}</span>
           </div>
         </div>`;
       });
-      html += `</div>`; // close sec-ch
     }
   }
 
   container.innerHTML = html;
 }
-
 
 function showAddEvent() {
   document.getElementById('cal-form-card').style.display = 'block';
