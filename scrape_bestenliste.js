@@ -73,7 +73,7 @@ async function main() {
       const sFile = path.join(SCREENSHOT_DIR, `alabus_fehler_${disc.key.replace(' ','_')}.png`);
       await page.screenshot({ path: sFile, fullPage: true }).catch(() => {});
       console.log(`   📸 ${sFile}`);
-      result.disciplines[disc.key] = { error: e.message, fiona: null, top5: [], total: 0 };
+      result.disciplines[disc.key] = { error: e.message, fiona: null, top15: [], total: 0 };
     }
     console.log('');
   }
@@ -258,7 +258,7 @@ async function scrape(page, disc) {
       date: fiona.date,
       gapToFirst: top1 ? gap(fiona.result, top1.result) : null,
     } : null,
-    top5: rows.slice(0, 5),
+    top15: rows.slice(0, 15),
     total: rows.length,
   };
 }
