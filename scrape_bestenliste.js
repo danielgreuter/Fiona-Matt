@@ -26,6 +26,7 @@ const F = {
 const DISCIPLINES = [
   { label:'100 m', key:'100m',      season:'Outdoor', year:'2025' },
   { label:'60 m',  key:'60m',       season:'Indoor',  year:'2026' },
+  { label:'60 m',  key:'60m_2025',  season:'Indoor',  year:'2025' },
   { label:'200 m', key:'200m',      season:'Outdoor', year:'2025' },
   { label:'Weit',  key:'Long Jump', season:'Outdoor', year:'2025' },
 ];
