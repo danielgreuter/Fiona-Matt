@@ -1370,11 +1370,18 @@ function selectDisc(disc) {
     renderWAScoreChartDynamic(chartDisc);
   }
   currentDisc = disc;
-  // Highlight selected PB card
+  // Highlight selected PB card — try ID first, fallback to querySelectorAll
+  const idMap = { "100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m" };
   ['100m','60m','Long Jump','200m'].forEach(d => {
-    const idMap = { "100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m" };
     const el = document.getElementById(idMap[d]);
     if (el) el.classList.toggle('selected', d === disc);
+  });
+  // Also fallback: highlight by disc class
+  document.querySelectorAll('.pb-item').forEach(el => {
+    const isSelected = el.onclick?.toString().includes("'" + disc + "'") || 
+                       el.getAttribute('onclick')?.includes("'" + disc + "'");
+    if (isSelected) el.classList.add('selected');
+    else el.classList.remove('selected');
   });
   // Update chart titles
   const chartTitle = document.getElementById('chart-title');
@@ -1908,7 +1915,8 @@ function renderStaticPBs() {
     const labels = {'100m':'100m','60m':'60m Halle','Long Jump':'Weitsprung','200m':'200m'};
     const cls = {'100m':'disc-100','60m':'disc-60','Long Jump':'disc-lj','200m':'disc-200'};
     const unit = pb.discipline === 'Long Jump' ? ' m' : '';
-    html += `<div class="pb-item ${cls[pb.discipline]||''}${i===0?' selected':''}" onclick="selectDisc('${pb.discipline}')">
+    const idMap2 = {'100m':'pb-100m','60m':'pb-60m','Long Jump':'pb-lj','200m':'pb-200m'};
+    html += `<div id="${idMap2[pb.discipline]||''}" class="pb-item ${cls[pb.discipline]||''}${i===0?' selected':''}" onclick="selectDisc('${pb.discipline}')">
       <div class="pb-disc">${labels[pb.discipline]||pb.discipline}</div>
       <div class="pb-time">${pb.result}${unit}</div>
       <div class="pb-note">${pb.note||''}</div>
