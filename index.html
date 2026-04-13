@@ -896,7 +896,7 @@ body {
             <div class="card-title" style="margin:0">🇨🇭 Swiss Athletics Resultate</div>
             <div id="sa-results-status" style="font-size:10px;color:var(--text-dim);margin-top:2px"></div>
           </div>
-          <button onclick="loadSAResults(true)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:700;font-family:inherit">↻</button>
+          <button onclick="loadSAResults(false)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:700;font-family:inherit">↻</button>
         </div>
 
         <!-- Disziplin Filter -->
@@ -3657,7 +3657,7 @@ async function loadSAResults(force) {
   if (status) status.textContent = '⏳ Lade...';
 
   try {
-    const url = PROXY_URL + '?action=sa-results' + (force ? '&force=1' : '');
+    const url = PROXY_URL + '?action=sa-results'; // force not supported - data comes from scraper
     const res = await fetch(url);
     if (!res.ok) throw new Error('Keine Daten verfügbar');
     const data = await res.json();
