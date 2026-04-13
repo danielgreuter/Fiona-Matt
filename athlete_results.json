@@ -1,6 +1,6 @@
 {
   "athlete": "Fiona Matt",
-  "scraped": "2026-04-13T19:59:30.301Z",
+  "scraped": "2026-04-13T20:26:10.617Z",
   "source": "swiss-athletics",
   "count": 168,
   "pbs": {
@@ -17,7 +17,7 @@
       "date": "21.02.2026",
       "dateISO": "2026-02-21",
       "year": 2026,
-      "place": "3",
+      "place": "3. Final",
       "source": "swiss-athletics"
     },
     "100m": {
@@ -33,7 +33,7 @@
       "date": "13.09.2025",
       "dateISO": "2025-09-13",
       "year": 2025,
-      "place": "53",
+      "place": "5. Lauf 3",
       "source": "swiss-athletics"
     },
     "Long Jump": {
@@ -49,7 +49,7 @@
       "date": "23.08.2025",
       "dateISO": "2025-08-23",
       "year": 2025,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     "200m": {
@@ -65,7 +65,7 @@
       "date": "17.05.2025",
       "dateISO": "2025-05-17",
       "year": 2025,
-      "place": "41",
+      "place": "4. Runde 1",
       "source": "swiss-athletics"
     },
     "80m": {
@@ -81,7 +81,7 @@
       "date": "31.08.2024",
       "dateISO": "2024-08-31",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     }
   },
@@ -99,7 +99,7 @@
       "date": "21.02.2026",
       "dateISO": "2026-02-21",
       "year": 2026,
-      "place": "3",
+      "place": "3. Final",
       "source": "swiss-athletics"
     },
     {
@@ -115,7 +115,7 @@
       "date": "21.02.2026",
       "dateISO": "2026-02-21",
       "year": 2026,
-      "place": "35",
+      "place": "3. Lauf 5",
       "source": "swiss-athletics"
     },
     {
@@ -131,7 +131,7 @@
       "date": "14.02.2026",
       "dateISO": "2026-02-14",
       "year": 2026,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -147,7 +147,7 @@
       "date": "14.02.2026",
       "dateISO": "2026-02-14",
       "year": 2026,
-      "place": "21",
+      "place": "2. Lauf 1",
       "source": "swiss-athletics"
     },
     {
@@ -163,7 +163,7 @@
       "date": "07.02.2026",
       "dateISO": "2026-02-07",
       "year": 2026,
-      "place": "13",
+      "place": "1. Lauf 3",
       "source": "swiss-athletics"
     },
     {
@@ -179,7 +179,7 @@
       "date": "01.02.2026",
       "dateISO": "2026-02-01",
       "year": 2026,
-      "place": "12",
+      "place": "1. Lauf 2",
       "source": "swiss-athletics"
     },
     {
@@ -195,7 +195,7 @@
       "date": "31.01.2026",
       "dateISO": "2026-01-31",
       "year": 2026,
-      "place": "1",
+      "place": "1. Final",
       "source": "swiss-athletics"
     },
     {
@@ -211,7 +211,7 @@
       "date": "31.01.2026",
       "dateISO": "2026-01-31",
       "year": 2026,
-      "place": "13",
+      "place": "1. Lauf 3",
       "source": "swiss-athletics"
     },
     {
@@ -227,7 +227,7 @@
       "date": "25.01.2026",
       "dateISO": "2026-01-25",
       "year": 2026,
-      "place": "11",
+      "place": "1. Lauf 1",
       "source": "swiss-athletics"
     },
     {
@@ -243,7 +243,7 @@
       "date": "25.01.2026",
       "dateISO": "2026-01-25",
       "year": 2026,
-      "place": "1",
+      "place": "1. Final",
       "source": "swiss-athletics"
     },
     {
@@ -259,7 +259,7 @@
       "date": "18.01.2026",
       "dateISO": "2026-01-18",
       "year": 2026,
-      "place": "21",
+      "place": "2. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -275,7 +275,7 @@
       "date": "13.09.2025",
       "dateISO": "2025-09-13",
       "year": 2025,
-      "place": "53",
+      "place": "5. Lauf 3",
       "source": "swiss-athletics"
     },
     {
@@ -291,7 +291,7 @@
       "date": "13.09.2025",
       "dateISO": "2025-09-13",
       "year": 2025,
-      "place": "81",
+      "place": "8qf1",
       "source": "swiss-athletics"
     },
     {
@@ -307,7 +307,7 @@
       "date": "13.09.2025",
       "dateISO": "2025-09-13",
       "year": 2025,
-      "place": "81",
+      "place": "8. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -323,7 +323,7 @@
       "date": "23.08.2025",
       "dateISO": "2025-08-23",
       "year": 2025,
-      "place": "13",
+      "place": "1. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -339,7 +339,7 @@
       "date": "23.08.2025",
       "dateISO": "2025-08-23",
       "year": 2025,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -355,7 +355,7 @@
       "date": "20.08.2025",
       "dateISO": "2025-08-20",
       "year": 2025,
-      "place": "12",
+      "place": "1. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -371,7 +371,7 @@
       "date": "06.08.2025",
       "dateISO": "2025-08-06",
       "year": 2025,
-      "place": "112",
+      "place": "11. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -387,7 +387,7 @@
       "date": "06.08.2025",
       "dateISO": "2025-08-06",
       "year": 2025,
-      "place": "92",
+      "place": "9. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -403,7 +403,7 @@
       "date": "21.07.2025",
       "dateISO": "2025-07-21",
       "year": 2025,
-      "place": "54",
+      "place": "5. Lauf 4",
       "source": "swiss-athletics"
     },
     {
@@ -419,7 +419,7 @@
       "date": "21.06.2025",
       "dateISO": "2025-06-21",
       "year": 2025,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -435,7 +435,7 @@
       "date": "21.06.2025",
       "dateISO": "2025-06-21",
       "year": 2025,
-      "place": "37",
+      "place": "3. Lauf 7",
       "source": "swiss-athletics"
     },
     {
@@ -451,7 +451,7 @@
       "date": "21.06.2025",
       "dateISO": "2025-06-21",
       "year": 2025,
-      "place": "52",
+      "place": "5qf2",
       "source": "swiss-athletics"
     },
     {
@@ -467,7 +467,7 @@
       "date": "21.06.2025",
       "dateISO": "2025-06-21",
       "year": 2025,
-      "place": "81",
+      "place": "8. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -483,7 +483,7 @@
       "date": "14.06.2025",
       "dateISO": "2025-06-14",
       "year": 2025,
-      "place": "62",
+      "place": "6. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -499,7 +499,7 @@
       "date": "14.06.2025",
       "dateISO": "2025-06-14",
       "year": 2025,
-      "place": "83",
+      "place": "8. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -515,7 +515,7 @@
       "date": "14.06.2025",
       "dateISO": "2025-06-14",
       "year": 2025,
-      "place": "132",
+      "place": "13. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -531,7 +531,7 @@
       "date": "09.06.2025",
       "dateISO": "2025-06-09",
       "year": 2025,
-      "place": "123",
+      "place": "12. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -547,7 +547,7 @@
       "date": "09.06.2025",
       "dateISO": "2025-06-09",
       "year": 2025,
-      "place": "12",
+      "place": "12. Final",
       "source": "swiss-athletics"
     },
     {
@@ -563,7 +563,7 @@
       "date": "09.06.2025",
       "dateISO": "2025-06-09",
       "year": 2025,
-      "place": "284",
+      "place": "28. Runde 4",
       "source": "swiss-athletics"
     },
     {
@@ -579,7 +579,7 @@
       "date": "07.06.2025",
       "dateISO": "2025-06-07",
       "year": 2025,
-      "place": "356",
+      "place": "35. Lauf 6",
       "source": "swiss-athletics"
     },
     {
@@ -595,7 +595,7 @@
       "date": "07.06.2025",
       "dateISO": "2025-06-07",
       "year": 2025,
-      "place": "12",
+      "place": "12. Final",
       "source": "swiss-athletics"
     },
     {
@@ -611,7 +611,7 @@
       "date": "07.06.2025",
       "dateISO": "2025-06-07",
       "year": 2025,
-      "place": "325",
+      "place": "32. Runde 5",
       "source": "swiss-athletics"
     },
     {
@@ -627,7 +627,7 @@
       "date": "17.05.2025",
       "dateISO": "2025-05-17",
       "year": 2025,
-      "place": "33",
+      "place": "3. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -643,7 +643,7 @@
       "date": "17.05.2025",
       "dateISO": "2025-05-17",
       "year": 2025,
-      "place": "41",
+      "place": "4. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -659,7 +659,7 @@
       "date": "17.05.2025",
       "dateISO": "2025-05-17",
       "year": 2025,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -675,7 +675,7 @@
       "date": "26.04.2025",
       "dateISO": "2025-04-26",
       "year": 2025,
-      "place": "14",
+      "place": "1. Runde 4",
       "source": "swiss-athletics"
     },
     {
@@ -691,7 +691,7 @@
       "date": "26.04.2025",
       "dateISO": "2025-04-26",
       "year": 2025,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -707,7 +707,7 @@
       "date": "01.03.2025",
       "dateISO": "2025-03-01",
       "year": 2025,
-      "place": "71",
+      "place": "7. Lauf 1",
       "source": "swiss-athletics"
     },
     {
@@ -723,7 +723,7 @@
       "date": "01.03.2025",
       "dateISO": "2025-03-01",
       "year": 2025,
-      "place": "7",
+      "place": "7. Final",
       "source": "swiss-athletics"
     },
     {
@@ -739,7 +739,7 @@
       "date": "08.02.2025",
       "dateISO": "2025-02-08",
       "year": 2025,
-      "place": "64",
+      "place": "6. Runde 4",
       "source": "swiss-athletics"
     },
     {
@@ -755,7 +755,7 @@
       "date": "26.01.2025",
       "dateISO": "2025-01-26",
       "year": 2025,
-      "place": "1",
+      "place": "1. Lauf",
       "source": "swiss-athletics"
     },
     {
@@ -771,7 +771,7 @@
       "date": "26.01.2025",
       "dateISO": "2025-01-26",
       "year": 2025,
-      "place": "1",
+      "place": "1. Final",
       "source": "swiss-athletics"
     },
     {
@@ -787,7 +787,7 @@
       "date": "25.01.2025",
       "dateISO": "2025-01-25",
       "year": 2025,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -803,7 +803,7 @@
       "date": "19.01.2025",
       "dateISO": "2025-01-19",
       "year": 2025,
-      "place": "62",
+      "place": "6. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -819,7 +819,7 @@
       "date": "28.09.2024",
       "dateISO": "2024-09-28",
       "year": 2024,
-      "place": "11",
+      "place": "1. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -835,7 +835,7 @@
       "date": "28.09.2024",
       "dateISO": "2024-09-28",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -851,7 +851,7 @@
       "date": "22.09.2024",
       "dateISO": "2024-09-22",
       "year": 2024,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -867,7 +867,7 @@
       "date": "22.09.2024",
       "dateISO": "2024-09-22",
       "year": 2024,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -883,7 +883,7 @@
       "date": "22.09.2024",
       "dateISO": "2024-09-22",
       "year": 2024,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -899,7 +899,7 @@
       "date": "07.09.2024",
       "dateISO": "2024-09-07",
       "year": 2024,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -915,7 +915,7 @@
       "date": "04.09.2024",
       "dateISO": "2024-09-04",
       "year": 2024,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -931,7 +931,7 @@
       "date": "01.09.2024",
       "dateISO": "2024-09-01",
       "year": 2024,
-      "place": "91",
+      "place": "9. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -947,7 +947,7 @@
       "date": "31.08.2024",
       "dateISO": "2024-08-31",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -963,7 +963,7 @@
       "date": "31.08.2024",
       "dateISO": "2024-08-31",
       "year": 2024,
-      "place": "26",
+      "place": "2. Lauf 6",
       "source": "swiss-athletics"
     },
     {
@@ -979,7 +979,7 @@
       "date": "31.08.2024",
       "dateISO": "2024-08-31",
       "year": 2024,
-      "place": "12",
+      "place": "1qf2",
       "source": "swiss-athletics"
     },
     {
@@ -995,7 +995,7 @@
       "date": "25.08.2024",
       "dateISO": "2024-08-25",
       "year": 2024,
-      "place": "12",
+      "place": "1. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -1011,7 +1011,7 @@
       "date": "25.08.2024",
       "dateISO": "2024-08-25",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1027,7 +1027,7 @@
       "date": "18.08.2024",
       "dateISO": "2024-08-18",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1043,7 +1043,7 @@
       "date": "18.08.2024",
       "dateISO": "2024-08-18",
       "year": 2024,
-      "place": "71",
+      "place": "7. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1059,7 +1059,7 @@
       "date": "30.06.2024",
       "dateISO": "2024-06-30",
       "year": 2024,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1075,7 +1075,7 @@
       "date": "15.06.2024",
       "dateISO": "2024-06-15",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1091,7 +1091,7 @@
       "date": "15.06.2024",
       "dateISO": "2024-06-15",
       "year": 2024,
-      "place": "24",
+      "place": "2qf4",
       "source": "swiss-athletics"
     },
     {
@@ -1107,7 +1107,7 @@
       "date": "15.06.2024",
       "dateISO": "2024-06-15",
       "year": 2024,
-      "place": "812",
+      "place": "8. Lauf 12",
       "source": "swiss-athletics"
     },
     {
@@ -1123,7 +1123,7 @@
       "date": "15.06.2024",
       "dateISO": "2024-06-15",
       "year": 2024,
-      "place": "41",
+      "place": "4. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1139,7 +1139,7 @@
       "date": "09.06.2024",
       "dateISO": "2024-06-09",
       "year": 2024,
-      "place": "15",
+      "place": "1. Runde 5",
       "source": "swiss-athletics"
     },
     {
@@ -1155,7 +1155,7 @@
       "date": "09.06.2024",
       "dateISO": "2024-06-09",
       "year": 2024,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1171,7 +1171,7 @@
       "date": "01.06.2024",
       "dateISO": "2024-06-01",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1187,7 +1187,7 @@
       "date": "01.06.2024",
       "dateISO": "2024-06-01",
       "year": 2024,
-      "place": "14",
+      "place": "1. Lauf 4",
       "source": "swiss-athletics"
     },
     {
@@ -1203,7 +1203,7 @@
       "date": "01.06.2024",
       "dateISO": "2024-06-01",
       "year": 2024,
-      "place": "12",
+      "place": "1qf2",
       "source": "swiss-athletics"
     },
     {
@@ -1219,7 +1219,7 @@
       "date": "18.05.2024",
       "dateISO": "2024-05-18",
       "year": 2024,
-      "place": "11",
+      "place": "1. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -1235,7 +1235,7 @@
       "date": "18.05.2024",
       "dateISO": "2024-05-18",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1251,7 +1251,7 @@
       "date": "15.05.2024",
       "dateISO": "2024-05-15",
       "year": 2024,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1267,7 +1267,7 @@
       "date": "09.05.2024",
       "dateISO": "2024-05-09",
       "year": 2024,
-      "place": "15",
+      "place": "1. Runde 5",
       "source": "swiss-athletics"
     },
     {
@@ -1283,7 +1283,7 @@
       "date": "09.05.2024",
       "dateISO": "2024-05-09",
       "year": 2024,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1299,7 +1299,7 @@
       "date": "27.04.2024",
       "dateISO": "2024-04-27",
       "year": 2024,
-      "place": "17",
+      "place": "1. Runde 7",
       "source": "swiss-athletics"
     },
     {
@@ -1315,7 +1315,7 @@
       "date": "24.02.2024",
       "dateISO": "2024-02-24",
       "year": 2024,
-      "place": "5",
+      "place": "5. Final",
       "source": "swiss-athletics"
     },
     {
@@ -1331,7 +1331,7 @@
       "date": "24.02.2024",
       "dateISO": "2024-02-24",
       "year": 2024,
-      "place": "64",
+      "place": "6. Lauf 4",
       "source": "swiss-athletics"
     },
     {
@@ -1347,7 +1347,7 @@
       "date": "28.01.2024",
       "dateISO": "2024-01-28",
       "year": 2024,
-      "place": "2",
+      "place": "2. Lauf",
       "source": "swiss-athletics"
     },
     {
@@ -1363,7 +1363,7 @@
       "date": "28.01.2024",
       "dateISO": "2024-01-28",
       "year": 2024,
-      "place": "7",
+      "place": "7. Final",
       "source": "swiss-athletics"
     },
     {
@@ -1379,7 +1379,7 @@
       "date": "28.01.2024",
       "dateISO": "2024-01-28",
       "year": 2024,
-      "place": "3",
+      "place": "3.",
       "source": "swiss-athletics"
     },
     {
@@ -1395,7 +1395,7 @@
       "date": "21.01.2024",
       "dateISO": "2024-01-21",
       "year": 2024,
-      "place": "1",
+      "place": "1. Final",
       "source": "swiss-athletics"
     },
     {
@@ -1411,7 +1411,7 @@
       "date": "21.01.2024",
       "dateISO": "2024-01-21",
       "year": 2024,
-      "place": "15",
+      "place": "1. Lauf 5",
       "source": "swiss-athletics"
     },
     {
@@ -1427,7 +1427,7 @@
       "date": "30.09.2023",
       "dateISO": "2023-09-30",
       "year": 2023,
-      "place": "21",
+      "place": "2. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -1443,7 +1443,7 @@
       "date": "30.09.2023",
       "dateISO": "2023-09-30",
       "year": 2023,
-      "place": "2",
+      "place": "2. Final",
       "source": "swiss-athletics"
     },
     {
@@ -1459,7 +1459,7 @@
       "date": "30.09.2023",
       "dateISO": "2023-09-30",
       "year": 2023,
-      "place": "31",
+      "place": "3. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1475,7 +1475,7 @@
       "date": "17.09.2023",
       "dateISO": "2023-09-17",
       "year": 2023,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1491,7 +1491,7 @@
       "date": "17.09.2023",
       "dateISO": "2023-09-17",
       "year": 2023,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -1507,7 +1507,7 @@
       "date": "17.09.2023",
       "dateISO": "2023-09-17",
       "year": 2023,
-      "place": "5",
+      "place": "5.",
       "source": "swiss-athletics"
     },
     {
@@ -1523,7 +1523,7 @@
       "date": "02.09.2023",
       "dateISO": "2023-09-02",
       "year": 2023,
-      "place": "17",
+      "place": "17.",
       "source": "swiss-athletics"
     },
     {
@@ -1539,7 +1539,7 @@
       "date": "26.08.2023",
       "dateISO": "2023-08-26",
       "year": 2023,
-      "place": "11",
+      "place": "1. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -1555,7 +1555,7 @@
       "date": "26.08.2023",
       "dateISO": "2023-08-26",
       "year": 2023,
-      "place": "21",
+      "place": "2. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1571,7 +1571,7 @@
       "date": "09.08.2023",
       "dateISO": "2023-08-09",
       "year": 2023,
-      "place": "31",
+      "place": "3. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -1587,7 +1587,7 @@
       "date": "09.08.2023",
       "dateISO": "2023-08-09",
       "year": 2023,
-      "place": "153",
+      "place": "15. Final 3",
       "source": "swiss-athletics"
     },
     {
@@ -1603,7 +1603,7 @@
       "date": "02.07.2023",
       "dateISO": "2023-07-02",
       "year": 2023,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1619,7 +1619,7 @@
       "date": "24.06.2023",
       "dateISO": "2023-06-24",
       "year": 2023,
-      "place": "65",
+      "place": "6. Lauf 5",
       "source": "swiss-athletics"
     },
     {
@@ -1635,7 +1635,7 @@
       "date": "24.06.2023",
       "dateISO": "2023-06-24",
       "year": 2023,
-      "place": "311",
+      "place": "31. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1651,7 +1651,7 @@
       "date": "07.06.2023",
       "dateISO": "2023-06-07",
       "year": 2023,
-      "place": "46",
+      "place": "4. Runde 6",
       "source": "swiss-athletics"
     },
     {
@@ -1667,7 +1667,7 @@
       "date": "07.06.2023",
       "dateISO": "2023-06-07",
       "year": 2023,
-      "place": "151",
+      "place": "15. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1683,7 +1683,7 @@
       "date": "04.06.2023",
       "dateISO": "2023-06-04",
       "year": 2023,
-      "place": "31",
+      "place": "3. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1699,7 +1699,7 @@
       "date": "04.06.2023",
       "dateISO": "2023-06-04",
       "year": 2023,
-      "place": "32",
+      "place": "3. Lauf 2",
       "source": "swiss-athletics"
     },
     {
@@ -1715,7 +1715,7 @@
       "date": "04.06.2023",
       "dateISO": "2023-06-04",
       "year": 2023,
-      "place": "82",
+      "place": "8. Final 2",
       "source": "swiss-athletics"
     },
     {
@@ -1731,7 +1731,7 @@
       "date": "18.05.2023",
       "dateISO": "2023-05-18",
       "year": 2023,
-      "place": "62",
+      "place": "6. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -1747,7 +1747,7 @@
       "date": "18.05.2023",
       "dateISO": "2023-05-18",
       "year": 2023,
-      "place": "162",
+      "place": "16. Final 2",
       "source": "swiss-athletics"
     },
     {
@@ -1763,7 +1763,7 @@
       "date": "13.05.2023",
       "dateISO": "2023-05-13",
       "year": 2023,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1779,7 +1779,7 @@
       "date": "13.05.2023",
       "dateISO": "2023-05-13",
       "year": 2023,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1795,7 +1795,7 @@
       "date": "13.05.2023",
       "dateISO": "2023-05-13",
       "year": 2023,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -1811,7 +1811,7 @@
       "date": "06.05.2023",
       "dateISO": "2023-05-06",
       "year": 2023,
-      "place": "11",
+      "place": "1. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -1827,7 +1827,7 @@
       "date": "06.05.2023",
       "dateISO": "2023-05-06",
       "year": 2023,
-      "place": "71",
+      "place": "7. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1843,7 +1843,7 @@
       "date": "29.04.2023",
       "dateISO": "2023-04-29",
       "year": 2023,
-      "place": "12",
+      "place": "1. Runde 2",
       "source": "swiss-athletics"
     },
     {
@@ -1859,7 +1859,7 @@
       "date": "29.04.2023",
       "dateISO": "2023-04-29",
       "year": 2023,
-      "place": "81",
+      "place": "8. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -1875,7 +1875,7 @@
       "date": "08.04.2023",
       "dateISO": "2023-04-08",
       "year": 2023,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -1891,7 +1891,7 @@
       "date": "25.02.2023",
       "dateISO": "2023-02-25",
       "year": 2023,
-      "place": "653",
+      "place": "65. Lauf 3",
       "source": "swiss-athletics"
     },
     {
@@ -1907,7 +1907,7 @@
       "date": "12.02.2023",
       "dateISO": "2023-02-12",
       "year": 2023,
-      "place": "13",
+      "place": "1. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -1923,7 +1923,7 @@
       "date": "12.02.2023",
       "dateISO": "2023-02-12",
       "year": 2023,
-      "place": "11",
+      "place": "1. Runde 1",
       "source": "swiss-athletics"
     },
     {
@@ -1939,7 +1939,7 @@
       "date": "29.01.2023",
       "dateISO": "2023-01-29",
       "year": 2023,
-      "place": "5",
+      "place": "5fB",
       "source": "swiss-athletics"
     },
     {
@@ -1955,7 +1955,7 @@
       "date": "29.01.2023",
       "dateISO": "2023-01-29",
       "year": 2023,
-      "place": "34",
+      "place": "3. Lauf 4",
       "source": "swiss-athletics"
     },
     {
@@ -1971,7 +1971,7 @@
       "date": "29.01.2023",
       "dateISO": "2023-01-29",
       "year": 2023,
-      "place": "9",
+      "place": "9. Final",
       "source": "swiss-athletics"
     },
     {
@@ -1987,7 +1987,7 @@
       "date": "22.01.2023",
       "dateISO": "2023-01-22",
       "year": 2023,
-      "place": "205",
+      "place": "20. Lauf 5",
       "source": "swiss-athletics"
     },
     {
@@ -2003,7 +2003,7 @@
       "date": "02.10.2022",
       "dateISO": "2022-10-02",
       "year": 2022,
-      "place": "",
+      "place": "D",
       "source": "swiss-athletics"
     },
     {
@@ -2019,7 +2019,7 @@
       "date": "25.09.2022",
       "dateISO": "2022-09-25",
       "year": 2022,
-      "place": "61",
+      "place": "6. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -2035,7 +2035,7 @@
       "date": "17.09.2022",
       "dateISO": "2022-09-17",
       "year": 2022,
-      "place": "143",
+      "place": "14. Lauf 3",
       "source": "swiss-athletics"
     },
     {
@@ -2051,7 +2051,7 @@
       "date": "17.09.2022",
       "dateISO": "2022-09-17",
       "year": 2022,
-      "place": "162",
+      "place": "16qf2",
       "source": "swiss-athletics"
     },
     {
@@ -2067,7 +2067,7 @@
       "date": "03.09.2022",
       "dateISO": "2022-09-03",
       "year": 2022,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -2083,7 +2083,7 @@
       "date": "03.09.2022",
       "dateISO": "2022-09-03",
       "year": 2022,
-      "place": "25",
+      "place": "2. Lauf 5",
       "source": "swiss-athletics"
     },
     {
@@ -2099,7 +2099,7 @@
       "date": "26.08.2022",
       "dateISO": "2022-08-26",
       "year": 2022,
-      "place": "13",
+      "place": "1. Final 3",
       "source": "swiss-athletics"
     },
     {
@@ -2115,7 +2115,7 @@
       "date": "20.08.2022",
       "dateISO": "2022-08-20",
       "year": 2022,
-      "place": "24",
+      "place": "2. Runde 4",
       "source": "swiss-athletics"
     },
     {
@@ -2131,7 +2131,7 @@
       "date": "10.07.2022",
       "dateISO": "2022-07-10",
       "year": 2022,
-      "place": "23",
+      "place": "2. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -2147,7 +2147,7 @@
       "date": "26.06.2022",
       "dateISO": "2022-06-26",
       "year": 2022,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -2163,7 +2163,7 @@
       "date": "18.06.2022",
       "dateISO": "2022-06-18",
       "year": 2022,
-      "place": "93",
+      "place": "9qf3",
       "source": "swiss-athletics"
     },
     {
@@ -2179,7 +2179,7 @@
       "date": "18.06.2022",
       "dateISO": "2022-06-18",
       "year": 2022,
-      "place": "94",
+      "place": "9. Lauf 4",
       "source": "swiss-athletics"
     },
     {
@@ -2195,7 +2195,7 @@
       "date": "11.06.2022",
       "dateISO": "2022-06-11",
       "year": 2022,
-      "place": "29",
+      "place": "2. Runde 9",
       "source": "swiss-athletics"
     },
     {
@@ -2211,7 +2211,7 @@
       "date": "26.05.2022",
       "dateISO": "2022-05-26",
       "year": 2022,
-      "place": "85",
+      "place": "8. Runde 5",
       "source": "swiss-athletics"
     },
     {
@@ -2227,7 +2227,7 @@
       "date": "14.05.2022",
       "dateISO": "2022-05-14",
       "year": 2022,
-      "place": "11",
+      "place": "1. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -2243,7 +2243,7 @@
       "date": "14.05.2022",
       "dateISO": "2022-05-14",
       "year": 2022,
-      "place": "13",
+      "place": "1. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -2259,7 +2259,7 @@
       "date": "07.05.2022",
       "dateISO": "2022-05-07",
       "year": 2022,
-      "place": "13",
+      "place": "1. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -2275,7 +2275,7 @@
       "date": "16.04.2022",
       "dateISO": "2022-04-16",
       "year": 2022,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -2291,7 +2291,7 @@
       "date": "30.01.2022",
       "dateISO": "2022-01-30",
       "year": 2022,
-      "place": "12",
+      "place": "1. Lauf 2",
       "source": "swiss-athletics"
     },
     {
@@ -2307,7 +2307,7 @@
       "date": "26.09.2021",
       "dateISO": "2021-09-26",
       "year": 2021,
-      "place": "213",
+      "place": "21. Final 3",
       "source": "swiss-athletics"
     },
     {
@@ -2323,7 +2323,7 @@
       "date": "18.09.2021",
       "dateISO": "2021-09-18",
       "year": 2021,
-      "place": "253",
+      "place": "25. Lauf 3",
       "source": "swiss-athletics"
     },
     {
@@ -2339,7 +2339,7 @@
       "date": "20.08.2021",
       "dateISO": "2021-08-20",
       "year": 2021,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -2355,7 +2355,7 @@
       "date": "12.08.2021",
       "dateISO": "2021-08-12",
       "year": 2021,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -2371,7 +2371,7 @@
       "date": "27.06.2021",
       "dateISO": "2021-06-27",
       "year": 2021,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -2387,7 +2387,7 @@
       "date": "19.06.2021",
       "dateISO": "2021-06-19",
       "year": 2021,
-      "place": "81",
+      "place": "8. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -2403,7 +2403,7 @@
       "date": "13.06.2021",
       "dateISO": "2021-06-13",
       "year": 2021,
-      "place": "65",
+      "place": "6zf5",
       "source": "swiss-athletics"
     },
     {
@@ -2419,7 +2419,7 @@
       "date": "06.06.2021",
       "dateISO": "2021-06-06",
       "year": 2021,
-      "place": "178",
+      "place": "17. Runde 8",
       "source": "swiss-athletics"
     },
     {
@@ -2435,7 +2435,7 @@
       "date": "15.05.2021",
       "dateISO": "2021-05-15",
       "year": 2021,
-      "place": "",
+      "place": "f",
       "source": "swiss-athletics"
     },
     {
@@ -2451,7 +2451,7 @@
       "date": "15.05.2021",
       "dateISO": "2021-05-15",
       "year": 2021,
-      "place": "3",
+      "place": "3.",
       "source": "swiss-athletics"
     },
     {
@@ -2467,7 +2467,7 @@
       "date": "13.05.2021",
       "dateISO": "2021-05-13",
       "year": 2021,
-      "place": "173",
+      "place": "17. Runde 3",
       "source": "swiss-athletics"
     },
     {
@@ -2483,7 +2483,7 @@
       "date": "01.05.2021",
       "dateISO": "2021-05-01",
       "year": 2021,
-      "place": "34",
+      "place": "3. Runde 4",
       "source": "swiss-athletics"
     },
     {
@@ -2499,7 +2499,7 @@
       "date": "17.04.2021",
       "dateISO": "2021-04-17",
       "year": 2021,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -2515,7 +2515,7 @@
       "date": "28.03.2021",
       "dateISO": "2021-03-28",
       "year": 2021,
-      "place": "101",
+      "place": "10. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -2531,7 +2531,7 @@
       "date": "28.03.2021",
       "dateISO": "2021-03-28",
       "year": 2021,
-      "place": "91",
+      "place": "9. Final 1",
       "source": "swiss-athletics"
     },
     {
@@ -2547,7 +2547,7 @@
       "date": "19.09.2020",
       "dateISO": "2020-09-19",
       "year": 2020,
-      "place": "264",
+      "place": "26. Lauf 4",
       "source": "swiss-athletics"
     },
     {
@@ -2563,7 +2563,7 @@
       "date": "12.09.2020",
       "dateISO": "2020-09-12",
       "year": 2020,
-      "place": "3",
+      "place": "3.",
       "source": "swiss-athletics"
     },
     {
@@ -2579,7 +2579,7 @@
       "date": "23.08.2020",
       "dateISO": "2020-08-23",
       "year": 2020,
-      "place": "3",
+      "place": "3.",
       "source": "swiss-athletics"
     },
     {
@@ -2595,7 +2595,7 @@
       "date": "14.08.2020",
       "dateISO": "2020-08-14",
       "year": 2020,
-      "place": "2",
+      "place": "2.",
       "source": "swiss-athletics"
     },
     {
@@ -2611,7 +2611,7 @@
       "date": "07.08.2020",
       "dateISO": "2020-08-07",
       "year": 2020,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -2627,7 +2627,7 @@
       "date": "27.06.2020",
       "dateISO": "2020-06-27",
       "year": 2020,
-      "place": "1",
+      "place": "1.",
       "source": "swiss-athletics"
     },
     {
@@ -2643,7 +2643,7 @@
       "date": "21.09.2019",
       "dateISO": "2019-09-21",
       "year": 2019,
-      "place": "61",
+      "place": "6. Lauf 1",
       "source": "swiss-athletics"
     },
     {
@@ -2659,7 +2659,7 @@
       "date": "23.08.2019",
       "dateISO": "2019-08-23",
       "year": 2019,
-      "place": "23",
+      "place": "23.",
       "source": "swiss-athletics"
     },
     {
@@ -2675,7 +2675,7 @@
       "date": "30.06.2019",
       "dateISO": "2019-06-30",
       "year": 2019,
-      "place": "4",
+      "place": "4.",
       "source": "swiss-athletics"
     },
     {
@@ -2691,7 +2691,7 @@
       "date": "18.05.2019",
       "dateISO": "2019-05-18",
       "year": 2019,
-      "place": "5",
+      "place": "5.",
       "source": "swiss-athletics"
     },
     {
@@ -2707,7 +2707,7 @@
       "date": "01.07.2018",
       "dateISO": "2018-07-01",
       "year": 2018,
-      "place": "4",
+      "place": "4.",
       "source": "swiss-athletics"
     },
     {
@@ -2723,7 +2723,7 @@
       "date": "06.06.2018",
       "dateISO": "2018-06-06",
       "year": 2018,
-      "place": "16",
+      "place": "16.",
       "source": "swiss-athletics"
     },
     {
@@ -2739,7 +2739,7 @@
       "date": "02.07.2017",
       "dateISO": "2017-07-02",
       "year": 2017,
-      "place": "7",
+      "place": "7.",
       "source": "swiss-athletics"
     },
     {
@@ -2755,7 +2755,7 @@
       "date": "18.06.2017",
       "dateISO": "2017-06-18",
       "year": 2017,
-      "place": "7",
+      "place": "7.",
       "source": "swiss-athletics"
     },
     {
@@ -2771,7 +2771,7 @@
       "date": "17.05.2017",
       "dateISO": "2017-05-17",
       "year": 2017,
-      "place": "5",
+      "place": "5.",
       "source": "swiss-athletics"
     }
   ]

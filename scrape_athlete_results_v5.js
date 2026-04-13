@@ -96,7 +96,17 @@ function parseRow(cells, combo) {
     date: dateStr,
     dateISO,
     year,
-    place: place.replace(/[^0-9]/g, '') || '',
+    place: (() => {
+      const v = place.trim();
+      const m = v.match(/^(\d+)([fFhHrR]?)(\d*)$/);
+      if (!m) return v || '';
+      const pos = m[1], typ = m[2].toLowerCase(), num = m[3];
+      const typMap = {f:'Final', h:'Lauf', r:'Runde'};
+      const typStr = typMap[typ] || '';
+      if (typStr && num) return pos + '. ' + typStr + ' ' + num;
+      if (typStr) return pos + '. ' + typStr;
+      return pos + '.';
+    })(),
     source: 'swiss-athletics',
   };
 }
