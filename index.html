@@ -912,6 +912,29 @@ body {
         <button id="live-results-btn" onclick="loadLiveResults()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;margin-top:8px">Live laden</button>
       </div>
 
+      <!-- Swiss Athletics Results Section -->
+      <div class="card" style="margin-top:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div>
+            <div class="card-title" style="margin:0">🇨🇭 Swiss Athletics Resultate</div>
+            <div id="sa-results-status" style="font-size:10px;color:var(--text-dim);margin-top:2px"></div>
+          </div>
+          <button onclick="loadSAResults(true)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:700;font-family:inherit">↻</button>
+        </div>
+
+        <!-- Disziplin Filter -->
+        <div id="sa-disc-filter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="sa-disc-btn active" onclick="setSADisc('all',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--blue);color:white;cursor:pointer">Alle</button>
+          <button class="sa-disc-btn" onclick="setSADisc('60m',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">60m</button>
+          <button class="sa-disc-btn" onclick="setSADisc('100m',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">100m</button>
+          <button class="sa-disc-btn" onclick="setSADisc('200m',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">200m</button>
+          <button class="sa-disc-btn" onclick="setSADisc('80m',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">80m</button>
+          <button class="sa-disc-btn" onclick="setSADisc('Long Jump',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">Weit</button>
+        </div>
+
+        <div id="sa-results-list"><div style="font-size:12px;color:var(--text-dim);padding:10px 0">Lade Resultate...</div></div>
+      </div>
+
     </div><!-- /tab-results -->
 
     <!-- ═══ TAB: CALENDAR ═══ -->
@@ -1481,6 +1504,7 @@ function switchTab(id, btn) {
   });
   // Load calendar from KV when calendar tab opens
   if (id === 'calendar') loadCalendarFromKV();
+  if (id === 'results' && !saResultsData) loadSAResults();
   if (id === 'ranking') { renderRankBanners(); renderRankList(); }
   // Re-render SVG charts when overview becomes visible (offsetWidth=0 while hidden)
   if (id === 'overview') {
@@ -3632,6 +3656,112 @@ async function deleteEvent(id) {
 }
 
 // Auto-load handled via tab onclick
+
+
+// ══════════════════════════════════════════════════
+// SWISS ATHLETICS RESULTATE
+// ══════════════════════════════════════════════════
+let saResultsData = null;
+let saCurrentDisc = 'all';
+
+function setSADisc(disc, btn) {
+  saCurrentDisc = disc;
+  document.querySelectorAll('.sa-disc-btn').forEach(b => {
+    b.style.background = 'transparent';
+    b.style.color = 'var(--text)';
+  });
+  if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = 'white'; }
+  renderSAResults();
+}
+
+async function loadSAResults(force) {
+  const status = document.getElementById('sa-results-status');
+  const list = document.getElementById('sa-results-list');
+  if (status) status.textContent = '⏳ Lade...';
+
+  try {
+    const url = PROXY_URL + '?action=sa-results' + (force ? '&force=1' : '');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Keine Daten verfügbar');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    saResultsData = data;
+    if (status) {
+      const d = new Date(data.scraped);
+      status.textContent = '✅ Swiss Athletics · ' + d.toLocaleDateString('de-CH');
+      status.style.color = 'var(--green)';
+    }
+    renderSAResults();
+  } catch(e) {
+    if (status) { status.textContent = '❌ ' + e.message; status.style.color = 'var(--red)'; }
+    if (list) list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:10px 0">Keine Swiss Athletics Daten verfügbar.</div>';
+  }
+}
+
+function renderSAResults() {
+  const list = document.getElementById('sa-results-list');
+  if (!list || !saResultsData) return;
+
+  const DISC_LABELS = {'60m':'60m','100m':'100m','200m':'200m','80m':'80m','Long Jump':'Weitsprung'};
+  const DISC_COLORS = {'60m':'var(--purple)','100m':'var(--blue)','200m':'var(--cyan)','80m':'var(--green)','Long Jump':'var(--emerald)'};
+
+  // Filter results
+  let results = saResultsData.results || [];
+  if (saCurrentDisc !== 'all') {
+    results = results.filter(r => r.discipline === saCurrentDisc);
+  }
+
+  // Group by year
+  const byYear = {};
+  results.forEach(r => {
+    const yr = r.year || r.date?.split('.')[2] || '?';
+    if (!byYear[yr]) byYear[yr] = [];
+    byYear[yr].push(r);
+  });
+
+  const years = Object.keys(byYear).sort((a,b) => b-a);
+  if (years.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:10px 0">Keine Resultate gefunden.</div>';
+    return;
+  }
+
+  let html = '';
+  years.forEach((yr, idx) => {
+    const open = idx === 0; // 2026 (latest) open, rest closed
+    const yResults = byYear[yr];
+    html += `<div style="margin-bottom:8px">
+      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sa-yr-icon').textContent=this.nextElementSibling.style.display==='none'?'▶':'▼'"
+        style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;font-weight:700;color:var(--text)">${yr} <span style="font-size:11px;font-weight:400;color:var(--text-dim)">${yResults.length} Resultate</span></span>
+        <span class="sa-yr-icon" style="font-size:12px;color:var(--text-dim)">${open?'▼':'▶'}</span>
+      </div>
+      <div style="display:${open?'block':'none'}">`;
+
+    yResults.forEach(r => {
+      const col = DISC_COLORS[r.discipline] || 'var(--text-dim)';
+      const label = DISC_LABELS[r.discipline] || r.discipline;
+      const unit = r.discipline === 'Long Jump' ? ' m' : '';
+      const windStr = r.wind ? ` <span style="font-size:9px;color:var(--text-dim)">W${r.wind}</span>` : '';
+      const indoorStr = r.indoor ? ' <span style="font-size:9px;color:var(--blue)">(i)</span>' : '';
+      const waStr = r.windAssisted ? ' <span style="font-size:9px;color:var(--orange)">n.l.</span>' : '';
+
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:10px;color:${col};min-width:48px;font-weight:600">${label}</div>
+        <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);min-width:52px">${r.result}${unit}${windStr}${waStr}${indoorStr}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.competition||''}</div>
+          <div style="font-size:10px;color:var(--text-dim)">${r.venue||''} · ${r.date||''}</div>
+        </div>
+        ${r.place ? `<div style="font-size:10px;color:var(--text-dim);flex-shrink:0">Rang ${r.place}</div>` : ''}
+      </div>`;
+    });
+
+    html += '</div></div>';
+  });
+
+  list.innerHTML = html;
+}
 
 </script>
 </body>
