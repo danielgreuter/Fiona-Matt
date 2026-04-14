@@ -709,7 +709,7 @@ body {
 }
 </style>
 </head>
-<body style="background-color:#2563EB;overscroll-behavior-y:none">
+<body style="background-color:#1E3A8A;overscroll-behavior-y:none">
 <div class="app">
 
   <!-- HERO -->
@@ -2430,7 +2430,7 @@ async function loadLIEScores() {
           lieData[name] = fresh[name];
         }
       });
-      window.lieCached=true;
+      try{localStorage.setItem('lie_team_v1',JSON.stringify(lieData));localStorage.setItem('lie_team_time',Date.now().toString());}catch(e){}
 try{localStorage.setItem("lieData",JSON.stringify(lieData));}catch(e){}
       renderLIERanking();
       if (status) { status.textContent = `✓ ${Object.keys(fresh).length} Athleten aktualisiert · World Athletics`; status.style.color = 'var(--green)'; }
