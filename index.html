@@ -1754,27 +1754,10 @@ try {
 
 
 // Fallback data — direkt von World Athletics abgerufen (18.03.2026)
-const LIE_FALLBACK = {
-  "Fiona Matt":       { discs:[{name:"60m",   score:1019, result:"7.60 NR"}, {name:"100m",  score:944,  result:"12.24 NU18R"}], updated:"21.02.2026", url:"fiona-matt-15091224" },
-  "Julia Rohrer":     { discs:[{name:"100mH", score:955,  result:"14.51"},   {name:"60mH",  score:950,  result:"8.97 NU20R"}],  updated:"27.08.2024", url:"julia-rohrer-14934104" },
-  "Jule Insinna":     { discs:[{name:"Diskus", score:855, result:"48.21 NR"},{name:"Kugel", score:810,  result:"13.62 NR"}],    updated:"22.06.2024", url:"jule-insinna-14951910" },
-  "Matthias Verling": { discs:[{name:"Speer",  score:1000,result:"72.90 NR"},{name:"Weit",  score:888,  result:"6.84"}],        updated:"25.06.2025", url:"matthias-verling-14985991" },
-  "Nadine Stüber":    { discs:[{name:"400m",   score:941, result:"56.98 NU20R"},{name:"300m",score:909, result:"40.96"}],       updated:"28.06.2024", url:"nadine-stuber-14972539" },
-  "Sienna Zobel":     { discs:[{name:"800m",   score:null,result:"—"},        {name:"400m",  score:null, result:"—"}],           updated:null, url:"sienna-zobel-15089898" },
-  "Joel Riesen":      { discs:[{name:"Hoch",   score:984,  result:"2.10 m"},      {name:"Weit",  score:null, result:"—"}],           updated:"25.06.2025", url:"joel-riesen-14985311" },
-  "Ben Seger":        { discs:[{name:"Speer",  score:null,result:"—"},        {name:"—",     score:null, result:"—"}],           updated:null, url:"ben-seger-15097339" },
-  "Annmarie Kindle":  { discs:[{name:"60m",    score:817,  result:"8.27"},        {name:"100m",  score:807,  result:"12.98"}],        updated:"28.01.2024", url:"annmarie-kindle-15129161" },
-  "Sienna Zobel":     { discs:[{name:"800m",   score:920,  result:"2:15.88"},     {name:"1000m", score:914,  result:"2:58.16 NU20R"}], updated:"14.06.2025", url:"sienna-zobel-15089898" },
-  "Julia Thalmann":   { discs:[{name:"60mH",   score:973,  result:"8.86"},        {name:"100mH", score:957,  result:"14.49"}],         updated:"29.05.2025", url:"julia-thalmann-14904441", note:"SUI" },
-  "Ben Seger":        { discs:[{name:"Speer 700g", score:null, result:"58.49 NU18R"}],                                                 updated:"17.05.2024", url:"ben-seger-15097339", note:"Jugendgerät" },
-  "Elina Lussi":      { discs:[{name:"Hoch",   score:null,result:"—"}],                                                               updated:null, url:"elina-lussi-15239636" },
-  "Athina Roth":      { discs:[{name:"Weit",   score:null,result:"—"}],                                                               updated:null, url:null },
-  "Zoey Zobel":       { discs:[{name:"—",      score:null,result:"—"}],                                                               updated:null, url:null },
-  "Soe Frick":        { discs:[{name:"60m",   score:857,  result:"—"},           {name:"200m",  score:818,  result:"—"}],           updated:"2025", url:"soe-frick-15233979" },
-  "Julian Schatz":    { discs:[{name:"—",      score:null,result:"—"}],                                                               updated:null, url:null },
-};
+const LIE_FALLBACK = {}; // Live-Daten von WA API
 
-let lieData = JSON.parse(JSON.stringify(LIE_FALLBACK));
+let lieData = {};
+try{const s=localStorage.getItem("lie_team_v1");if(s)lieData=JSON.parse(s);}catch(e){}
 
 function renderLIERanking() {
   const container = document.getElementById('lie-ranking-list');
