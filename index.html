@@ -2405,7 +2405,7 @@ async function loadLIEScores() {
     if (cached && cachedTime) {
       const age = Date.now() - parseInt(cachedTime);
       if (age < 24 * 60 * 60 * 1000) { // 24h cache
-        renderLIEScores(JSON.parse(cached));
+        renderLIERanking();
         // Update status
         const btn = document.getElementById('lie-refresh-btn');
         if (btn) btn.textContent = '↻';
@@ -2429,6 +2429,7 @@ async function loadLIEScores() {
           lieData[name] = fresh[name];
         }
       });
+      window.lieCached=true;
       renderLIERanking();
       if (status) { status.textContent = `✓ ${Object.keys(fresh).length} Athleten aktualisiert · World Athletics`; status.style.color = 'var(--green)'; }
     } else {
