@@ -1485,8 +1485,7 @@ function switchTab(id, btn) {
   // Re-render SVG charts when overview becomes visible (offsetWidth=0 while hidden)
   if (id === 'overview') {
     setTimeout(() => {
-      renderScoreChart(currentDisc);
-      renderSeasonCompare(currentDisc);
+      if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderScoreChart(currentDisc);renderSeasonCompare(currentDisc);}else{loadSAResults().then(()=>{renderScoreChart(currentDisc);renderSeasonCompare(currentDisc);});}
     }, 50);
   }
 }
@@ -2940,6 +2939,7 @@ function renderWAResults(results) {
 // WA SCORE CHART
 // ══════════════════════════════════════════════════
 function renderScoreChart(disc) {
+  if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderScoreChartFromSA(disc);return;}
 
   const container = document.getElementById('score-chart-svg');
   const note = document.getElementById('score-chart-note');
@@ -2990,12 +2990,30 @@ function renderScoreChart(disc) {
 // ══════════════════════════════════════════════════
 // SAISONVERGLEICH
 // ══════════════════════════════════════════════════
+﻿function renderScoreChartFromSA(disc){
+const el=document.getElementById('score-chart-svg');
+const note=document.getElementById('score-chart-note');
+if(!el||!saResultsData||!saResultsData.results)return;
+const C={['60m']:'#7C3AED',['100m']:'#2563EB',['200m']:'#0891B2',['Long Jump']:'#059669',['80m']:'#D97706'};
+const col=C[disc]||'#2563EB',ij=disc==='Long Jump';
+const dr=saResultsData.results.filter(r=>r.discipline===disc&&r.result&&r.dateISO&&!r.windAssisted).sort((a,b)=>a.dateISO.localeCompare(b.dateISO));
+if(!dr.length){el.textContent='Keine Daten';return;}
+const vs=dr.map(r=>parseFloat(r.result)||0).filter(v=>v>0);
+const mn=Math.min(...vs)-(ij?.2:.15),mx=Math.max(...vs)+(ij?.2:.15);
+const W=360,H=140,n=dr.length,xs=i=>8+(n>1?i/(n-1):.5)*344,ys=v=>116-(v-mn)/(mx-mn)*96;
+const bv=ij?Math.max(...vs):Math.min(...vs);
+let a='',l='',ci='';
+dr.forEach((r,i)=>{const v=parseFloat(r.result)||0;if(!v)return;const x=xs(i).toFixed(1),y=ys(v).toFixed(1);a+=(i?'L':'M'+x+',116 L')+x+','+y;l+=(i?'L':'M')+x+','+y+' ';const b=v===bv;ci+='cx='+x+' cy='+y+' r='+(b?5:2.5);if(b)ci+=r.result+(ij?' m':'');});
+if(note)note.textContent=dr.length+' Resultate';
+}
+
+
 function renderSeasonCompare(disc) {
 
   const container = document.getElementById('season-compare-grid');
   if (!container) return;
 
-  const allResults = (FIONA.recentResults || [])
+  const allResults = (saResultsData&&saResultsData.results&&saResultsData.results.length?saResultsData.results:FIONA.recentResults||[])
     .filter(r => {
       const d = r.discipline || '';
       let matches;
@@ -3650,6 +3668,8 @@ function setSADisc(disc, btn) {
   });
   if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = 'white'; }
   renderSAResults();
+    renderScoreChart(currentDisc||'100m');
+    renderSeasonCompare(currentDisc||'100m');
 }
 
 async function loadSAResults(force) {
