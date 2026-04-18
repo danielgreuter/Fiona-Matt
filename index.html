@@ -1485,8 +1485,8 @@ function switchTab(id, btn) {
   // Re-render SVG charts when overview becomes visible (offsetWidth=0 while hidden)
   if (id === 'overview') {
     setTimeout(() => {
-      if (saResultsData) { renderScoreChart(currentDisc); renderSeasonCompare(currentDisc); }
-      else { loadSAResults().then(() => { renderScoreChart(currentDisc); renderSeasonCompare(currentDisc); }); }
+      renderScoreChart(currentDisc);
+      renderSeasonCompare(currentDisc);
     }, 50);
   }
 }
@@ -2941,85 +2941,190 @@ function renderWAResults(results) {
 // WA SCORE CHART
 // ══════════════════════════════════════════════════
 function renderScoreChart(disc) {
+
   const container = document.getElementById('score-chart-svg');
   const note = document.getElementById('score-chart-note');
   if (!container) return;
-  const allResults = (saResultsData && saResultsData.results && saResultsData.results.length)
-    ? saResultsData.results : (window.waResults || []);
-  if (!allResults.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:20px 0;text-align:center">Lade Daten...</div>'; return; }
-  const COLORS = {'60m':'#7C3AED','100m':'#2563EB','200m':'#0891B2','Long Jump':'#059669','80m':'#D97706'};
-  const col = COLORS[disc] || '#2563EB';
-  const isJump = disc === 'Long Jump';
-  const discResults = allResults
-    .filter(r => r.discipline === disc && r.result && r.dateISO && !r.windAssisted)
-    .sort((a,b) => a.dateISO.localeCompare(b.dateISO));
-  if (!discResults.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:20px 0;text-align:center">Keine Daten</div>'; return; }
-  const vals = discResults.map(r => parseFloat(r.result)||0).filter(v=>v>0);
-  const minV = Math.min(...vals) - (isJump?0.2:0.15);
-  const maxV = Math.max(...vals) + (isJump?0.2:0.15);
-  const W=360, H=140, PAD={l:8,r:8,t:20,b:24};
-  const n = discResults.length;
-  const xs = i => PAD.l + (n>1?i/(n-1):0.5)*(W-PAD.l-PAD.r);
-  const ys = v => H-PAD.b-(v-minV)/(maxV-minV)*(H-PAD.t-PAD.b);
-  const bestVal = isJump ? Math.max(...vals) : Math.min(...vals);
-  let area='', line='', circles='';
-  discResults.forEach((r,i) => {
-    const v=parseFloat(r.result)||0; if(!v)return;
-    const x=xs(i).toFixed(1), y=ys(v).toFixed(1);
-    area += (i===0?'M'+x+','+(H-PAD.b)+' L'+x+','+y:'L'+x+','+y);
-    line += (i===0?'M':'L')+x+','+y+' ';
-    const isBest=v===bestVal;
-    circles += '<circle cx="'+x+'" cy="'+y+'" r="'+(isBest?5:2.5)+'" fill="'+(isBest?col:'white')+'" stroke="'+col+'" stroke-width="1.5"/>';
-    if(isBest){const ly=parseFloat(y)<PAD.t+12?parseFloat(y)+14:parseFloat(y)-8;circles+='<text x="'+x+'" y="'+ly+'" text-anchor="middle" font-size="9" fill="'+col+'" font-weight="700">'+r.result+(isJump?' m':'')+'</text>';}
-  });
-  if(area) area+=' L'+xs(n-1)+','+(H-PAD.b)+' Z';
-  const seenYrs=new Set(); let yrLabels='';
-  discResults.forEach((r,i)=>{const yr=r.dateISO.substring(0,4);if(!seenYrs.has(yr)){seenYrs.add(yr);yrLabels+='<text x="'+xs(i).toFixed(1)+'" y="'+(H-6)+'" font-size="9" fill="var(--text-dim)" text-anchor="middle">'+yr+'</text>';}});
-  container.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:'+H+'px"><defs><linearGradient id="scg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity="0.25"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#scg)"/><path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+circles+yrLabels+'</svg>';
-  if(note) note.textContent=discResults.length+' Resultate · Swiss Athletics';
+
+  const SVGS = {
+    '60m': '<svg id="score-svg-60m" viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px;display:block"><defs><linearGradient id="sg60m" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity="0.2"/><stop offset="100%" stop-color="#2563EB" stop-opacity="0.02"/></linearGradient></defs><polygon points="44.0,122.0 44.0,105.9 75.2,105.9 106.4,75.5 137.6,66.5 168.8,70.4 200.0,75.5 231.2,66.5 262.4,61.4 293.6,56.2 324.8,54.3 356.0,38.1 356.0,122.0" fill="url(#sg60m)"/><polyline points="44.0,105.9 75.2,105.9 106.4,75.5 137.6,66.5 168.8,70.4 200.0,75.5 231.2,66.5 262.4,61.4 293.6,56.2 324.8,54.3 356.0,38.1" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><text x="39" y="108.9" text-anchor="end" font-size="9" fill="#9CA3AF">914</text><line x1="44" y1="105.9" x2="356" y2="105.9" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="75.3" text-anchor="end" font-size="9" fill="#9CA3AF">966</text><line x1="44" y1="72.3" x2="356" y2="72.3" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="41.1" text-anchor="end" font-size="9" fill="#9CA3AF">1019</text><line x1="44" y1="38.1" x2="356" y2="38.1" stroke="#F3F4F6" stroke-width="1"/><text x="44.0" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Jan \'24</text><text x="106.4" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Jan \'25</text><text x="168.8" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Mär \'25</text><text x="231.2" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Jan \'26b</text><text x="293.6" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Feb \'26b</text><text x="356.0" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Feb \'26d</text><circle cx="44.0" cy="105.9" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="75.2" cy="105.9" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="106.4" cy="75.5" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="137.6" cy="66.5" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="168.8" cy="70.4" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="200.0" cy="75.5" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="231.2" cy="66.5" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="262.4" cy="61.4" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="293.6" cy="56.2" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="324.8" cy="54.3" r="3" fill="#2563EB" stroke="white" stroke-width="1.5"/><circle cx="356.0" cy="38.1" r="5" fill="#F59E0B" stroke="white" stroke-width="1.5"/><text x="356.0" y="30.1" text-anchor="middle" font-size="9" font-weight="700" fill="#F59E0B">1019</text><line x1="44" y1="122" x2="356" y2="122" stroke="#E5E7EB" stroke-width="1"/></svg>',
+    '100m': '<svg id="score-svg-100m" viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px;display:block"><defs><linearGradient id="sg100m" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DC2626" stop-opacity="0.2"/><stop offset="100%" stop-color="#DC2626" stop-opacity="0.02"/></linearGradient></defs><polygon points="44.0,122.0 44.0,103.1 88.6,92.5 133.1,90.2 177.7,90.2 222.3,40.9 266.9,42.5 311.4,42.5 356.0,40.9 356.0,122.0" fill="url(#sg100m)"/><polyline points="44.0,103.1 88.6,92.5 133.1,90.2 177.7,90.2 222.3,40.9 266.9,42.5 311.4,42.5 356.0,40.9" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><text x="39" y="106.1" text-anchor="end" font-size="9" fill="#9CA3AF">862</text><line x1="44" y1="103.1" x2="356" y2="103.1" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="75.0" text-anchor="end" font-size="9" fill="#9CA3AF">903</text><line x1="44" y1="72.0" x2="356" y2="72.0" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="43.9" text-anchor="end" font-size="9" fill="#9CA3AF">944</text><line x1="44" y1="40.9" x2="356" y2="40.9" stroke="#F3F4F6" stroke-width="1"/><text x="44.0" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Mai \'24</text><text x="133.1" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Sep \'24</text><text x="222.3" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Jun \'25</text><text x="311.4" y="146" text-anchor="middle" font-size="8" fill="#9CA3AF">Aug \'25</text><circle cx="44.0" cy="103.1" r="3" fill="#DC2626" stroke="white" stroke-width="1.5"/><circle cx="88.6" cy="92.5" r="3" fill="#DC2626" stroke="white" stroke-width="1.5"/><circle cx="133.1" cy="90.2" r="3" fill="#DC2626" stroke="white" stroke-width="1.5"/><circle cx="177.7" cy="90.2" r="3" fill="#DC2626" stroke="white" stroke-width="1.5"/><circle cx="222.3" cy="40.9" r="5" fill="#F59E0B" stroke="white" stroke-width="1.5"/><text x="222.3" y="32.9" text-anchor="middle" font-size="9" font-weight="700" fill="#F59E0B">944</text><circle cx="266.9" cy="42.5" r="3" fill="#DC2626" stroke="white" stroke-width="1.5"/><circle cx="311.4" cy="42.5" r="3" fill="#DC2626" stroke="white" stroke-width="1.5"/><circle cx="356.0" cy="40.9" r="5" fill="#F59E0B" stroke="white" stroke-width="1.5"/><text x="356.0" y="32.9" text-anchor="middle" font-size="9" font-weight="700" fill="#F59E0B">944</text><line x1="44" y1="122" x2="356" y2="122" stroke="#E5E7EB" stroke-width="1"/></svg>',
+    '200m': '<svg id="score-svg-200m" viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px;display:block"><defs><linearGradient id="sg200m" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7C3AED" stop-opacity="0.2"/><stop offset="100%" stop-color="#7C3AED" stop-opacity="0.02"/></linearGradient></defs><polygon points="44.0,122.0 44.0,99.4 129.0,81.3 214.0,45.1 299.0,52.7 384.0,40.6 384.0,122.0" fill="url(#sg200m)"/><polyline points="44.0,99.4 129.0,81.3 214.0,45.1 299.0,52.7 384.0,40.6" fill="none" stroke="#7C3AED" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><text x="39" y="102.4" text-anchor="end" font-size="9" fill="#9CA3AF">722</text><line x1="44" y1="99.4" x2="384" y2="99.4" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="73.0" text-anchor="end" font-size="9" fill="#9CA3AF">742</text><line x1="44" y1="70.0" x2="384" y2="70.0" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="43.6" text-anchor="end" font-size="9" fill="#9CA3AF">761</text><line x1="44" y1="40.6" x2="384" y2="40.6" stroke="#F3F4F6" stroke-width="1"/><text x="44.0" y="148" text-anchor="middle" font-size="8" fill="#9CA3AF">Mai \'25</text><text x="214.0" y="148" text-anchor="middle" font-size="8" fill="#9CA3AF">Jun \'25b</text><text x="384.0" y="148" text-anchor="middle" font-size="8" fill="#9CA3AF">Aug \'25b</text><circle cx="44.0" cy="99.4" r="3" fill="#7C3AED" stroke="white" stroke-width="1.5"/><circle cx="129.0" cy="81.3" r="3" fill="#7C3AED" stroke="white" stroke-width="1.5"/><circle cx="214.0" cy="45.1" r="3" fill="#7C3AED" stroke="white" stroke-width="1.5"/><circle cx="299.0" cy="52.7" r="3" fill="#7C3AED" stroke="white" stroke-width="1.5"/><circle cx="384.0" cy="40.6" r="5" fill="#F59E0B" stroke="white" stroke-width="1.5"/><text x="384.0" y="31.6" text-anchor="middle" font-size="9" font-weight="700" fill="#F59E0B">761</text><line x1="44" y1="122.0" x2="384" y2="122.0" stroke="#E5E7EB" stroke-width="1"/></svg>',
+    'Long Jump': '<svg id="score-svg-long-jump" viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px;display:block"><defs><linearGradient id="sglj" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#059669" stop-opacity="0.2"/><stop offset="100%" stop-color="#059669" stop-opacity="0.02"/></linearGradient></defs><polygon points="44.0,122.0 44.0,100.3 214.0,65.7 384.0,39.7 384.0,122.0" fill="url(#sglj)"/><polyline points="44.0,100.3 214.0,65.7 384.0,39.7" fill="none" stroke="#059669" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><text x="39" y="103.3" text-anchor="end" font-size="9" fill="#9CA3AF">707</text><line x1="44" y1="100.3" x2="384" y2="100.3" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="73.0" text-anchor="end" font-size="9" fill="#9CA3AF">728</text><line x1="44" y1="70.0" x2="384" y2="70.0" stroke="#F3F4F6" stroke-width="1"/><text x="39" y="42.7" text-anchor="end" font-size="9" fill="#9CA3AF">749</text><line x1="44" y1="39.7" x2="384" y2="39.7" stroke="#F3F4F6" stroke-width="1"/><text x="44.0" y="148" text-anchor="middle" font-size="8" fill="#9CA3AF">Jun \'24</text><text x="214.0" y="148" text-anchor="middle" font-size="8" fill="#9CA3AF">Mai \'25</text><text x="384.0" y="148" text-anchor="middle" font-size="8" fill="#9CA3AF">Aug \'25</text><circle cx="44.0" cy="100.3" r="3" fill="#059669" stroke="white" stroke-width="1.5"/><circle cx="214.0" cy="65.7" r="3" fill="#059669" stroke="white" stroke-width="1.5"/><circle cx="384.0" cy="39.7" r="5" fill="#F59E0B" stroke="white" stroke-width="1.5"/><text x="384.0" y="30.7" text-anchor="middle" font-size="9" font-weight="700" fill="#F59E0B">749</text><line x1="44" y1="122.0" x2="384" y2="122.0" stroke="#E5E7EB" stroke-width="1"/></svg>'
+  };
+  const NOTES = {
+    '60m':        'Aktuell: 1019 Pkt · +105 seit Debut · Max: 1019 Pkt',
+    '100m':       'Aktuell: 944 Pkt · +82 seit Debut · Max: 944 Pkt',
+    '200m':       "Aktuell: 761 Pkt · +39 seit Debut · PB: 26.41 (Aug '25)",
+    'Long Jump':  "Aktuell: 749 Pkt · +42 seit Debut · PB: 5.47m (Aug '25)",
+  };
+
+  // All 4 disciplines now have SVGs
+  if (SVGS[disc]) {
+    container.innerHTML = SVGS[disc];
+    if (note) note.textContent = NOTES[disc] || '';
+  } else {
+    // Fallback: build chart from waScoreHistory data
+    const hist = FIONA.waScoreHistory[disc] || [];
+    if (hist.length >= 2) {
+      const col = DISC_COLORS[disc]?.hex || '#9CA3AF';
+      const VW=400, VH=150, PL=44, PR=16, PT=18, PB=28;
+      const iW=VW-PL-PR, iH=VH-PT-PB;
+      const vals=hist.map(h=>h.val);
+      const minV=Math.min(...vals)-15, maxV=Math.max(...vals)+15;
+      const xS=i=>PL+(i/Math.max(hist.length-1,1))*iW;
+      const yS=v=>PT+(1-(v-minV)/(maxV-minV))*iH;
+      const pts=hist.map((h,i)=>`${xS(i).toFixed(1)},${yS(h.val).toFixed(1)}`).join(' ');
+      const bestV=Math.max(...vals);
+      const dots=hist.map((h,i)=>{const isBest=h.val===bestV;const cx=xS(i).toFixed(1),cy=yS(h.val).toFixed(1);const r=isBest?5:3;return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${isBest?'#F59E0B':col}" stroke="white" stroke-width="1.5"/>${isBest?`<text x="${cx}" y="${parseFloat(cy)-9}" text-anchor="middle" font-size="9" font-weight="700" fill="#F59E0B">${h.val}</text>`:''}`}).join('');
+      const xl=hist.map((h,i)=>(i===0||i===hist.length-1||i===Math.floor(hist.length/2))?`<text x="${xS(i).toFixed(1)}" y="${VH-2}" text-anchor="middle" font-size="8" fill="#9CA3AF">${h.label}</text>`:'').join('');
+      container.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;height:${VH}px;display:block"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg>`;
+    } else {
+      const col=DISC_COLORS[disc]?.hex||'#9CA3AF';
+      const lbl=DISC_LABELS[disc]||disc;
+      container.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:140px;flex-direction:column;gap:8px"><div style="font-size:28px;color:${col};font-weight:900">—</div><div style="font-size:12px;color:var(--text-dim)">Noch keine WA Score-Daten für ${lbl}</div></div>`;
+    }
+    if (note) note.textContent = NOTES[disc] || '';
+  }
 }
 
-
+// ══════════════════════════════════════════════════
+// SAISONVERGLEICH
+// ══════════════════════════════════════════════════
 function renderSeasonCompare(disc) {
+
   const container = document.getElementById('season-compare-grid');
   if (!container) return;
-  const allResults = (saResultsData && saResultsData.results && saResultsData.results.length)
-    ? saResultsData.results : (FIONA.recentResults || []);
-  const isJump = disc === 'Long Jump';
-  const filtered = allResults.filter(r => r.discipline === disc && r.result && r.dateISO);
-  if (!filtered.length) { container.innerHTML = '<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:12px">Keine Daten</div>'; return; }
-  const byYear = {};
-  filtered.forEach(r => {
-    const yr = r.year || r.dateISO.substring(0,4);
-    const val = parseFloat(r.result) || 0;
-    if (!val) return;
-    if (!byYear[yr] || (isJump ? val > byYear[yr].val : val < byYear[yr].val))
-      byYear[yr] = { yr, val, result: r.result, date: r.date, competition: r.competition };
-  });
-  const years = Object.keys(byYear).sort((a,b) => b-a).slice(0,4);
-  if (!years.length) { container.innerHTML = ''; return; }
-  const vals = years.map(yr => byYear[yr].val);
-  const bestVal = isJump ? Math.max(...vals) : Math.min(...vals);
-  const worstVal = isJump ? Math.min(...vals) : Math.max(...vals);
-  const range = Math.abs(bestVal - worstVal) || 0.5;
-  let html = '';
-  years.forEach(yr => {
-    const d = byYear[yr];
-    const pct = Math.max(25, 100 - Math.abs(d.val - bestVal) / range * 60);
-    const isBest = d.val === bestVal;
-    const unit = isJump ? ' m' : '';
-    html += '<div style="margin-bottom:10px">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
-      '<span style="font-size:11px;color:var(--text-dim)">' + yr + '</span>' +
-      '<span style="font-size:13px;font-weight:700;font-family:monospace;color:' + (isBest?'var(--blue)':'var(--text)') + '">' + d.result + unit + (isBest?' ★':'') + '</span></div>' +
-      '<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">' +
-      '<div style="height:100%;width:' + pct + '%;background:' + (isBest?'var(--blue)':'var(--text-dim)') + ';border-radius:3px"></div></div>' +
-      '<div style="font-size:10px;color:var(--text-dim);margin-top:2px">' + (d.competition||'') + '</div></div>';
-  });
-  container.innerHTML = html;
+
+  const allResults = (FIONA.recentResults || [])
+    .filter(r => {
+      const d = r.discipline || '';
+      let matches;
+      if (disc === '60m')        matches = d === '60m';
+      else if (disc === '100m')  matches = d === '100m';
+      else if (disc === '200m')  matches = d === '200m';
+      else if (disc === 'Long Jump') matches = d === 'Long Jump';
+      else matches = d === disc;
+      return matches && r.numResult && r.numResult < 99 && !r.note?.includes('n.l.');
+    })
+    .sort((a, b) => {
+      const pa = a.date.split('.'); const pb = b.date.split('.');
+      const dateDiff = new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
+      if (dateDiff !== 0) return dateDiff;
+      // Same date: sort by result ASC (best/lowest time last = end of day)
+      return (b.numResult || 99) - (a.numResult || 99);
+    });
+
+  if (!allResults.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:10px">Keine Daten</div>';
+    return;
+  }
+
+  const SEASON_COLS = { '2024':'#6B7280', '2025':'#7C3AED', '2026':'#2563EB' };
+  const seasons = [...new Set(allResults.map(r => r.season || r.date.split('.')[2]))].sort();
+
+  // Fixed viewBox SVG
+  const VW = 400, VH = 200;
+  const pad = { t:20, r:16, b:36, l:44 };
+  const iW = VW - pad.l - pad.r;
+  const iH = VH - pad.t - pad.b;
+
+  const vals = allResults.map(r => r.numResult);
+  const minV = Math.min(...vals) - 0.12;
+  const maxV = Math.max(...vals) + 0.12;
+  // Inverted Y: lower time = higher on chart
+  const yS = v => pad.t + ((v - minV) / (maxV - minV)) * iH;
+  const xS = i => pad.l + (i / Math.max(allResults.length-1, 1)) * iW;
+
+  const lines = seasons.map(yr => {
+    const pts = allResults
+      .map((r, i) => ({ r, i }))
+      .filter(({r}) => (r.season || r.date.split('.')[2]) === yr);
+    if (pts.length < 2) return '';
+    const points = pts.map(({r,i}) => `${xS(i).toFixed(1)},${yS(r.numResult).toFixed(1)}`).join(' ');
+    return `<polyline points="${points}" fill="none" stroke="${SEASON_COLS[yr]||'#999'}" stroke-width="2" stroke-opacity="0.8" stroke-linejoin="round"/>`;
+  }).join('');
+
+  const bestVal = Math.min(...vals);
+  const dots = allResults.map((r, i) => {
+    const col = SEASON_COLS[r.season || r.date.split('.')[2]] || '#999';
+    const isBest = r.numResult === bestVal;
+    const cx = xS(i).toFixed(1);
+    const cy = yS(r.numResult).toFixed(1);
+    return `<circle cx="${cx}" cy="${cy}" r="${isBest?5:3.5}" fill="${col}" stroke="white" stroke-width="1.5"/>
+      ${isBest ? `<text x="${cx}" y="${parseFloat(cy)-9}" text-anchor="middle" font-size="9" font-weight="700" fill="${col}">${r.result}</text>` : ''}`;
+  }).join('');
+
+  const nTicks = 4;
+  const yLabels = Array.from({length:nTicks}, (_,i) => {
+    const v = minV + (maxV-minV)*i/(nTicks-1);
+    return `<text x="${pad.l-4}" y="${yS(v)+3}" text-anchor="end" font-size="9" fill="#9CA3AF">${v.toFixed(2)}</text>
+      <line x1="${pad.l}" y1="${yS(v)}" x2="${pad.l+iW}" y2="${yS(v)}" stroke="#F3F4F6" stroke-width="1"/>`;
+  }).join('');
+
+  const sznLabels = seasons.map(yr => {
+    const pts = allResults.map((r,i)=>({r,i})).filter(({r})=>(r.season||r.date.split('.')[2])===yr);
+    const mid = pts[Math.floor(pts.length/2)];
+    return `<text x="${xS(mid.i)}" y="${VH-6}" text-anchor="middle" font-size="11" font-weight="700" fill="${SEASON_COLS[yr]||'#999'}">${yr}</text>`;
+  }).join('');
+
+  container.innerHTML = `<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:200px;display:block">
+    ${yLabels}${lines}${dots}${sznLabels}
+    <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t+iH}" stroke="#E5E7EB" stroke-width="1"/>
+    <line x1="${pad.l}" y1="${pad.t+iH}" x2="${pad.l+iW}" y2="${pad.t+iH}" stroke="#E5E7EB" stroke-width="1"/>
+  </svg>`;
 }
 
+// ══════════════════════════════════════════════════
+// PUSH BENACHRICHTIGUNGEN
+// ══════════════════════════════════════════════════
 
+async function togglePush() {
+  const btn = document.getElementById('push-btn');
+  const status = document.getElementById('push-status');
+
+  if (!('Notification' in window)) {
+    status.style.display = 'block';
+    status.textContent = '⚠ Benachrichtigungen nicht unterstützt. Auf iPhone: App zum Home-Screen hinzufügen.';
+    return;
+  }
+
+  const current = localStorage.getItem(PUSH_CHECK_KEY);
+  if (current === 'enabled') {
+    // Disable
+    localStorage.removeItem(PUSH_CHECK_KEY);
+    btn.textContent = '🔔 Benachrichtigungen aktivieren';
+    btn.style.background = '';
+    status.style.display = 'none';
+    return;
+  }
+
+  // Request permission
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    status.style.display = 'block';
+    status.textContent = '⚠ Berechtigung verweigert. Bitte in den Browser-Einstellungen erlauben.';
+    return;
+  }
+
+  localStorage.setItem(PUSH_CHECK_KEY, 'enabled');
+  // Save current latest result as baseline
+  const latest = (window.waResults || [])[0];
+  if (latest) localStorage.setItem(PUSH_STORAGE_KEY, latest.date + '|' + latest.result);
+
+  btn.textContent = '🔕 Benachrichtigungen deaktivieren';
+  btn.style.background = 'var(--green, #10B981)';
+  status.style.display = 'block';
+  status.textContent = '✓ Aktiv — die App prüft beim Öffnen ob neue Resultate auf WA erschienen sind.';
+
+  // Show test notification
+  new Notification('Fiona Matt Dashboard', {
+    body: 'Push-Benachrichtigungen aktiviert! Du wirst informiert wenn neue Resultate erscheinen.',
+    icon: '/Fiona-Matt/icon-192.png'
+  });
+}
+
+// Check for new results on load (if push enabled)
 function checkForNewResults(results) {
   if (localStorage.getItem(PUSH_CHECK_KEY) !== 'enabled') return;
   if (!results || !results.length) return;
@@ -3546,8 +3651,6 @@ function setSADisc(disc, btn) {
   });
   if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = 'white'; }
   renderSAResults();
-    renderScoreChart(currentDisc || '100m');
-    renderSeasonCompare(currentDisc || '100m');
 }
 
 async function loadSAResults(force) {
