@@ -2380,24 +2380,29 @@ const LIE_ATHLETES = [
 ];
 
 async function loadLIEScores() {
-  // Check localStorage cache (24h)
+  // Check localStorage cache first
   try {
-    const cached = localStorage.getItem('lie_team_v1');
-    const cachedTime = localStorage.getItem('lie_team_time');
-    if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < 86400000) {
-      lieData = JSON.parse(cached);
-      renderLIERanking();
-      const status = document.getElementById('lie-status');
-      if (status) {
-        status.style.display = 'block';
-        status.textContent = '✓ World Athletics (gecacht)';
-        status.style.color = 'var(--green)';
+    const cached = localStorage.getItem('lie_scores_cache');
+    const cachedTime = localStorage.getItem('lie_scores_time');
+    if (cached && cachedTime) {
+      const age = Date.now() - parseInt(cachedTime);
+      if (age < 24 * 60 * 60 * 1000) { // 24h cache
+        try{const s=localStorage.getItem("lieData");if(s){lieData=JSON.parse(s);renderLIERanking();}}catch(e){}
+        renderLIERanking();
+        // Update status
+        const btn = document.getElementById('lie-refresh-btn');
+        if (btn) btn.textContent = '↻';
+        return;
       }
-      return;
     }
   } catch(e) {}
+  const btn = document.getElementById('lie-refresh-btn');
+  const status = document.getElementById('lie-status');
+  btn.disabled = true; btn.textContent = '⏳';
+  if (status) { status.style.display = 'block'; status.textContent = 'Lade Top-10 LIE Athleten von World Athletics…'; }
 
-  const res = await fetch(PROXY_URL + '?action=lieteam');
+  try {
+    const res = await fetch(PROXY_URL + '?action=lieteam');
     const fresh = await res.json();
 
     if (fresh && Object.keys(fresh).length > 0) {
