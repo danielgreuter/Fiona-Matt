@@ -1,0 +1,20 @@
+{
+  "name": "Fiona Matt Athletics",
+  "short_name": "Fiona Matt",
+  "start_url": "/Fiona-Matt/",
+  "display": "standalone",
+  "background_color": "#1E3A8A",
+  "theme_color": "#1E3A8A",
+  "icons": [
+    {
+      "src": "/Fiona-Matt/icon-192.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    },
+    {
+      "src": "/Fiona-Matt/icon-512.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
