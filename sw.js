@@ -1,5 +1,5 @@
 // sw.js — Service Worker für PWA Installation
-const CACHE_NAME = 'fiona-matt-v1';
+const CACHE_NAME = 'fiona-matt-v2';
 const ASSETS = [
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
