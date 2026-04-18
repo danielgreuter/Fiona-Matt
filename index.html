@@ -2365,21 +2365,20 @@ async function loadBestenliste() {
 // LIE TEAM — dynamisch von World Athletics
 // ══════════════════════════════════════════════════
 const LIE_ATHLETES = [
-  { name:'Fiona Matt',       code:'15091224', url:'fiona-matt-15091224',          club:'TV Eschen-Mauren',     gender:'f', isMe:true },
-  { name:'Julia Rohrer',     code:'14934104', url:'julia-rohrer-14934104',         club:'TV Eschen-Mauren',     gender:'f' },
-  { name:'Jule Insinna',     code:'14951910', url:'jule-insinna-14951910',          club:'TV Eschen-Mauren',     gender:'f' },
-  { name:'Matthias Verling', code:'14985991', url:'matthias-verling-14985991',      club:'TV Eschen-Mauren',     gender:'m' },
-  { name:'Nadine Stüber',    code:'14972539', url:'nadine-stuber-14972539',         club:'LC Vaduz',             gender:'f' },
-  { name:'Sienna Zobel',     code:'15089898', url:'sienna-zobel-15089898',          club:'TV Eschen-Mauren',     gender:'f' },
-  { name:'Joel Riesen',      code:'14985311', url:'joel-riesen-14985311',           club:'LC Vaduz',             gender:'m' },
-  { name:'Annmarie Kindle', code:'15129161', url:'annmarie-kindle-15129161', club:'TV Eschen-Mauren', gender:'f' },
-  { name:'Elina Lussi',     code:'15239636', url:'elina-lussi-15239636',     club:'TV Eschen-Mauren', gender:'f' },
-  { name:'Ben Seger',        code:'15097339', url:'ben-seger-15097339',             club:'TV Balzers',           gender:'m' },
-  { name:'Annmarie Kindle',  code:'15129161', url:'annmarie-kindle-15129161',       club:'LC Vaduz',             gender:'f' },
-  { name:'Julia Thalmann',   code:'14904441', url:'julia-thalmann-14904441',        club:'TV Eschen-Mauren',     gender:'f', note:'SUI' },
-  { name:'Soe Frick',        code:'15233979', url:'soe-frick-15233979',             club:'TV Triesen',           gender:'f' },
-  { name:'Elina Lussi',      code:'15239636', url:'elina-lussi-15239636',           club:'LC Vaduz',             gender:'f' },
+  { name:'Fiona Matt',       code:'15091224', url:'fiona-matt-15091224',       club:'TV Eschen-Mauren', gender:'f', isMe:true },
+  { name:'Julia Rohrer',     code:'14934104', url:'julia-rohrer-14934104',      club:'LC Brühl',         gender:'f' },
+  { name:'Jule Insinna',     code:'14951910', url:'jule-insinna-14951910',       club:'LC Schaan',        gender:'f' },
+  { name:'Matthias Verling', code:'14985991', url:'matthias-verling-14985991',   club:'LC Vaduz',         gender:'m' },
+  { name:'Nadine Stüber',    code:'14972539', url:'nadine-stuber-14972539',      club:'TV Triesen',       gender:'f' },
+  { name:'Sienna Zobel',     code:'15089898', url:'sienna-zobel-15089898',       club:'TV Triesen',       gender:'f' },
+  { name:'Joel Riesen',      code:'14985311', url:'joel-riesen-14985311',        club:'LC Schaan',        gender:'m' },
+  { name:'Ben Seger',        code:'15097339', url:'ben-seger-15097339',          club:'LC Schaan',        gender:'m' },
+  { name:'Julia Thalmann',   code:'14904441', url:'julia-thalmann-14904441',     club:'LC Vaduz',         gender:'f' },
+  { name:'Soe Frick',        code:'15233979', url:'soe-frick-15233979',          club:'TV Triesen',       gender:'f' },
+  { name:'Annmarie Kindle',  code:'15129161', url:'annmarie-kindle-15129161',    club:'TV Triesen',       gender:'f' },
+  { name:'Elina Lussi',      code:'15239636', url:'elina-lussi-15239636',        club:'TV Eschen-Mauren', gender:'f' },
 ];
+
 
 async function loadLIEScores() {
   // Check localStorage cache first
