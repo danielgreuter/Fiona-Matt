@@ -2382,12 +2382,12 @@ const LIE_ATHLETES = [
 async function loadLIEScores() {
   // Check localStorage cache first
   try {
-    const cached = localStorage.getItem('lie_scores_cache');
-    const cachedTime = localStorage.getItem('lie_scores_time');
+    const cached = localStorage.getItem('lie_team_v1');
+    const cachedTime = localStorage.getItem('lie_team_time');
     if (cached && cachedTime) {
       const age = Date.now() - parseInt(cachedTime);
       if (age < 24 * 60 * 60 * 1000) { // 24h cache
-        try{const s=localStorage.getItem("lieData");if(s){lieData=JSON.parse(s);renderLIERanking();}}catch(e){}
+        try{const s=localStorage.getItem('lie_team_v1');if(s){lieData=JSON.parse(s);renderLIERanking();}}catch(e){}
         renderLIERanking();
         // Update status
         const btn = document.getElementById('lie-refresh-btn');
