@@ -1485,7 +1485,7 @@ function switchTab(id, btn) {
   // Re-render SVG charts when overview becomes visible (offsetWidth=0 while hidden)
   if (id === 'overview') {
     setTimeout(() => {
-      renderScoreChart(currentDisc);
+      if(window.waScoreByDisc){renderWAScoreChartDynamic(currentDisc);}else{renderScoreChart(currentDisc);}
       renderSeasonCompare(currentDisc);
     }, 50);
   }
