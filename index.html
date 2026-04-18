@@ -2332,8 +2332,9 @@ async function loadLiveResults() {
 
     // Update WA Score Chart dynamically
     updateWAScoreChart(mapped);
+    setTimeout(()=>renderWAScoreChartDynamic(currentDisc||"60m"),100);
 
-    // Update Saison-Verlauf Chart dynamically  
+    // Update Saison-Verlauf Chart dynamically
     updateSaisonChart(mapped);
 
     // Re-render overview
