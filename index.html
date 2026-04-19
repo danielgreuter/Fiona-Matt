@@ -1631,6 +1631,7 @@ function filterTop10(disc, btn) {
 }
 function renderTop10() {
   const container = document.getElementById('top10-list');
+  if(!container) return;
   // top10Static is now year-keyed — use most recent year for Resultate tab
   const top10YearMap = FIONA.top10Static[currentTop10] || {};
   const top10Yr = Object.keys(top10YearMap).sort().reverse()[0];
@@ -2678,6 +2679,7 @@ async function shareResult() {
 // ══════════════════════════
 async function loadLiveResults() {
   const btn = document.getElementById('live-results-btn');
+  if(!btn && !document.getElementById('live-results-status')) return; // DOM elements removed
   const status = document.getElementById('live-results-status');
   const output = document.getElementById('live-results-output');
   const list = document.getElementById('live-results-list');
