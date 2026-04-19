@@ -2143,14 +2143,9 @@ function renderWAScoreChartDynamic(disc) {
 
   let raw = (window.waScoreByDisc && window.waScoreByDisc[disc]) || [];
 
-  if (!raw.length) {
-    const hist = (FIONA && FIONA.waScoreHistory && FIONA.waScoreHistory[disc]) || [];
-    raw = hist.map(d => ({
-      date: d.label || d.date || '',
-      score: Number(d.val ?? d.score),
-      result: d.result || ''
-    })).filter(d => !isNaN(d.score));
-  }
+if (!raw.length) {
+  return renderScoreChart(disc);
+}
 
   chartEl.setAttribute('viewBox', '0 0 360 160');
   chartEl.setAttribute('width', '100%');
@@ -3862,6 +3857,7 @@ function renderSAResults() {
 </script>
 </body>
 </html>
+
 
 
 
