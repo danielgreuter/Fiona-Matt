@@ -1337,36 +1337,14 @@ let currentDisc = '100m';
 let mainChart = null;
 
 function selectDisc(disc) {
-  // Update WA score chart when discipline changes
-  if (window.waScoreByDisc) {
-    const chartDisc = disc === 'Long Jump' ? 'Long Jump' : disc;
-    renderWAScoreChartDynamic(chartDisc);
-  }
   currentDisc = disc;
-  renderScoreChart(disc);
+  const idMap = {"100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m","80m":"pb-80m"};
+  Object.keys(idMap).forEach(d => { const el = document.getElementById(idMap[d]); if (el) el.classList.toggle('selected', d === disc); });
   renderDevChart(disc);
-  // Highlight selected PB card — try ID first, fallback to querySelectorAll
-  const idMap = { "100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m" };
-  ['100m','60m','Long Jump','200m'].forEach(d => {
-    const el = document.getElementById(idMap[d]);
-    if (el) el.classList.toggle('selected', d === disc);
-  });
-  // Also fallback: highlight by disc class
-  document.querySelectorAll('.pb-item').forEach(el => {
-    const isSelected = el.onclick?.toString().includes("'" + disc + "'") || 
-                       el.getAttribute('onclick')?.includes("'" + disc + "'");
-    if (isSelected) el.classList.add('selected');
-    else el.classList.remove('selected');
-  });
-  // Update chart titles
-  const chartTitle = document.getElementById('chart-title');
-  const seasonTitle = document.getElementById('season-title');
-  if (chartTitle) chartTitle.textContent = DISC_LABELS[disc] + ' Entwicklung';
-  if (seasonTitle) seasonTitle.textContent = 'Saisonbestwert ' + DISC_LABELS[disc];
-  // Rebuild ALL charts — single source of truth, driven by PB card selection
-  renderDevChart(disc);
-  if(window.waScoreByDisc) renderWAScoreChartDynamic(disc);
+  renderWAScoreChartDynamic(disc);
+  console.log('selectDisc', disc);
 }
+
 
 function updateChart(disc) {
   const histData = FIONA.disciplineHistory[disc];
@@ -2127,61 +2105,26 @@ function updateWAScoreChart(results) {
 
 function renderWAScoreChartDynamic(disc) {
   window.currentWAScoreDisc = disc;
-  const chartEl = document.getElementById('score-chart-svg');
-  if (!chartEl) return;
-  if (!window.waScoreByDisc || !window.waScoreByDisc[disc]) {
-    // No live data yet — keep existing static chart
-    return;
-  }
-
-  const data = window.waScoreByDisc[disc] || [];
-  if (!data.length) return;
-
-  const MONTHS = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
-  const pts = data.map(d => {
-    const p = d.date.split(' ');
-    const dt = p.length===3 ? new Date(parseInt(p[2]), MONTHS[p[1]]||0, parseInt(p[0])) : new Date(d.date);
-    return { dt, score: d.score, result: d.result, label: d.date };
-  }).filter(p => !isNaN(p.dt)).sort((a,b) => a.dt - b.dt);
-
-  if (!pts.length) return;
-
-  const W = chartEl.offsetWidth || 320, H = 160;
-  const PAD = { l:40, r:10, t:10, b:30 };
-  const minS = Math.min(...pts.map(p=>p.score)) - 20;
-  const maxS = Math.max(...pts.map(p=>p.score)) + 20;
-  const minT = pts[0].dt.getTime(), maxT = pts[pts.length-1].dt.getTime();
-  const xScale = t => PAD.l + (maxT===minT ? (W-PAD.l-PAD.r)/2 : (t-minT)/(maxT-minT)*(W-PAD.l-PAD.r));
-  const yScale = s => H - PAD.b - (s-minS)/(maxS-minS)*(H-PAD.t-PAD.b);
-
-  const COLORS = {'60m':'#7C3AED','100m':'#2563EB','200m':'#0891B2','Long Jump':'#059669'};
-  const col = COLORS[disc] || '#2563EB';
-
-  const polyline = pts.map(p => `${xScale(p.dt.getTime()).toFixed(1)},${yScale(p.score).toFixed(1)}`).join(' ');
-
-  let circles = pts.map(p => `
-    <circle cx="${xScale(p.dt.getTime()).toFixed(1)}" cy="${yScale(p.score).toFixed(1)}" r="5" fill="${col}" stroke="white" stroke-width="1.5"/>
-    <text x="${xScale(p.dt.getTime()).toFixed(1)}" y="${(yScale(p.score)-8).toFixed(1)}" text-anchor="middle" font-size="9" fill="${col}" font-weight="700">${p.score}</text>
-  `).join('');
-
-  // Year labels on x-axis
-  const years = [...new Set(pts.map(p => p.dt.getFullYear()))];
-  const yearLabels = years.map(yr => {
-    const yrPts = pts.filter(p => p.dt.getFullYear()===yr);
-    const midT = yrPts[Math.floor(yrPts.length/2)].dt.getTime();
-    return `<text x="${xScale(midT).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="9" fill="var(--text-dim)">${yr}</text>`;
-  }).join('');
-
-  chartEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:${H}px">
-    <polyline points="${polyline}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/>
-    ${circles}
-    ${yearLabels}
-  </svg>`;
+  const el = document.getElementById('score-chart-svg');
+  if (!el) return;
+  const raw = (window.waScoreByDisc && window.waScoreByDisc[disc]) || [];
+  const MONTHS={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  const pts=raw.map(d=>{const p=String(d.date||'').split(' ');const dt=p.length===3?new Date(parseInt(p[2]),MONTHS[p[1]]||0,parseInt(p[0])):new Date(d.date);return{dt,score:Number(d.score),result:d.result};}).filter(p=>!isNaN(p.dt)&&!isNaN(p.score)).sort((a,b)=>a.dt-b.dt);
+  if(!pts.length){el.setAttribute('viewBox','0 0 360 160');el.setAttribute('width','100%');el.setAttribute('height','160');el.innerHTML='<text x="180 y=82 text-anchor=middle fill=#9CA3AF font-size=12>Keine WA-Daten fuer '+disc+'</text>';return;}
+  const W=360,H=160,PAD={l:36,r:12,t:14,b:28};
+  const minS=Math.min(...pts.map(p=>p.score))-10,maxS=Math.max(...pts.map(p=>p.score))+10;
+  const minT=pts[0].dt.getTime(),maxT=pts[pts.length-1].dt.getTime();
+  const xf=t=>PAD.l+(maxT===minT?0.5:(t-minT)/(maxT-minT))*(W-PAD.l-PAD.r);
+  const yf=s=>H-PAD.b-((s-minS)/((maxS-minS)||1))*(H-PAD.t-PAD.b);
+  const COLORS={'60m':'#7C3AED','100m':'#2563EB','200m':'#0891B2','80m':'#D97706','Long Jump':'#059669'};
+  const col=COLORS[disc]||'#2563EB';
+  const points=pts.map(p=>xf(p.dt.getTime()).toFixed(1)+','+yf(p.score).toFixed(1)).join(' ');
+  el.setAttribute('viewBox','0 0 '+W+' '+H);el.setAttribute('width','100%');el.setAttribute('height',H);
+  el.innerHTML='<line x1='+PAD.l+'" y1='+(H-PAD.b)+'" x2='+(W-PAD.r)+'" y2='+(H-PAD.b)+'" stroke="#E5E7EB stroke-width=1/><line x1='+PAD.l+'" y1='+PAD.t+'" x2='+PAD.l+'" y2='+(H-PAD.b)+'" stroke=#E5E7EB stroke-width=1/><polyline fill=none stroke='+col+'" stroke-width="3 stroke-linecap=round stroke-linejoin=round points='+points+'"/'+pts.map(p=>'<circle cx='+xf(p.dt.getTime()).toFixed(1)+'" cy='+yf(p.score).toFixed(1)+'" r="4 fill='+col+'"\/><text x='+xf(p.dt.getTime()).toFixed(1)+'" y='+(yf(p.score)-8).toFixed(1)+'" text-anchor="middle font-size=9 fill=#6B7280>'+p.score+'</text>').join('')+'';
+  console.log('WA render', disc, pts.length);
 }
 
-// ══════════════════════════════════════════════════
-// DYNAMIC SAISON-VERLAUF CHART
-// ══════════════════════════════════════════════════
+
 function updateSaisonChart(results) {
   // Group by year + discipline, find season bests per date
   const bySeason = {};
@@ -3693,17 +3636,16 @@ async function loadSAResults(force) {
 
 function setSADisc(disc, btn) {
   saCurrentDisc = disc;
-  document.querySelectorAll('.sa-disc-btn').forEach(b => {
-    b.style.background = 'transparent';
-    b.style.color = 'var(--text)';
-  });
+  if (disc !== 'all') currentDisc = disc;
+  document.querySelectorAll('.sa-disc-btn').forEach(b => { b.style.background = 'transparent'; b.style.color = 'var(--text)'; });
   if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = 'white'; }
   renderSAResults();
-  const chartDisc = disc==='all'?(currentDisc||'100m'):disc;
-  if(disc!=='all')currentDisc=disc;
+  const chartDisc = disc === 'all' ? (currentDisc || '100m') : disc;
   renderDevChart(chartDisc);
   renderWAScoreChartDynamic(chartDisc);
+  console.log('setSADisc', disc);
 }
+
 
 function renderSAResults() {
   const list = document.getElementById('sa-results-list');
