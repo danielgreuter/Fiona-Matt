@@ -1333,6 +1333,7 @@ const DISC_Y = {
   "200m":       { min:25.80, max:27.00, rev:true  },
 };
 
+let saResultsData = null;
 let currentDisc = '100m';
 let mainChart = null;
 
@@ -2935,7 +2936,7 @@ const vs=dr.map(r=>parseFloat(r.result)||0).filter(v=>v>0);
 const mn=Math.min(...vs),mx=Math.max(...vs),range=mx-mn||0.5;
 const W=360,H=150,PT=20,PB=24,PL=8,PR=8,n=dr.length;
 const xs=i=>PL+(n>1?i/(n-1):0.5)*(W-PL-PR);
-const ys=v=>ij?(PT+(mx-v)/range*(H-PT-PB)):(PT+(v-mn)/range*(H-PT-PB));
+const ys=v=>ij?(PT+(mx-v)/range*(H-PT-PB)):(PT+(mx-v)/range*(H-PT-PB));
 const bv=ij?Math.max(...vs):Math.min(...vs);
 const NS='http://www.w3.org/2000/svg';
 const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 360 150');svg.setAttribute('style','width:100%;height:150px');
