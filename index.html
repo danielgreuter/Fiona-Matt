@@ -1358,7 +1358,6 @@ function selectDisc(disc) {
   console.log('selectDisc', disc);
 }
 
-
 function updateChart(disc) {
   const histData = FIONA.disciplineHistory[disc];
   if (mainChart) { mainChart.destroy(); mainChart = null; }
@@ -1456,7 +1455,7 @@ function switchTab(id, btn) {
       } else if (typeof loadSAResults === 'function') {
         loadSAResults().then(() => renderDevChart(disc)).catch(() => {});
       }
-      renderScoreChart(disc);
+      renderWAScoreChartDynamic(disc);
     }, 50);
   }
 }
@@ -2141,14 +2140,22 @@ function renderWAScoreChartDynamic(disc) {
   const chartEl = document.getElementById('score-chart-svg');
   if (!chartEl) return;
 
-  const raw = (window.waScoreByDisc && window.waScoreByDisc[disc]) || [];
+  let raw = (window.waScoreByDisc && window.waScoreByDisc[disc]) || [];
+
+  if (!raw.length) {
+    const hist = (FIONA && FIONA.waScoreHistory && FIONA.waScoreHistory[disc]) || [];
+    raw = hist.map(d => ({
+      date: d.label || d.date || '',
+      score: Number(d.val ?? d.score),
+      result: d.result || ''
+    })).filter(d => !isNaN(d.score));
+  }
 
   chartEl.setAttribute('viewBox', '0 0 360 160');
   chartEl.setAttribute('width', '100%');
   chartEl.setAttribute('height', '160');
 
   if (!raw.length) {
-    console.log('WA render fallback to static chart', disc);
     if (typeof renderScoreChart === 'function') {
       renderScoreChart(disc);
       return;
@@ -2180,6 +2187,10 @@ function renderWAScoreChartDynamic(disc) {
     .sort((a, b) => a.dt - b.dt);
 
   if (!pts.length) {
+    if (typeof renderScoreChart === 'function') {
+      renderScoreChart(disc);
+      return;
+    }
     chartEl.innerHTML = `
       <text x="180" y="82" text-anchor="middle" fill="#9CA3AF" font-size="12">
         Keine gültigen WA-Daten für ${disc}
@@ -2212,8 +2223,8 @@ function renderWAScoreChartDynamic(disc) {
   const col = COLORS[disc] || '#2563EB';
 
   chartEl.innerHTML = `
-    <line x1="${PAD.l}" y1="${H - PAD.b}" x2="${W - PAD.r}" y2="${H - PAD.b}" stroke="#E5E7EB" stroke-width="1" />
-    <line x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${H - PAD.b}" stroke="#E5E7EB" stroke-width="1" />
+    <line x1="${PAD.l}" y1="${H-PAD.b}" x2="${W-PAD.r}" y2="${H-PAD.b}" stroke="#E5E7EB" stroke-width="1" />
+    <line x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${H-PAD.b}" stroke="#E5E7EB" stroke-width="1" />
     <polyline fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${points}" />
     ${pts.map(p => `
       <circle cx="${x(p.dt.getTime()).toFixed(1)}" cy="${y(p.score).toFixed(1)}" r="4" fill="${col}" />
@@ -2221,9 +2232,11 @@ function renderWAScoreChartDynamic(disc) {
     `).join('')}
   `;
 
+  const note = document.getElementById('score-chart-note');
+  if (note) note.textContent = `${pts.length} WA Scores`;
+
   console.log('WA render', disc, pts.length);
 }
-
 
 function updateSaisonChart(results) {
   // Group by year + discipline, find season bests per date
@@ -2935,7 +2948,7 @@ function renderWAResults(results) {
 function renderDevChart(disc) {
   const el = document.getElementById('dev-chart-svg');
   const title = document.getElementById('dev-chart-title');
-  const note = document.getElementById('dev-chart-note');
+  const note = document.getElementById('score-chart-note');
 
   if (!el) return;
 
@@ -3024,7 +3037,7 @@ function renderScoreChart(disc) {
   if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderScoreChartFromSA(disc);return;}
 
   const container = document.getElementById('score-chart-svg');
-  const note = document.getElementById('dev-chart-note');
+  const note = document.getElementById('score-chart-note');
   if (!container) return;
 
   const SVGS = {
@@ -3787,9 +3800,8 @@ function setSADisc(disc, btn) {
   renderDevChart(chartDisc);
   renderScoreChart(chartDisc);
 
-  console.log('setSADisc', disc);
+  console.log('setSADisc', chartDisc);
 }
-
 
 function renderSAResults() {
   const list = document.getElementById('sa-results-list');
