@@ -2121,7 +2121,7 @@ function updateWAScoreChart(results) {
   window.waScoreByDisc = byDisc;
 
   // Re-render chart with live data
-  const chartEl = document.getElementById('dev-chart-svg');
+  const chartEl = document.getElementById('score-chart-svg');
   if (chartEl) renderWAScoreChartDynamic(window.currentWAScoreDisc || '60m');
 }
 
