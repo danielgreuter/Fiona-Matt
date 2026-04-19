@@ -1342,8 +1342,7 @@ function selectDisc(disc) {
     const chartDisc = disc === 'Long Jump' ? 'Long Jump' : disc;
     renderWAScoreChartDynamic(chartDisc);
   }
-  currentDisc = disc;
-  renderScoreChart(disc);
+  currentDisc = disc;
   renderDevChart(disc);
   // Highlight selected PB card — try ID first, fallback to querySelectorAll
   const idMap = { "100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m" };
@@ -1367,7 +1366,7 @@ function selectDisc(disc) {
   if (typeof updateChart        === 'function') updateChart(disc);
   if (typeof renderSeasonBars   === 'function') renderSeasonBars(disc);
   if (typeof renderSeasonCompare=== 'function') renderSeasonCompare(disc);
-  if (typeof renderScoreChart   === 'function') renderScoreChart(disc);
+  if (typeof renderScoreChart   === 'function'
 }
 
 function updateChart(disc) {
