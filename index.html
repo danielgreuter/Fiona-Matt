@@ -2375,7 +2375,7 @@ async function loadLIEScores() {
   } catch(e) {}
   const btn = document.getElementById('lie-refresh-btn');
   const status = document.getElementById('lie-status');
-  btn.disabled = true; btn.textContent = '⏳';
+  if(btn) btn.disabled = true; btn.textContent = '⏳';
   if (status) { status.style.display = 'block'; status.textContent = 'Lade Top-10 LIE Athleten von World Athletics…'; }
 
   try {
@@ -2679,7 +2679,6 @@ async function shareResult() {
 // ══════════════════════════
 async function loadLiveResults() {
   const btn = document.getElementById('live-results-btn');
-  if(!btn && !document.getElementById('live-results-status')) return; // DOM elements removed
   const status = document.getElementById('live-results-status');
   const output = document.getElementById('live-results-output');
   const list = document.getElementById('live-results-list');
@@ -2691,11 +2690,9 @@ async function loadLiveResults() {
     return;
   }
 
-  btn.textContent = '⏳';
+  if(btn) btn.textContent = '⏳';
   btn.disabled = true;
-  status.style.display = 'block';
-  status.style.color = 'var(--text-dim)';
-  status.textContent = 'Lade von Swiss Athletics...';
+  if(status){status.style.display='block';status.style.color='var(--text-dim)';status.textContent='Lade von WA...';}
 
   try {
     const res = await fetch(`${PROXY_URL}?action=results`);
