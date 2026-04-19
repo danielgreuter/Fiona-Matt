@@ -3682,8 +3682,8 @@ async function loadSAResults(force) {
   if (status) status.textContent = '⏳ Lade...';
 
   try {
-    const url = PROXY_URL + '?action=sa-results'; // force not supported - data comes from scraper
-    const res = await fetch(url);
+    const url = PROXY_URL + '?action=sa-results&ts=' + Date.now();
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Keine Daten verfügbar');
     const data = await res.json();
     if (data.error) throw new Error(data.error);
