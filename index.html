@@ -1364,10 +1364,8 @@ function selectDisc(disc) {
   if (chartTitle) chartTitle.textContent = DISC_LABELS[disc] + ' Entwicklung';
   if (seasonTitle) seasonTitle.textContent = 'Saisonbestwert ' + DISC_LABELS[disc];
   // Rebuild ALL charts — single source of truth, driven by PB card selection
-  if (typeof updateChart        === 'function') updateChart(disc);
-  if (typeof renderSeasonBars   === 'function') renderSeasonBars(disc);
-  if (typeof renderSeasonCompare=== 'function') renderSeasonCompare(disc);
-  if (typeof renderScoreChart   === 'function') renderScoreChart(disc);
+  renderDevChart(disc);
+  if(window.waScoreByDisc) renderWAScoreChartDynamic(disc);
 }
 
 function updateChart(disc) {
@@ -1479,6 +1477,7 @@ function filterResults(disc, btn) {
 }
 function renderResults() {
   const container = document.getElementById('results-list');
+  if(!container) return;
   let results = [...FIONA.recentResults];
   if (currentFilter !== 'Alle') results = results.filter(r => r.discipline === currentFilter);
 
