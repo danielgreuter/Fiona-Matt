@@ -884,7 +884,7 @@ body {
           <button class="sa-disc-btn" onclick="setSADisc('Long Jump',this)" style="font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer">Weit</button>
         </div>
 
-        <div id="sa-results-list"><div style="font-size:12px;color:red;padding:10px 0">TEST 777</div></div>
+        <div id="sa-results-list"><div style="font-size:12px;color:var(--text-dim);padding:10px 0">Lade Resultate...</div></div>
       </div>
 
     </div><!-- /tab-results -->
@@ -3675,6 +3675,31 @@ async function deleteEvent(id) {
 // ══════════════════════════════════════════════════
 var saResultsData = null;
 let saCurrentDisc = 'all';
+
+async function loadSAResults(force) {
+  const status = document.getElementById('sa-results-status');
+  const list = document.getElementById('sa-results-list');
+  if (status) status.textContent = '⏳ Lade...';
+
+  try {
+    const url = PROXY_URL + '?action=sa-results'; // force not supported - data comes from scraper
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Keine Daten verfügbar');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    saResultsData = data;
+    if (status) {
+      const d = new Date(data.scraped);
+      status.textContent = '✅ Swiss Athletics · ' + d.toLocaleDateString('de-CH');
+      status.style.color = 'var(--green)';
+    }
+    renderSAResults();
+  } catch(e) {
+    if (status) { status.textContent = '❌ ' + e.message; status.style.color = 'var(--red)'; }
+    if (list) list.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:10px 0">Keine Swiss Athletics Daten verfügbar.</div>';
+  }
+}
 
 function setSADisc(disc, btn) {
   saCurrentDisc = disc;
