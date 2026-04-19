@@ -1352,8 +1352,8 @@ function selectDisc(disc) {
     if (el) el.classList.toggle('selected', d === disc);
   });
 
-  renderDevChart(disc);
-  renderWAScoreChartDynamic(disc);
+renderDevChart(chartDisc);
+renderScoreChart(chartDisc);
 
   console.log('selectDisc', disc);
 }
