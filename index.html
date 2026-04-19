@@ -822,29 +822,13 @@ body {
       </div>
 
       <!-- Dynamic Chart -->
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div class="card-title" style="margin:0" id="chart-title">100m Entwicklung</div>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="mainChart"></canvas>
-        </div>
-      </div>
+      
 
       <!-- Season Stats -->
-      <div class="card">
-        <div style="margin-bottom:6px">
-          <div class="card-title" style="margin:0" id="season-title">Saisonbestwert 100m</div>
-        </div>
-        <div id="season-bars"></div>
-      </div>
+      
 
       <!-- Season Compare -->
-      <div class="card"><div style="display:flex;align-items:center;gap:0"><img src="/Fiona-Matt/WALogo.png" style="height:36px;width:auto;opacity:0.9;margin-right:8px;flex-shrink:0;vertical-align:middle" onerror="this.style.display='none'"><div class="card-title">Saisonvergleich</div></div>
-        <div id="season-compare-grid" style="width:100%;overflow:hidden">
-          <canvas id="seasonChart" style="width:100%"></canvas>
-        </div>
-      </div>
+      
 
       <!-- WA SCORE CHART -->
       <div class="card">
@@ -858,30 +842,13 @@ body {
       </div>
 
       <!-- Milestone -->
-      <div class="card" id="milestone-card" style="display:none">
-        <div class="card-title">Nächstes Ziel</div>
-        <div id="milestone-text" style="font-size:13px;margin-bottom:8px"></div>
-        <div style="background:var(--border);border-radius:4px;height:8px;overflow:hidden">
-          <div id="milestone-fill" style="height:100%;background:var(--accent);width:0%;transition:width 0.8s ease;border-radius:4px"></div>
-        </div>
-        <div id="milestone-pct" style="font-size:11px;color:var(--text-dim);margin-top:4px;text-align:right"></div>
-      </div>
+      
 
       <!-- Push Notifications -->
-      <div class="card" id="push-card">
-        <div class="card-title">🔔 Push-Benachrichtigungen</div>
-        <div id="push-status" style="font-size:12px;color:var(--text-dim);margin-bottom:8px">Aktiviere Benachrichtigungen für neue Resultate.</div>
-        <button id="push-btn" onclick="setupPush()" style="font-size:12px;padding:8px 16px;border-radius:20px;border:none;background:var(--accent);color:white;cursor:pointer;font-weight:600">Benachrichtigungen aktivieren</button>
-      </div>
+      
 
       <!-- Teilen -->
-      <div class="card">
-        <div class="card-title">Teilen</div>
-        <button class="share-btn" onclick="shareResult()">
-          <span style="font-size:16px">📤</span> Resultat als Bild teilen
-        </button>
-        <div id="share-canvas-wrap" style="display:none;margin-top:10px;text-align:center"></div>
-      </div>
+      
 
           <!-- Career Timeline (hidden, rendered by JS) -->
       <div id="career-timeline" style="display:none"></div>
