@@ -2121,7 +2121,7 @@ function updateWAScoreChart(results) {
   window.waScoreByDisc = byDisc;
 
   // Re-render chart with live data
-  const chartEl = document.getElementById('score-chart-svg');
+  const chartEl = document.getElementById('dev-chart-svg');
   if (chartEl) renderWAScoreChartDynamic(window.currentWAScoreDisc || '60m');
 }
 
@@ -2958,7 +2958,7 @@ function renderScoreChart(disc) {
   if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderScoreChartFromSA(disc);return;}
 
   const container = document.getElementById('score-chart-svg');
-  const note = document.getElementById('score-chart-note');
+  const note = document.getElementById('dev-chart-note');
   if (!container) return;
 
   const SVGS = {
