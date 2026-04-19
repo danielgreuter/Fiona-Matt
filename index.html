@@ -831,7 +831,14 @@ body {
       
 
       <!-- WA SCORE CHART -->
-      <div class="card">
+            <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div class="card-title" id="dev-chart-title">Entwicklung 100m</div>
+        </div>
+        <div id="dev-chart-svg" style="height:160px;width:100%;overflow:hidden"></div>
+        <div id="dev-chart-note" style="font-size:10px;color:var(--text-dim);margin-top:4px;text-align:center"></div>
+      </div>
+<div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:0"><img src="/Fiona-Matt/WALogo.png" style="height:36px;width:auto;opacity:0.9;margin-right:8px;flex-shrink:0;vertical-align:middle" onerror="this.style.display='none'"><div class="card-title" style="margin:0">WA Score Entwicklung</div></div>
           
@@ -1337,6 +1344,7 @@ function selectDisc(disc) {
   }
   currentDisc = disc;
   renderScoreChart(disc);
+  renderDevChart(disc);
   // Highlight selected PB card — try ID first, fallback to querySelectorAll
   const idMap = { "100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m" };
   ['100m','60m','Long Jump','200m'].forEach(d => {
@@ -1453,7 +1461,8 @@ function switchTab(id, btn) {
   // Re-render SVG charts when overview becomes visible (offsetWidth=0 while hidden)
   if (id === 'overview') {
     setTimeout(() => {
-      if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderScoreChart(currentDisc);renderSeasonCompare(currentDisc);}else{loadSAResults().then(()=>{renderScoreChart(currentDisc);renderSeasonCompare(currentDisc);});}
+      if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderDevChart(currentDisc||'100m');
+  renderScoreChart(currentDisc);renderSeasonCompare(currentDisc);}else{loadSAResults().then(()=>{renderScoreChart(currentDisc);renderSeasonCompare(currentDisc);});}
     }, 50);
   }
 }
@@ -2906,6 +2915,48 @@ function renderWAResults(results) {
 // ══════════════════════════════════════════════════
 // WA SCORE CHART
 // ══════════════════════════════════════════════════
+
+function renderDevChart(disc){
+const el=document.getElementById('dev-chart-svg');
+const title=document.getElementById('dev-chart-title');
+const note=document.getElementById('dev-chart-note');
+if(!el)return;
+const LABELS={'60m':'60m','100m':'100m','200m':'200m','Long Jump':'Weitsprung','80m':'80m'};
+if(title)title.textContent='Entwicklung '+(LABELS[disc]||disc);
+const sa=saResultsData&&saResultsData.results;
+if(!sa){el.textContent='Lade...';return;}
+const COLORS={'60m':'#7C3AED','100m':'#2563EB','200m':'#0891B2','Long Jump':'#059669','80m':'#D97706'};
+const col=COLORS[disc]||'#2563EB',ij=disc==='Long Jump';
+const dr=sa.filter(r=>r.discipline===disc&&r.result&&r.dateISO&&!r.windAssisted).sort((a,b)=>a.dateISO.localeCompare(b.dateISO));
+if(!dr.length){el.textContent='Keine Daten';return;}
+const vs=dr.map(r=>parseFloat(r.result)||0).filter(v=>v>0);
+const mn=Math.min(...vs)-(ij?.2:.15),mx=Math.max(...vs)+(ij?.2:.15);
+const W=360,H=150,n=dr.length,xs=i=>8+(n>1?i/(n-1):.5)*344,ys=v=>126-(v-mn)/(mx-mn)*106;
+const bv=ij?Math.max(...vs):Math.min(...vs);
+const NS='http://www.w3.org/2000/svg';
+const svg=document.createElementNS(NS,'svg');
+svg.setAttribute('viewBox','0 0 360 150');svg.setAttribute('style','width:100%;height:150px');
+const defs=document.createElementNS(NS,'defs');
+const grad=document.createElementNS(NS,'linearGradient');grad.id='dg';grad.setAttribute('x2','0');grad.setAttribute('y2','1');
+const s1=document.createElementNS(NS,'stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',col);s1.setAttribute('stop-opacity','0.25');
+const s2=document.createElementNS(NS,'stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',col);s2.setAttribute('stop-opacity','0');
+grad.appendChild(s1);grad.appendChild(s2);defs.appendChild(grad);svg.appendChild(defs);
+let aD='',lD='';const seenY=new Set();
+dr.forEach((r,i)=>{const v=parseFloat(r.result)||0;if(!v)return;
+const x=xs(i).toFixed(1),y=ys(v).toFixed(1);
+aD+=(i?'L':'M'+x+',126 L')+x+','+y;lD+=(i?'L':'M')+x+','+y+' ';
+const b=v===bv;
+const circ=document.createElementNS(NS,'circle');circ.setAttribute('cx',x);circ.setAttribute('cy',y);circ.setAttribute('r',b?5:2);circ.setAttribute('fill',b?col:'white');circ.setAttribute('stroke',col);circ.setAttribute('stroke-width','1.5');svg.appendChild(circ);
+if(b){const t=document.createElementNS(NS,'text');const ly=parseFloat(y)<22?parseFloat(y)+14:parseFloat(y)-8;t.setAttribute('x',x);t.setAttribute('y',ly);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','10');t.setAttribute('fill',col);t.setAttribute('font-weight','700');t.textContent=r.result+(ij?' m':'');svg.appendChild(t);}
+const yr=r.dateISO.substring(0,4);if(!seenY.has(yr)){seenY.add(yr);const yt=document.createElementNS(NS,'text');yt.setAttribute('x',x);yt.setAttribute('y','144');yt.setAttribute('text-anchor','middle');yt.setAttribute('font-size','9');yt.setAttribute('fill','#888');yt.textContent=yr;svg.appendChild(yt);}
+});
+if(aD)aD+=' L'+xs(n-1)+',126 Z';
+const aPath=document.createElementNS(NS,'path');aPath.setAttribute('d',aD);aPath.setAttribute('fill','url(#dg)');svg.insertBefore(aPath,svg.childNodes[1]);
+const lPath=document.createElementNS(NS,'path');lPath.setAttribute('d',lD);lPath.setAttribute('fill','none');lPath.setAttribute('stroke',col);lPath.setAttribute('stroke-width','2.5');lPath.setAttribute('stroke-linejoin','round');svg.insertBefore(lPath,svg.childNodes[2]);
+el.innerHTML='';el.appendChild(svg);
+if(note)note.textContent=dr.length+' Resultate von Swiss Athletics';
+}
+
 function renderScoreChart(disc) {
   if(saResultsData&&saResultsData.results&&saResultsData.results.length){renderScoreChartFromSA(disc);return;}
 
@@ -3636,6 +3687,7 @@ function setSADisc(disc, btn) {
   });
   if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = 'white'; }
   renderSAResults();
+    renderDevChart(currentDisc||'100m');
     renderScoreChart(currentDisc||'100m');
     renderSeasonCompare(currentDisc||'100m');
 }
