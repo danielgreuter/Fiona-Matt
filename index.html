@@ -1336,6 +1336,7 @@ function selectDisc(disc) {
     renderWAScoreChartDynamic(chartDisc);
   }
   currentDisc = disc;
+  renderScoreChart(disc);
   // Highlight selected PB card — try ID first, fallback to querySelectorAll
   const idMap = { "100m":"pb-100m","60m":"pb-60m","Long Jump":"pb-lj","200m":"pb-200m" };
   ['100m','60m','Long Jump','200m'].forEach(d => {
