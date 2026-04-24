@@ -3236,9 +3236,10 @@ async function loadCalendarFromKV(force) {
   try {
     if (status) { status.style.display = 'block'; status.textContent = '⏳ Lade Kalender...'; status.style.color = 'var(--text-dim)'; }
     
+    const ts = force ? ('&_t=' + Date.now()) : '';
     const [googleRes, chRes] = await Promise.allSettled([
-      fetch(PROXY_URL + '?action=calendar' + (force?'&force=1':'')).then(r => r.json()),
-      fetch(PROXY_URL + '?action=chcalendar' + (force?'&force=1':'')).then(r => r.json()),
+      fetch(PROXY_URL + '?action=calendar' + (force?'&force=1':'') + ts, {cache:'no-store'}).then(r => r.json()),
+      fetch(PROXY_URL + '?action=chcalendar' + (force?'&force=1':'') + ts, {cache:'no-store'}).then(r => r.json()),
     ]);
 
     // Google Calendar (Fionas Wettkämpfe)
@@ -3728,8 +3729,8 @@ async function loadTrainingCalendar(force) {
 
   try {
     // Selber Fetch wie Wettkämpfe-Tab (calendar action)
-    const url = PROXY_URL + '?action=calendar' + (force ? '&force=1' : '');
-    const res = await fetch(url);
+    const url = PROXY_URL + '?action=calendar' + (force ? '&force=1&_t=' + Date.now() : '');
+    const res = await fetch(url, {cache: 'no-store'});
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const all = await res.json() || [];
 
