@@ -3795,7 +3795,9 @@ function renderTrainingCalendar() {
       weeks[key].entries.push(e);
     });
     html += `<div style="font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0;border-top:1px solid var(--border);margin-bottom:8px">Weitere Termine</div>`;
-    Object.keys(weeks).sort().forEach(wk => {
+    // Nur nächste 3 Wochen anzeigen
+    const weekKeys = Object.keys(weeks).sort().slice(0, 3);
+    weekKeys.forEach(wk => {
       const w=weeks[wk];
       html += collapsibleBlock('trw_'+wk.replace(/-/g,''), w.label, w.entries.length, w.entries, false);
     });
