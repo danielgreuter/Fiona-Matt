@@ -194,8 +194,8 @@ body {
 .nav-tabs::-webkit-scrollbar { display: none; }
 .nav-tab {
   flex-shrink: 0;
-  padding: 14px 14px;
-  font-size: 13px;
+  padding: 12px 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   border: none;
@@ -203,8 +203,9 @@ body {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.1px;
   font-family: inherit;
+  white-space: nowrap;
 }
 .nav-tab.active {
   color: var(--blue);
@@ -804,8 +805,8 @@ body {
       <button class="nav-tab active" onclick="switchTab('overview', this)">Übersicht</button>
       <button class="nav-tab" onclick="switchTab('results', this);">Resultate</button>
       <button class="nav-tab" onclick="switchTab('calendar', this)">Wettkämpfe</button>
-      <button class="nav-tab" onclick="switchTab('ranking', this)">Ranking</button>
       <button class="nav-tab" onclick="switchTab('training', this)">Training</button>
+      <button class="nav-tab" onclick="switchTab('ranking', this)">Ranking</button>
       <button class="nav-tab" onclick="switchTab('lieteam', this)">Team 🇱🇮</button>
     </div>
   </div>
