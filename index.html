@@ -3881,8 +3881,8 @@ async function rankRefresh(btn) {
   try {
     const res = await fetch(PROXY_URL + '?action=trigger-bestenliste');
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    if (status) { status.textContent = '⏳ Läuft (~60s)...'; status.style.color = 'var(--orange)'; }
-    await new Promise(r => setTimeout(r, 65000));
+    if (status) { status.textContent = '⏳ Läuft (~30s)...'; status.style.color = 'var(--orange)'; }
+    await new Promise(r => setTimeout(r, 30000));
     await loadBestenliste();
     if (status) { status.textContent = '✅ Aktualisiert'; status.style.color = 'var(--green)'; }
   } catch(e) {
