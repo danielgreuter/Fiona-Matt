@@ -2041,7 +2041,11 @@ function renderRankBanners() {
       } else {
         resEl.textContent  = '—';
         gapEl.textContent  = '';
-        rankEl.textContent = 'Keine Daten';
+        // Saison hat begonnen (Live-Daten vorhanden) aber Fiona noch nicht in Liste
+        const hasListData = live && live.total > 0 && liveSeasonMatch;
+        rankEl.textContent = hasListData
+          ? 'Noch kein Resultat · ' + seasons[disc]
+          : 'Keine Daten';
       }
     }
   });
