@@ -1,196 +1,42 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v15 — No Browser
- * Pure HTTP + JSF partial/ajax — kein Playwright, kein Chrome nötig
- * Laufzeit: ~1 Min statt 10 Min
+ * Swiss Athletics Bestenliste Scraper v16 — Direkte URLs
+ * Keine JSF-Navigation nötig, direkte GET-Anfragen
+ * disci-Parameter aus echten alabus-URLs extrahiert
  */
 
 const fs = require('fs');
-
-const BASE  = 'https://alabus.swiss-athletics.ch';
-const URL   = BASE + '/satweb/faces/bestlist.xhtml?lang=de';
 
 const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID || '';
 const CF_API_TOKEN  = process.env.CF_API_TOKEN  || '';
 const CF_KV_NS_ID   = process.env.CF_KV_NS_ID  || '';
 
+const BASE_BESTLIST = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml?lang=de&mobile=false&top=30';
+const CAT_U18W = '5c4o3k5m-d686mo-j986g2ie-1-j986g45y-bn';
+
 const DISCIPLINES = [
-  { key:'100m',           year:'2026', season:'Outdoor', label:'100 m' },
-  { key:'100m_2025',      year:'2025', season:'Outdoor', label:'100 m' },
-  { key:'60m',            year:'2026', season:'Indoor',  label:'60 m'  },
-  { key:'60m_2025',       year:'2025', season:'Indoor',  label:'60 m'  },
-  { key:'200m',           year:'2026', season:'Outdoor', label:'200 m' },
-  { key:'200m_2025',      year:'2025', season:'Outdoor', label:'200 m' },
-  { key:'Long Jump',      year:'2026', season:'Outdoor', label:'Weit'  },
-  { key:'Long Jump_2025', year:'2025', season:'Outdoor', label:'Weit'  },
+  { key:'100m',           year:'2026', url:`${BASE_BESTLIST}&blyear=2026&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv` },
+  { key:'100m_2025',      year:'2025', url:`${BASE_BESTLIST}&blyear=2025&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv` },
+  { key:'60m',            year:'2026', url:`${BASE_BESTLIST}&blyear=2026&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986gfre-4zz` },
+  { key:'60m_2025',       year:'2025', url:`${BASE_BESTLIST}&blyear=2025&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986gfre-4zz` },
+  { key:'200m',           year:'2026', url:`${BASE_BESTLIST}&blyear=2026&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks` },
+  { key:'200m_2025',      year:'2025', url:`${BASE_BESTLIST}&blyear=2025&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks` },
+  { key:'Long Jump',      year:'2026', url:`${BASE_BESTLIST}&blyear=2026&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp` },
+  { key:'Long Jump_2025', year:'2025', url:`${BASE_BESTLIST}&blyear=2025&blcat=${CAT_U18W}&disci=5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp` },
 ];
 
-const F = {
-  year:       'form_anonym:bestlistYear_input',
-  season:     'form_anonym:bestlistSeason_input',
-  category:   'form_anonym:bestlistCategory_input',
-  discipline: 'form_anonym:bestlistDiscipline_input',
-  type:       'form_anonym:bestlistType_input',
-  tops:       'form_anonym:bestlistTops_input',
-};
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0';
 
-// ── Helpers ──────────────────────────────────────────────────
+// ── Scrape one discipline via direkte GET-URL ─────────────────
 
-function extractVS(text) {
-  return (text.match(/ViewState[^>]*value="([^"]{10,})"/) || [])[1] || null;
-}
-
-function extractGuid(html) {
-  return (html.match(/aeswindowguid['":\s=]+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i) || [])[1]
-    || 'deadbeef-dead-4bed-8ead-deadbeefcafe';
-}
-
-function decodeHtml(xml) {
-  let out = '';
-  const re = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
-  let m;
-  while ((m = re.exec(xml)) !== null) out += m[1];
-  return out || xml;
-}
-
-// Parse all <option> elements from a <select> by field ID
-function getOptions(html, fieldId) {
-  const escaped = fieldId.replace(/:/g, '\\:');
-  const sm = html.match(new RegExp(`id="${escaped}"[^>]*>([\\s\\S]*?)</select>`));
-  if (!sm) return [];
-  const opts = [];
-  const re = /<option[^>]*value="([^"]*)"[^>]*>\s*([^<]*?)\s*<\/option>/g;
-  let m;
-  while ((m = re.exec(sm[1])) !== null) opts.push({ value: m[1], label: m[2].trim() });
-  return opts;
-}
-
-function findOpt(opts, label) {
-  return opts.find(o => o.label === label || o.label.startsWith(label));
-}
-
-const wait = ms => new Promise(r => setTimeout(r, ms));
-
-// ── JSF partial/ajax POST ─────────────────────────────────────
-
-async function jsfPost(session, vs, guid, sourceId, fields) {
-  const body = new URLSearchParams({
-    'javax.faces.partial.ajax': 'true',
-    'javax.faces.source': sourceId,
-    'javax.faces.partial.execute': '@all',
-    'javax.faces.partial.render': 'form_anonym',
-    [sourceId]: sourceId,
-    'aeswindowguid': guid,
-    'form_anonym': 'form_anonym',
-    ...fields,
-    'javax.faces.ViewState': vs,
+async function scrapeDiscipline(disc) {
+  const res = await fetch(disc.url, {
+    headers: { 'User-Agent': UA, 'Accept-Language': 'de-CH,de;q=0.9' }
   });
-
-  const res = await fetch(URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      'Faces-Request': 'partial/ajax',
-      'X-Requested-With': 'XMLHttpRequest',
-      'Accept': 'application/xml, text/xml, */*; q=0.01',
-      'Cookie': 'JSESSIONID=' + session,
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0',
-      'Origin': BASE,
-      'Referer': URL,
-    },
-    body: body.toString(),
-  });
-
-  const xml = await res.text();
-  const html = decodeHtml(xml);
-  const newVs = extractVS(xml) || extractVS(html) || vs;
-  return { xml, html, vs: newVs };
-}
-
-// ── Scrape one discipline via JSF navigation ──────────────────
-
-async function scrapeDiscipline(disc, session, guid) {
-  // Fresh page to get current ViewState
-  const pageRes = await fetch(URL, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0',
-      'Cookie': 'JSESSIONID=' + session,
-      'Accept-Language': 'de-CH,de;q=0.9',
-    }
-  });
-  let html = await pageRes.text();
-  let vs = extractVS(html);
-  if (!vs) throw new Error('ViewState nicht gefunden');
-
-  const base = {
-    [F.year]: '', [F.season]: '', [F.category]: '',
-    [F.discipline]: '', [F.type]: '', [F.tops]: '',
-    'form_anonym:selectOneMenuSearchField_focus': '',
-    'form_anonym:selectOneMenuSearchField_input': 'Name',
-    'form_anonym:inputTxtSearchValue': '',
-  };
-
-  // 1. Jahr
-  const yearOpts = getOptions(html, F.year);
-  const yearOpt  = yearOpts.find(o => o.label === disc.year) || yearOpts.find(o => o.value === 'ALL') || yearOpts[0];
-  if (!yearOpt) throw new Error(`Jahr ${disc.year} nicht gefunden`);
-  let r = await jsfPost(session, vs, guid, F.year, { ...base, [F.year]: yearOpt.value });
-  vs = r.vs; html = r.html; await wait(600);
-
-  // 2. Saison
-  const seasonOpts = getOptions(html, F.season);
-  const isIndoor = disc.season === 'Indoor';
-  const seasonOpt = seasonOpts.find(o =>
-    isIndoor ? (o.label.toLowerCase().includes('halle') || o.label.toLowerCase().includes('indoor'))
-             : (o.label.toLowerCase().includes('outdoor') || o.label.toLowerCase().includes('freiluft'))
-  ) || seasonOpts.find(o => o.value !== '') || seasonOpts[1];
-  if (!seasonOpt) throw new Error(`Saison ${disc.season} nicht gefunden (${seasonOpts.map(o=>o.label).join(', ')})`);
-  r = await jsfPost(session, vs, guid, F.season, { ...base, [F.year]: yearOpt.value, [F.season]: seasonOpt.value });
-  vs = r.vs; html = r.html; await wait(600);
-
-  // 3. Kategorie U18 Frauen
-  const catOpts = getOptions(html, F.category);
-  const catOpt  = catOpts.find(o => o.label.includes('U18') && o.label.toLowerCase().includes('frauen'))
-                || catOpts.find(o => o.label.includes('U18'))
-                || catOpts.find(o => o.value !== '') || catOpts[1];
-  if (!catOpt) throw new Error(`U18 Frauen nicht gefunden (${catOpts.map(o=>o.label).join(', ')})`);
-  r = await jsfPost(session, vs, guid, F.category, {
-    ...base, [F.year]: yearOpt.value, [F.season]: seasonOpt.value, [F.category]: catOpt.value
-  });
-  vs = r.vs; html = r.html; await wait(800);
-
-  // 4. Disziplin
-  const discOpts = getOptions(html, F.discipline);
-  const discOpt  = findOpt(discOpts, disc.label);
-  if (!discOpt) throw new Error(`Disziplin "${disc.label}" nicht gefunden (${discOpts.map(o=>o.label).join(', ')})`);
-  r = await jsfPost(session, vs, guid, F.discipline, {
-    ...base, [F.year]: yearOpt.value, [F.season]: seasonOpt.value,
-    [F.category]: catOpt.value, [F.discipline]: discOpt.value
-  });
-  vs = r.vs; html = r.html; await wait(600);
-
-  // 5. Typ: Ein Resultat pro Athlet
-  const typeOpts = getOptions(html, F.type);
-  const typeOpt  = typeOpts.find(o => o.label.toLowerCase().includes('ein resultat')) || typeOpts[1] || typeOpts[0];
-
-  // 6. Tops: so viele wie möglich (500 oder letzter)
-  const topsOpts = getOptions(html, F.tops);
-  const topsOpt  = topsOpts.find(o => o.label.trim() === '500') || topsOpts[topsOpts.length - 1];
-
-  // 7. Anzeigen Button
-  const btnMatch = html.match(/id="(form_anonym:[^"]*(?:j_idt|anzeig|loadData|Btn)[^"]*)"[^>]*>[^<]*[Aa]nzeig/);
-  const btnId    = btnMatch ? btnMatch[1] : 'form_anonym:j_idt70';
-
-  r = await jsfPost(session, vs, guid, btnId, {
-    [F.year]: yearOpt.value, [F.season]: seasonOpt.value,
-    [F.category]: catOpt.value, [F.discipline]: discOpt.value,
-    [F.type]: typeOpt?.value || '', [F.tops]: topsOpt?.value || '',
-    [btnId]: btnId,
-  });
-  await wait(1000);
-
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const html = await res.text();
   const isJump = disc.key.startsWith('Long Jump');
-  const rows = parseTable(r.html || r.xml, isJump);
+  const rows = parseTable(html, isJump);
   console.log(`   ${rows.length} Einträge geparst`);
   return rows;
 }
@@ -260,29 +106,14 @@ async function uploadKV(data) {
 // ── Main ──────────────────────────────────────────────────────
 
 async function main() {
-  console.log('🚀 Swiss Athletics Bestenliste Scraper v17 (JSF Navigation)\n');
-
-  // Session holen
-  const initRes = await fetch(URL, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0',
-      'Accept-Language': 'de-CH,de;q=0.9',
-    }
-  });
-  const initHtml = await initRes.text();
-  const cookie   = initRes.headers.get('set-cookie') || '';
-  const session  = (cookie.match(/JSESSIONID=([^;]+)/) || [])[1] || '';
-  const guid     = extractGuid(initHtml);
-
-  if (!session) { console.error('❌ Keine Session'); process.exit(1); }
-  console.log(`✓ Session OK · GUID: ${guid.substring(0, 8)}...\n`);
+  console.log('🚀 Swiss Athletics Bestenliste Scraper v16 (Direkte URLs)\n');
 
   const result = { updated: new Date().toISOString().split('T')[0], disciplines: {} };
 
   for (const disc of DISCIPLINES) {
     console.log(`📋 ${disc.key} (${disc.year})`);
     try {
-      const rows   = await scrapeDiscipline(disc, session, guid);
+      const rows   = await scrapeDiscipline(disc);
       const isJump = disc.key.startsWith('Long Jump');
       const fiona  = rows.find(r => r.isFiona);
       const top1   = rows[0];
