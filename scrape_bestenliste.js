@@ -94,57 +94,87 @@ function calcGap(a, b, isJump) {
 async function scrapeDiscipline(page, disc) {
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
   await wait(1500);
-  await page.screenshot({ path: `/tmp/alabus_debug_01_loaded.png` });
 
   // Jahr
   const yearSel = 'form_anonym:bestlistYear_input';
   const yearOk = await selectByLabel(page, yearSel, disc.year);
-  if (!yearOk) {
-    await page.screenshot({ path: `/tmp/alabus_debug_year_fail.png` });
-    throw new Error(`Jahr ${disc.year} nicht gefunden`);
-  }
+  if (!yearOk) throw new Error(`Jahr ${disc.year} nicht gefunden`);
   await wait(1000);
 
-  // Saison
+  // Saison — alle Optionen loggen für Debugging
   const seasonSel = 'form_anonym:bestlistSeason_input';
-  const seasonLabel = disc.season === 'Indoor' ? 'halle' : 'outdoor';
-  const seasonOk = await selectByLabel(page, seasonSel, seasonLabel, true);
-  if (!seasonOk) {
-    await page.screenshot({ path: `/tmp/alabus_debug_season_fail.png` });
-    throw new Error(`Saison ${disc.season} nicht gefunden`);
+  const seasonSelect = page.locator(`#${seasonSel.replace(/:/g, '\\:')}`);
+  const seasonOptions = await seasonSelect.locator('option').all();
+  const seasonTexts = [];
+  for (const opt of seasonOptions) seasonTexts.push((await opt.textContent()).trim());
+  console.log(`   Saison-Optionen: ${seasonTexts.join(' | ')}`);
+
+  const isIndoor = disc.season === 'Indoor';
+  let seasonOk = false;
+  for (const opt of seasonOptions) {
+    const text = (await opt.textContent()).trim().toLowerCase();
+    if (isIndoor && (text.includes('halle') || text.includes('indoor') || text.includes('winter'))) {
+      await seasonSelect.selectOption({ value: await opt.getAttribute('value') });
+      seasonOk = true; break;
+    }
+    if (!isIndoor && (text.includes('outdoor') || text.includes('freiluft') || text.includes('sommer'))) {
+      await seasonSelect.selectOption({ value: await opt.getAttribute('value') });
+      seasonOk = true; break;
+    }
   }
+  if (!seasonOk && seasonOptions.length > 1) {
+    const idx = isIndoor ? 1 : (seasonOptions.length > 2 ? 2 : 1);
+    await seasonSelect.selectOption({ value: await seasonOptions[idx].getAttribute('value') });
+    console.log(`   ⚠️  Saison-Fallback: Option ${idx}`);
+    seasonOk = true;
+  }
+  if (!seasonOk) throw new Error(`Saison ${disc.season} nicht gefunden`);
   await wait(1000);
 
-  // Kategorie U18 Frauen
+  // Kategorie U18
   const catSel = 'form_anonym:bestlistCategory_input';
-  const catOk = await selectByLabel(page, catSel, 'U18', true);
-  if (!catOk) {
-    await page.screenshot({ path: `/tmp/alabus_debug_cat_fail.png` });
-    throw new Error('Kategorie U18 nicht gefunden');
+  const catSelect = page.locator(`#${catSel.replace(/:/g, '\\:')}`);
+  const catOptions = await catSelect.locator('option').all();
+  const catTexts = [];
+  for (const opt of catOptions) catTexts.push((await opt.textContent()).trim());
+  console.log(`   Kat-Optionen: ${catTexts.join(' | ')}`);
+
+  let catOk = false;
+  for (const opt of catOptions) {
+    const text = (await opt.textContent()).trim().toLowerCase();
+    if (text.includes('u18') || text.includes('u 18')) {
+      await catSelect.selectOption({ value: await opt.getAttribute('value') });
+      catOk = true; break;
+    }
   }
+  if (!catOk) throw new Error('Kategorie U18 nicht gefunden');
   await wait(1000);
 
   // Disziplin
   const discSel = 'form_anonym:bestlistDiscipline_input';
-  const discOk = await selectByLabel(page, discSel, disc.label);
-  if (!discOk) {
-    await page.screenshot({ path: `/tmp/alabus_debug_disc_fail.png` });
-    throw new Error(`Disziplin "${disc.label}" nicht gefunden`);
+  const discSelect = page.locator(`#${discSel.replace(/:/g, '\\:')}`);
+  const discOptions = await discSelect.locator('option').all();
+  const discTexts = [];
+  for (const opt of discOptions) discTexts.push((await opt.textContent()).trim());
+  console.log(`   Disc-Optionen: ${discTexts.slice(0,8).join(' | ')}`);
+
+  let discOk = false;
+  for (const opt of discOptions) {
+    const text = (await opt.textContent()).trim();
+    if (text === disc.label || text.startsWith(disc.label)) {
+      await discSelect.selectOption({ value: await opt.getAttribute('value') });
+      discOk = true; break;
+    }
   }
+  if (!discOk) throw new Error(`Disziplin "${disc.label}" nicht gefunden`);
   await wait(1000);
 
-  // Anzeigen Button klicken
-  await page.screenshot({ path: `/tmp/alabus_debug_02_before_submit.png` });
+  // Anzeigen
   const btn = page.locator('button, input[type=submit]').filter({ hasText: /[Aa]nzeig/ });
-  const btnCount = await btn.count();
-  if (btnCount > 0) {
-    await btn.first().click();
-  } else {
-    await page.locator('form#form_anonym').evaluate(f => f.requestSubmit());
-  }
+  if (await btn.count() > 0) await btn.first().click();
+  else await page.keyboard.press('Enter');
   await page.waitForLoadState('networkidle');
   await wait(2000);
-  await page.screenshot({ path: `/tmp/alabus_debug_03_results.png` });
 
   const html = await page.content();
   const isJump = disc.key.startsWith('Long Jump');
