@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v25
- * - waitForFunction statt blindem wait() nach Dropdowns
- * - robuster Button-Click via JS-Fallback
- * - Extraktion aus div[data-ri] oder Fallback auf Text-Parsing
+ * Swiss Athletics Bestenliste Scraper v26
+ * Hauptfix: Cookie-Banner sauber dismissen (warten bis er weg ist)
+ *           bevor irgendetwas anderes passiert
  */
 
 const { chromium } = require('playwright');
@@ -34,6 +33,36 @@ const TOP_N = 15;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const esc  = s => s.replace(/:/g, '\\:');
 
+// ── Cookie-Banner sauber dismissen ───────────────────────────────────────────
+
+async function dismissCookieBanner(page) {
+  // Versuche "Nein" zu klicken — wait bis zu 8s damit Banner Zeit hat zu laden
+  const cookieSelectors = [
+    'button:has-text("Nein")',
+    'button:has-text("Ablehnen")',
+    'button:has-text("Reject")',
+    'button:has-text("Decline")',
+    'button:has-text("Ja")',       // Fallback: akzeptieren
+    'button:has-text("Akzeptieren")',
+  ];
+
+  for (const sel of cookieSelectors) {
+    try {
+      const btn = page.locator(sel).first();
+      await btn.waitFor({ state: 'visible', timeout: 8000 });
+      await btn.click();
+      console.log(`  🍪 Cookie-Banner geklickt: "${sel}"`);
+      // Warte bis Banner aus dem DOM/sichtbar verschwindet
+      await btn.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+      await wait(500);
+      return true;
+    } catch(_) { /* versuche nächsten Selektor */ }
+  }
+
+  console.log('  🍪 Kein Cookie-Banner gefunden (OK)');
+  return false;
+}
+
 // ── PrimeFaces SelectOneMenu ──────────────────────────────────────────────────
 
 async function pfSelect(page, inputId, labelText, partial = false) {
@@ -42,7 +71,6 @@ async function pfSelect(page, inputId, labelText, partial = false) {
   await wrapper.waitFor({ state: 'visible', timeout: 12000 });
   await wrapper.click();
 
-  // Panel kann _items oder _panel heissen
   let panel = page.locator(`#${esc(compId)}_items`);
   try { await panel.waitFor({ state: 'visible', timeout: 5000 }); }
   catch {
@@ -63,7 +91,6 @@ async function pfSelect(page, inputId, labelText, partial = false) {
       : text === labelText;
     if (match) {
       await item.click();
-      // Warte bis AJAX settled (max 8s), kein harter Fehler wenn nicht networkidle
       try { await page.waitForLoadState('networkidle', { timeout: 8000 }); }
       catch { await wait(2000); }
       console.log(`  ✓ "${text}" in ${compId}`);
@@ -98,80 +125,31 @@ function findCompId(comps, needle, partial = false) {
   return null;
 }
 
-// ── Klick "Anzeigen"-Button (PrimeFaces CommandButton) ────────────────────────
-
-async function clickAnzeigen(page) {
-  // Versuche verschiedene Selektoren
-  const selectors = [
-    'button:has-text("Anzeigen")',
-    'a:has-text("Anzeigen")',
-    '[id*="search"]',
-    '[id*="anzeigen"]',
-    '[id*="show"]',
-    'button[type="submit"]',
-  ];
-  for (const sel of selectors) {
-    try {
-      const el = page.locator(sel).first();
-      if (await el.isVisible({ timeout: 1500 })) {
-        await el.click();
-        console.log(`  ✓ Button geklickt: ${sel}`);
-        return true;
-      }
-    } catch(_) {}
-  }
-
-  // JS-Fallback: finde alle Buttons und klicke den mit "Anzeigen"-Text
-  const clicked = await page.evaluate(() => {
-    const btns = Array.from(document.querySelectorAll('button, a, input[type="submit"], span[role="button"]'));
-    for (const b of btns) {
-      if ((b.textContent || '').trim().toLowerCase().includes('anzeigen')) {
-        b.click();
-        return b.textContent.trim();
-      }
-    }
-    return null;
-  });
-  if (clicked) { console.log(`  ✓ JS-Click: "${clicked}"`); return true; }
-
-  console.warn('  ⚠ Kein Anzeigen-Button gefunden');
-  return false;
-}
-
 // ── Warte auf Resultate und extrahiere ───────────────────────────────────────
 
 async function waitAndExtract(page) {
-  // Warte bis div[data-ri] erscheint (max 15s)
+  // Warte bis div[data-ri] erscheint (max 20s)
   try {
     await page.waitForFunction(
       () => document.querySelectorAll('[data-ri]').length > 0,
-      { timeout: 15000, polling: 500 }
+      { timeout: 20000, polling: 500 }
     );
-    console.log('  ✓ div[data-ri] gefunden');
+    console.log('  ✓ Resultate geladen');
   } catch {
-    // Noch kein Resultat — versuche Button klicken
-    console.log('  → Noch keine Resultate, klicke Anzeigen…');
-    await clickAnzeigen(page);
-    try {
-      await page.waitForFunction(
-        () => document.querySelectorAll('[data-ri]').length > 0,
-        { timeout: 15000, polling: 500 }
-      );
-      console.log('  ✓ div[data-ri] nach Button-Click');
-    } catch {
-      // Letzte Chance: raw text parsing
-      const divCount = await page.evaluate(() => document.querySelectorAll('[data-ri]').length);
-      const body = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g,' '));
-      console.warn(`  ✗ Keine Resultate. data-ri=${divCount} | body: ${body}`);
-      return [];
-    }
+    // Debug-Dump
+    const info = await page.evaluate(() => ({
+      dataRi: document.querySelectorAll('[data-ri]').length,
+      divs: document.querySelectorAll('div').length,
+      body: document.body.innerText.substring(0, 400).replace(/\n/g,' '),
+    }));
+    console.warn(`  ✗ Timeout. data-ri=${info.dataRi} divs=${info.divs}`);
+    console.warn(`  body: ${info.body}`);
+    return [];
   }
 
-  // Extrahiere Zeilen
   return await page.evaluate(() => {
     const rows = [];
     document.querySelectorAll('[data-ri]').forEach(row => {
-      // Sammle alle Leaf-Text-Nodes
       const texts = [];
       const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
       let node;
@@ -190,22 +168,15 @@ async function waitAndExtract(page) {
 function mapRows(rawRows) {
   return rawRows.map(r => {
     const t = r.texts;
-    // Layout: Nr, Resultat, Wind, Rang, Name, Verein, Nat, Geb.Dat, Wettkampf, Ort, Datum
-    // Manchmal fehlt Wind wenn kein Windwert
     const nr = parseInt(t[0]);
     if (isNaN(nr)) return null;
-
-    // Resultat: zweite Zelle — Zeit (7.xx / 12.xx / 24.xx) oder Weite (5.xx)
     const result = t[1] || '';
-    // Wind: dritte Zelle wenn +/- Vorzeichen
-    let wind = null, nameIdx = 4;
-    if (t[2] && /^[+-]?\d+\.\d$/.test(t[2])) { wind = t[2]; }
-    else { nameIdx = 3; } // kein Wind, Name rückt vor
-
+    let wind = null;
+    if (t[2] && /^[+-]?\d+\.\d$/.test(t[2])) wind = t[2];
+    const nameIdx = wind !== null ? 4 : 3;
     const name = t[nameIdx] || '';
     const club = t[nameIdx + 1] || '';
     const date = t.find(s => /^\d{2}\.\d{2}\.\d{4}$/.test(s)) || '';
-
     return { rank: nr, result, wind, name, club, date };
   }).filter(r => r && r.result && r.name);
 }
@@ -232,20 +203,12 @@ async function scrapeDiscipline(context, disc) {
 
   try {
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
-    await wait(3000);
+    await wait(2000);
 
-    // Cookie-Banner
-    try {
-      for (const txt of ['Nein','Ablehnen','Akzeptieren','Ja']) {
-        const btn = page.locator(`button:has-text("${txt}")`).first();
-        if (await btn.isVisible({ timeout: 1000 })) {
-          await btn.click(); await wait(600);
-          console.log(`  Cookie "${txt}" geklickt`); break;
-        }
-      }
-    } catch(_) {}
+    // !! Cookie-Banner ZUERST dismissen !!
+    await dismissCookieBanner(page);
 
-    const comps   = await discoverComponents(page);
+    const comps    = await discoverComponents(page);
     const seasonId = findCompId(comps, season);
     const catId    = findCompId(comps, CATEGORY_LABEL) || findCompId(comps, 'U18', true);
     const typeId   = findCompId(comps, 'Ein Resultat pro Athlet');
@@ -260,7 +223,6 @@ async function scrapeDiscipline(context, disc) {
     if (!await pfSelect(page, catId, CATEGORY_LABEL) && !await pfSelect(page, catId, 'U18', true))
       return { discipline: key, year, error: 'category', top15: [], fiona: null };
 
-    // Re-discover nach Kategorie-AJAX
     await wait(500);
     const comps2  = await discoverComponents(page);
     const yearId2 = findCompId(comps2, year) || findCompId(comps, year);
@@ -279,7 +241,6 @@ async function scrapeDiscipline(context, disc) {
     if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
     if (topsId) await pfSelect(page, topsId, '30');
 
-    // Warte auf Resultate + extrahiere
     const rawRows = await waitAndExtract(page);
     console.log(`  → ${rawRows.length} Zeilen | Roh[0]: ${JSON.stringify(rawRows[0]?.texts?.slice(0,6))}`);
 
