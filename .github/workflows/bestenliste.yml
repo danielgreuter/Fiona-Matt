@@ -23,7 +23,6 @@ jobs:
         run: |
           npm install playwright
           npx playwright install chromium --with-deps
-          # Google Chrome installieren (für executablePath)
           wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt-get install -y /tmp/chrome.deb
 
@@ -34,20 +33,29 @@ jobs:
           CF_KV_NS_ID:   ${{ secrets.CF_KV_NS_ID }}
         run: node scrape_bestenliste.js --upload
 
+      - name: Debug Seite
+        if: always()
+        run: node debug_page.js
+
       - name: Debug-Artefakte hochladen
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: debug-${{ github.run_id }}
+          name: debug-output-${{ github.run_id }}
           path: |
+            debug_before.png
+            debug_after.png
+            debug_tables.txt
             debug_result.html
             debug_result.png
-          if-no-files-found: ignore
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Ergebnis als Artefakt speichern
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bestenliste-${{ github.run_id }}
           path: bestenliste.json
+          if-no-files-found: warn
           retention-days: 30
