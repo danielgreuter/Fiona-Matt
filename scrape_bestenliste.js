@@ -93,44 +93,58 @@ function calcGap(a, b, isJump) {
 
 async function scrapeDiscipline(page, disc) {
   await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-  await wait(1000);
+  await wait(1500);
+  await page.screenshot({ path: `/tmp/alabus_debug_01_loaded.png` });
 
   // Jahr
   const yearSel = 'form_anonym:bestlistYear_input';
   const yearOk = await selectByLabel(page, yearSel, disc.year);
-  if (!yearOk) throw new Error(`Jahr ${disc.year} nicht gefunden`);
-  await wait(800);
+  if (!yearOk) {
+    await page.screenshot({ path: `/tmp/alabus_debug_year_fail.png` });
+    throw new Error(`Jahr ${disc.year} nicht gefunden`);
+  }
+  await wait(1000);
 
   // Saison
   const seasonSel = 'form_anonym:bestlistSeason_input';
   const seasonLabel = disc.season === 'Indoor' ? 'halle' : 'outdoor';
   const seasonOk = await selectByLabel(page, seasonSel, seasonLabel, true);
-  if (!seasonOk) throw new Error(`Saison ${disc.season} nicht gefunden`);
-  await wait(800);
+  if (!seasonOk) {
+    await page.screenshot({ path: `/tmp/alabus_debug_season_fail.png` });
+    throw new Error(`Saison ${disc.season} nicht gefunden`);
+  }
+  await wait(1000);
 
   // Kategorie U18 Frauen
   const catSel = 'form_anonym:bestlistCategory_input';
-  let catOk = await selectByLabel(page, catSel, 'U18', true);
-  if (!catOk) throw new Error('Kategorie U18 nicht gefunden');
-  await wait(800);
+  const catOk = await selectByLabel(page, catSel, 'U18', true);
+  if (!catOk) {
+    await page.screenshot({ path: `/tmp/alabus_debug_cat_fail.png` });
+    throw new Error('Kategorie U18 nicht gefunden');
+  }
+  await wait(1000);
 
   // Disziplin
   const discSel = 'form_anonym:bestlistDiscipline_input';
   const discOk = await selectByLabel(page, discSel, disc.label);
-  if (!discOk) throw new Error(`Disziplin "${disc.label}" nicht gefunden`);
-  await wait(800);
+  if (!discOk) {
+    await page.screenshot({ path: `/tmp/alabus_debug_disc_fail.png` });
+    throw new Error(`Disziplin "${disc.label}" nicht gefunden`);
+  }
+  await wait(1000);
 
   // Anzeigen Button klicken
+  await page.screenshot({ path: `/tmp/alabus_debug_02_before_submit.png` });
   const btn = page.locator('button, input[type=submit]').filter({ hasText: /[Aa]nzeig/ });
   const btnCount = await btn.count();
   if (btnCount > 0) {
     await btn.first().click();
   } else {
-    // Fallback: Formular-Submit
     await page.locator('form#form_anonym').evaluate(f => f.requestSubmit());
   }
   await page.waitForLoadState('networkidle');
-  await wait(1500);
+  await wait(2000);
+  await page.screenshot({ path: `/tmp/alabus_debug_03_results.png` });
 
   const html = await page.content();
   const isJump = disc.key.startsWith('Long Jump');
