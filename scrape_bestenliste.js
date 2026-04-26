@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v21
- * - Frische Seite pro Disziplin (kein AJAX-Timing-Problem)
- * - DOM-basierter Table-Parser statt Regex
+ * Swiss Athletics Bestenliste Scraper v22
+ * PrimeFaces SelectOneMenu — UI-Interaktion (Click Trigger → Click Item)
  */
 
 const { chromium } = require('playwright');
@@ -32,60 +31,75 @@ const TOP_N = 15;
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-// ── Select by option text, wait for AJAX to settle ───────────────────────────
+// ── PrimeFaces SelectOneMenu: Click trigger → click item ─────────────────────
+// inputId = "form_anonym:bestlistDiscipline_input"
+// componentId = "form_anonym:bestlistDiscipline"
 
-async function selectOption(page, selectId, labelText, partial = false) {
-  const esc = selectId.replace(/:/g, '\\:');
-  const sel = page.locator(`#${esc}`);
+async function pfSelect(page, inputId, labelText, partial = false) {
+  const componentId = inputId.replace(/_input$/, '');
+  const esc = s => s.replace(/:/g, '\\:');
+
+  // 1. Click the PF component wrapper to open the dropdown panel
+  const wrapper = page.locator(`#${esc(componentId)}`);
+  await wrapper.waitFor({ state: 'visible', timeout: 12000 });
+  await wrapper.click();
+
+  // 2. Wait for the panel to open
+  const panel = page.locator(`#${esc(componentId)}_panel`);
   try {
-    await sel.waitFor({ state: 'visible', timeout: 15000 });
+    await panel.waitFor({ state: 'visible', timeout: 8000 });
   } catch {
-    console.warn(`  ⚠ Select #${selectId} nicht sichtbar`);
+    console.warn(`  ⚠ Panel #${componentId}_panel öffnete nicht`);
     return false;
   }
-  const options = await sel.locator('option').all();
-  for (const opt of options) {
-    const text = (await opt.textContent()).trim();
+
+  // 3. Find and click the matching list item
+  const items = panel.locator('li.ui-selectonemenu-item, li[data-label]');
+  const allItems = await items.all();
+  for (const item of allItems) {
+    const text = ((await item.textContent()) || '').trim();
     const match = partial
       ? text.toLowerCase().includes(labelText.toLowerCase())
       : text === labelText;
     if (match) {
-      const val = await opt.getAttribute('value');
-      await sel.selectOption({ value: val });
-      // JSF change trigger
-      await page.evaluate(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        if (typeof jsf !== 'undefined') {
-          jsf.ajax.request(el, null, { execute: '@this', render: '@form' });
-        }
-      }, selectId);
-      // Wait for AJAX to settle
+      await item.click();
+      // Wait for AJAX response
       try {
-        await page.waitForLoadState('networkidle', { timeout: 8000 });
-      } catch { await wait(2000); }
+        await page.waitForLoadState('networkidle', { timeout: 10000 });
+      } catch {
+        await wait(2500);
+      }
+      console.log(`  ✓ "${labelText}" gewählt in ${componentId}`);
       return true;
     }
   }
-  console.warn(`  ⚠ Option "${labelText}" nicht in #${selectId}`);
+
+  // Debug: show what options are available
+  const available = await Promise.all(allItems.map(i => i.textContent()));
+  console.warn(`  ⚠ "${labelText}" nicht gefunden. Verfügbar: ${available.map(s=>(s||'').trim()).filter(Boolean).join(', ')}`);
+
+  // Close panel by pressing Escape
+  await page.keyboard.press('Escape');
   return false;
 }
 
-// ── Discover select IDs by option content ─────────────────────────────────────
+// ── Discover PF component IDs from hidden backing selects ─────────────────────
+// The backing <select id="...Year_input"> → component = "...Year"
 
-async function discoverSelects(page) {
+async function discoverComponents(page) {
   return await page.evaluate(() => {
-    const out = {};
-    document.querySelectorAll('select').forEach(sel => {
-      out[sel.id] = Array.from(sel.options).map(o => o.text.trim());
+    const comps = {};
+    document.querySelectorAll('select[id$="_input"]').forEach(sel => {
+      const id = sel.id; // e.g. form_anonym:bestlistYear_input
+      const opts = Array.from(sel.options).map(o => o.text.trim());
+      comps[id] = opts;
     });
-    return out;
+    return comps;
   });
 }
 
-function findSelectId(selects, needle, partial = false) {
-  for (const [id, opts] of Object.entries(selects)) {
+function findCompId(comps, needle, partial = false) {
+  for (const [id, opts] of Object.entries(comps)) {
     if (opts.some(o => partial
       ? o.toLowerCase().includes(needle.toLowerCase())
       : o === needle)) return id;
@@ -93,51 +107,32 @@ function findSelectId(selects, needle, partial = false) {
   return null;
 }
 
-// ── DOM-based table extraction (PrimeFaces DataTable) ────────────────────────
+// ── DOM table extraction ──────────────────────────────────────────────────────
 
 async function extractTable(page) {
-  return await page.evaluate((fionaName) => {
+  return await page.evaluate(() => {
     const rows = [];
-    // PrimeFaces renders tbody with data rows (tr[data-ri] or just tr inside tbody)
-    const tbodies = document.querySelectorAll('table tbody');
-    for (const tbody of tbodies) {
-      const trs = tbody.querySelectorAll('tr');
-      for (const tr of trs) {
-        const tds = Array.from(tr.querySelectorAll('td'));
-        if (tds.length < 4) continue;
-        const texts = tds.map(td => td.innerText.trim().replace(/\s+/g, ' '));
-
-        // First cell should be a row number (Nr)
-        const nr = parseInt(texts[0]);
-        if (isNaN(nr) || nr < 1 || nr > 500) continue;
-
-        rows.push(texts);
-      }
-    }
+    document.querySelectorAll('table tbody tr').forEach(tr => {
+      const tds = Array.from(tr.querySelectorAll('td'));
+      if (tds.length < 4) return;
+      const texts = tds.map(td => (td.innerText || '').trim().replace(/\s+/g, ' '));
+      const nr = parseInt(texts[0]);
+      if (!isNaN(nr) && nr >= 1 && nr <= 500) rows.push(texts);
+    });
     return rows;
-  }, FIONA);
+  });
 }
 
-// ── Map raw cell arrays to structured entries ─────────────────────────────────
-// Swiss Athletics table: Nr | Resultat | Wind | Rang | Name | Verein | Nat. | Geb.Dat. | Wettkampf | Ort | Datum
-
-function mapRows(rawRows, isJump) {
-  return rawRows.map(cells => {
-    const rank   = parseInt(cells[0]);
-    const result = cells[1] || '';
-    const wind   = cells[2] || null;
-    const name   = cells[4] || '';
-    const club   = cells[5] || '';
-    const date   = cells[10] || cells[9] || '';
-    return {
-      rank,
-      result,
-      wind: wind && wind !== '' && wind !== '0.0' ? wind : null,
-      name,
-      club,
-      date,
-    };
-  }).filter(r => r.result && r.name);
+function mapRows(rawRows) {
+  // Columns: Nr | Resultat | Wind | Rang | Name | Verein | Nat. | Geb.Dat. | Wettkampf | Ort | Datum
+  return rawRows.map(cells => ({
+    rank:   parseInt(cells[0]),
+    result: (cells[1] || '').trim(),
+    wind:   (cells[2] || '').trim() || null,
+    name:   (cells[4] || '').trim(),
+    club:   (cells[5] || '').trim(),
+    date:   (cells[10] || cells[9] || '').trim(),
+  })).filter(r => r.result && r.name);
 }
 
 // ── Upload to Cloudflare KV ───────────────────────────────────────────────────
@@ -150,86 +145,83 @@ async function uploadToKV(key, value) {
     body: JSON.stringify(value),
   });
   const j = await res.json();
-  if (!j.success) throw new Error(`KV upload failed: ${JSON.stringify(j.errors)}`);
+  if (!j.success) throw new Error(`KV failed: ${JSON.stringify(j.errors)}`);
 }
 
 // ── Scrape one discipline ─────────────────────────────────────────────────────
 
 async function scrapeDiscipline(context, disc) {
   const { key, year, season, label } = disc;
-  const isJump = label.toLowerCase().includes('weit');
   const page = await context.newPage();
-  page.setDefaultTimeout(20000);
+  page.setDefaultTimeout(25000);
 
   try {
-    console.log(`  🌐 Lade Seite…`);
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
-    await wait(2500);
+    await wait(3000); // let PrimeFaces init
 
-    const selects = await discoverSelects(page);
-    const yearId   = findSelectId(selects, year);
-    const seasonId = findSelectId(selects, season);
-    const catId    = findSelectId(selects, CATEGORY_LABEL) || findSelectId(selects, 'U18', true);
-    const discId   = findSelectId(selects, label) || findSelectId(selects, label, true);
+    const comps = await discoverComponents(page);
+    const yearId   = findCompId(comps, year);
+    const seasonId = findCompId(comps, season);
+    const catId    = findCompId(comps, CATEGORY_LABEL) || findCompId(comps, 'U18', true);
+    const discId   = findCompId(comps, label) || findCompId(comps, label, true);
+
+    console.log(`  IDs → Jahr:${yearId} | Saison:${seasonId} | Kat:${catId} | Disc:${discId}`);
 
     if (!yearId || !seasonId || !catId || !discId) {
-      console.error(`  ✗ Dropdowns nicht gefunden (Jahr:${yearId} Saison:${seasonId} Kat:${catId} Disc:${discId})`);
-      console.error('  Selects:', JSON.stringify(Object.fromEntries(Object.entries(selects).map(([k,v])=>[k,v.slice(0,5)]))));
-      return { discipline: key, year, error: 'selects_not_found', top15: [], fiona: null };
+      console.error('  ✗ Komponenten nicht gefunden');
+      console.error('  Backing selects:', JSON.stringify(
+        Object.fromEntries(Object.entries(comps).map(([k,v])=>[k, v.slice(0,4)]))
+      ));
+      return { discipline: key, year, error: 'components_not_found', top15: [], fiona: null };
     }
 
-    console.log(`  Selects → Jahr:${yearId} | Saison:${seasonId} | Kat:${catId} | Disc:${discId}`);
+    // Order matters: Season → Category → (AJAX reloads disc options) → Year → Discipline
+    if (!await pfSelect(page, seasonId, season))
+      return { discipline: key, year, error: 'season', top15: [], fiona: null };
 
-    // Set dropdowns in order
-    if (!await selectOption(page, seasonId, season))              return { discipline:key, year, error:'season', top15:[], fiona:null };
-    if (!await selectOption(page, catId, CATEGORY_LABEL) &&
-        !await selectOption(page, catId, 'U18', true))            return { discipline:key, year, error:'category', top15:[], fiona:null };
+    if (!await pfSelect(page, catId, CATEGORY_LABEL) && !await pfSelect(page, catId, 'U18', true))
+      return { discipline: key, year, error: 'category', top15: [], fiona: null };
 
-    // Re-discover after AJAX (options may have changed)
-    const selects2 = await discoverSelects(page);
-    const discId2  = findSelectId(selects2, label) || findSelectId(selects2, label, true) || discId;
-    const yearId2  = findSelectId(selects2, year) || yearId;
+    // Re-discover after category AJAX (disc options change)
+    await wait(500);
+    const comps2 = await discoverComponents(page);
+    const discId2 = findCompId(comps2, label) || findCompId(comps2, label, true) || discId;
+    const yearId2 = findCompId(comps2, year) || yearId;
 
-    if (!await selectOption(page, yearId2, year))                 return { discipline:key, year, error:'year', top15:[], fiona:null };
-    if (!await selectOption(page, discId2, label) &&
-        !await selectOption(page, discId2, label, true))          return { discipline:key, year, error:'discipline', top15:[], fiona:null };
+    if (!await pfSelect(page, yearId2, year))
+      return { discipline: key, year, error: 'year', top15: [], fiona: null };
+
+    if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
+      return { discipline: key, year, error: 'discipline', top15: [], fiona: null };
 
     await wait(2000);
 
-    // Click search if visible
+    // Click search button if present
     try {
-      const btn = page.locator([
-        'button[id*="search"]', 'input[type="submit"]',
-        'button:has-text("Suchen")', 'button:has-text("Anzeigen")',
-        'button:has-text("Liste anzeigen")'
-      ].join(', ')).first();
+      const btn = page.locator('button:has-text("Suchen"), button:has-text("Anzeigen"), input[type="submit"]').first();
       if (await btn.isVisible({ timeout: 2000 })) {
         await btn.click();
-        try { await page.waitForLoadState('networkidle', { timeout: 8000 }); } catch { await wait(2500); }
+        try { await page.waitForLoadState('networkidle', { timeout: 8000 }); } catch { await wait(3000); }
       }
     } catch (_) {}
 
     const rawRows = await extractTable(page);
-    console.log(`  → ${rawRows.length} Zeilen (DOM)`);
-
-    // Debug: dump first raw row
-    if (rawRows.length > 0) console.log(`  Roh[0]: ${JSON.stringify(rawRows[0])}`);
+    console.log(`  → ${rawRows.length} Zeilen`);
+    if (rawRows[0]) console.log(`  Roh[0]: ${JSON.stringify(rawRows[0])}`);
     else {
-      // Fallback: dump table text for debugging
-      const tableText = await page.evaluate(() => {
+      const txt = await page.evaluate(() => {
         const t = document.querySelector('table');
-        return t ? t.innerText.substring(0, 500) : '(keine Tabelle)';
+        return t ? t.innerText.substring(0, 400) : '(keine Tabelle gefunden)';
       });
-      console.log(`  Tabelle-Text: ${tableText}`);
+      console.log(`  Tabellen-Text: ${txt}`);
     }
 
-    const rows = mapRows(rawRows, isJump);
+    const rows  = mapRows(rawRows);
     const top15 = rows.slice(0, TOP_N).map(r => ({
       rank: r.rank, name: r.name, result: r.result,
       wind: r.wind, club: r.club, date: r.date,
       isFiona: r.name.includes(FIONA),
     }));
-
     const fEntry = rows.find(r => r.name.includes(FIONA));
     const fiona  = fEntry ? {
       rank: fEntry.rank, result: fEntry.result, wind: fEntry.wind, date: fEntry.date,
@@ -252,11 +244,10 @@ async function scrapeDiscipline(context, disc) {
     args: ['--no-sandbox', '--disable-dev-shm-usage']
   });
   const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'
   });
 
   const results = {};
-
   for (const disc of DISCIPLINES) {
     console.log(`\n📋 ${disc.key}  (${disc.season} ${disc.year} — "${disc.label}")`);
     results[disc.key] = await scrapeDiscipline(context, disc);
@@ -270,8 +261,8 @@ async function scrapeDiscipline(context, disc) {
   console.log('\n✅ bestenliste.json geschrieben');
 
   if (UPLOAD) {
-    console.log('⬆ Upload KV…');
+    console.log('⬆ KV Upload…');
     await uploadToKV('bestenliste', output);
-    console.log('✅ KV fertig');
+    console.log('✅ fertig');
   }
 })();
