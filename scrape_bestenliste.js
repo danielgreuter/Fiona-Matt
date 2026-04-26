@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v23
- * - Wartet aktiv auf Tabellenzeilen (waitForSelector)
- * - Probiert mehrere Selektoren für PrimeFaces DataTable
- * - Inline-Debug im Actions-Log
+ * Swiss Athletics Bestenliste Scraper v24
+ * Fixes:
+ * - PF Panel-ID ist _items nicht _panel
+ * - Resultate in div[data-ri], nicht in <table>
+ * - Cookie-Banner Dismissal
+ * - "Ein Resultat pro Athlet" + "30" setzen
  */
 
 const { chromium } = require('playwright');
@@ -32,22 +34,36 @@ const CATEGORY_LABEL = 'U18 Frauen';
 const TOP_N = 15;
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
+const esc  = s => s.replace(/:/g, '\\:');
 
-// ── PrimeFaces SelectOneMenu click interaction ────────────────────────────────
+// ── PrimeFaces SelectOneMenu: click wrapper → wait for _items panel → click li ──
 
 async function pfSelect(page, inputId, labelText, partial = false) {
-  const componentId = inputId.replace(/_input$/, '');
-  const esc = s => s.replace(/:/g, '\\:');
+  const compId = inputId.replace(/_input$/, '');
 
-  const wrapper = page.locator(`#${esc(componentId)}`);
+  // Click the visible wrapper div to open panel
+  const wrapper = page.locator(`#${esc(compId)}`);
   await wrapper.waitFor({ state: 'visible', timeout: 12000 });
   await wrapper.click();
 
-  const panel = page.locator(`#${esc(componentId)}_panel`);
-  try { await panel.waitFor({ state: 'visible', timeout: 8000 }); }
-  catch { console.warn(`  ⚠ Panel ${componentId}_panel öffnete nicht`); return false; }
+  // Panel ID is <compId>_items (not _panel!)
+  const panel = page.locator(`#${esc(compId)}_items`);
+  try {
+    await panel.waitFor({ state: 'visible', timeout: 8000 });
+  } catch {
+    // Fallback: try _panel
+    const panel2 = page.locator(`#${esc(compId)}_panel`);
+    try { await panel2.waitFor({ state: 'visible', timeout: 4000 }); }
+    catch {
+      console.warn(`  ⚠ Panel für ${compId} nicht gefunden`);
+      await page.keyboard.press('Escape');
+      return false;
+    }
+  }
 
-  const allItems = await panel.locator('li').all();
+  // Find and click the matching li item
+  const liSel = `#${esc(compId)}_items li, #${esc(compId)}_panel li`;
+  const allItems = await page.locator(liSel).all();
   for (const item of allItems) {
     const text = ((await item.textContent()) || '').trim();
     const match = partial
@@ -57,14 +73,14 @@ async function pfSelect(page, inputId, labelText, partial = false) {
       await item.click();
       try { await page.waitForLoadState('networkidle', { timeout: 10000 }); }
       catch { await wait(2500); }
-      console.log(`  ✓ "${text}" gewählt in ${componentId}`);
+      console.log(`  ✓ "${text}" in ${compId}`);
       return true;
     }
   }
 
   const avail = (await Promise.all(allItems.map(i => i.textContent())))
     .map(s => (s||'').trim()).filter(Boolean);
-  console.warn(`  ⚠ "${labelText}" nicht gefunden. Verfügbar: ${avail.slice(0,10).join(' | ')}`);
+  console.warn(`  ⚠ "${labelText}" nicht gefunden. Verfügbar: ${avail.slice(0,8).join(' | ')}`);
   await page.keyboard.press('Escape');
   return false;
 }
@@ -74,8 +90,8 @@ async function pfSelect(page, inputId, labelText, partial = false) {
 async function discoverComponents(page) {
   return await page.evaluate(() => {
     const out = {};
-    document.querySelectorAll('select').forEach(sel => {
-      out[sel.id] = Array.from(sel.options).map(o => o.text.trim());
+    document.querySelectorAll('select').forEach(s => {
+      out[s.id] = Array.from(s.options).map(o => o.text.trim());
     });
     return out;
   });
@@ -89,71 +105,57 @@ function findCompId(comps, needle, partial = false) {
   return null;
 }
 
-// ── Wait for results and extract table ───────────────────────────────────────
+// ── Extract results from PrimeFaces div[data-ri] rows ────────────────────────
 
-async function extractTable(page) {
-  // Try to wait for at least one data row to appear
-  const ROW_SELECTORS = [
-    'div.ui-datatable table tbody tr',
-    'div[id*="bestlist"] table tbody tr',
-    'table.ui-datatable-data tbody tr',
-    'tbody[id*="data"] tr',
-    'table tbody tr[data-ri]',
-    'table tbody tr',
-  ];
-
-  let foundSelector = null;
-  for (const sel of ROW_SELECTORS) {
-    try {
-      await page.waitForSelector(sel, { timeout: 5000 });
-      const count = await page.locator(sel).count();
-      if (count > 0) { foundSelector = sel; break; }
-    } catch { /* try next */ }
-  }
-
-  if (!foundSelector) {
+async function extractResults(page) {
+  // Wait for at least one result row
+  try {
+    await page.waitForSelector('div[data-ri]', { timeout: 8000 });
+  } catch {
     // Debug: what's on the page?
-    const debug = await page.evaluate(() => {
-      const tables = document.querySelectorAll('table');
-      const divs   = Array.from(document.querySelectorAll('div[class*="datatable"], div[class*="list"], div[id*="best"]'))
-                         .map(d => `<div id="${d.id}" class="${d.className}">${d.innerText.substring(0,100)}</div>`);
-      return {
-        tableCount: tables.length,
-        tableClasses: Array.from(tables).map(t => t.className).slice(0,5),
-        relevantDivs: divs.slice(0,5),
-        bodyText: document.body.innerText.substring(0, 300),
-      };
-    });
-    console.log(`  🔍 Debug DOM: tables=${debug.tableCount} | classes=${debug.tableClasses.join(',')} | body="${debug.bodyText.replace(/\n/g,' ').substring(0,150)}"`);
-    if (debug.relevantDivs.length) console.log(`  relevantDivs: ${debug.relevantDivs.join(' ')}`);
+    const info = await page.evaluate(() => ({
+      dataRiCount: document.querySelectorAll('[data-ri]').length,
+      divCount: document.querySelectorAll('div').length,
+      bodySnippet: document.body.innerText.substring(0, 300).replace(/\n/g,' '),
+    }));
+    console.log(`  ⚠ Keine div[data-ri] gefunden. Info: ${JSON.stringify(info)}`);
     return [];
   }
 
-  console.log(`  ✓ Selektor gefunden: ${foundSelector}`);
-
-  return await page.evaluate((sel) => {
+  return await page.evaluate(() => {
     const rows = [];
-    document.querySelectorAll(sel).forEach(tr => {
-      const tds = Array.from(tr.querySelectorAll('td'));
-      if (tds.length < 4) return;
-      const texts = tds.map(td => (td.innerText || td.textContent || '').trim().replace(/\s+/g, ' '));
-      const nr = parseInt(texts[0]);
-      if (!isNaN(nr) && nr >= 1 && nr <= 500) rows.push(texts);
+    document.querySelectorAll('div[data-ri]').forEach(row => {
+      // Each cell is a div with ui-cell-data or similar
+      const cells = Array.from(row.querySelectorAll('[class*="cell"], [class*="col"], div > span, div'))
+        .map(el => (el.children.length === 0 ? (el.innerText||'').trim() : null))
+        .filter(t => t !== null && t !== '');
+
+      // Also try: just get all direct child divs' text
+      const directCells = Array.from(row.children)
+        .map(c => (c.innerText || '').trim().replace(/\s+/g,' '));
+
+      const best = directCells.length >= 4 ? directCells : cells;
+      if (best.length >= 4) rows.push({ ri: row.getAttribute('data-ri'), cells: best });
     });
     return rows;
-  }, foundSelector);
+  });
 }
 
+// ── Map extracted rows to structured data ────────────────────────────────────
+// Expected columns: Nr | Resultat | Wind | Rang | Name | Verein | Nat. | Geb.Dat. | Wettkampf | Ort | Datum
+
 function mapRows(rawRows) {
-  // Nr | Resultat | Wind | Rang | Name | Verein | Nat. | Geb.Dat. | Wettkampf | Ort | Datum
-  return rawRows.map(cells => ({
-    rank:   parseInt(cells[0]),
-    result: (cells[1] || '').trim(),
-    wind:   (cells[2] || '').trim() || null,
-    name:   (cells[4] || '').trim(),
-    club:   (cells[5] || '').trim(),
-    date:   (cells[10] || cells[9] || '').trim(),
-  })).filter(r => r.result && r.name);
+  return rawRows.map(r => {
+    const c = r.cells;
+    return {
+      rank:   parseInt(c[0]) || (parseInt(r.ri) + 1),
+      result: (c[1] || '').trim(),
+      wind:   (c[2] || '').trim() || null,
+      name:   (c[4] || '').trim(),
+      club:   (c[5] || '').trim(),
+      date:   (c[10] || c[9] || '').trim(),
+    };
+  }).filter(r => r.result && r.name);
 }
 
 // ── Upload to Cloudflare KV ───────────────────────────────────────────────────
@@ -180,52 +182,67 @@ async function scrapeDiscipline(context, disc) {
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
     await wait(3000);
 
-    const comps = await discoverComponents(page);
+    // Dismiss cookie banner
+    try {
+      for (const txt of ['Nein','Ablehnen','Akzeptieren','Ja']) {
+        const btn = page.locator(`button:has-text("${txt}")`).first();
+        if (await btn.isVisible({ timeout: 1500 })) {
+          await btn.click();
+          await wait(800);
+          console.log(`  Cookie "${txt}" geklickt`);
+          break;
+        }
+      }
+    } catch(_) {}
+
+    const comps   = await discoverComponents(page);
     const seasonId = findCompId(comps, season);
     const catId    = findCompId(comps, CATEGORY_LABEL) || findCompId(comps, 'U18', true);
+    const typeId   = findCompId(comps, 'Ein Resultat pro Athlet');
+    const topsId   = findCompId(comps, '30');
 
     if (!seasonId || !catId) {
-      console.error(`  ✗ Saison/Kat nicht gefunden`);
+      console.error(`  ✗ Saison/Kat IDs nicht gefunden`);
       return { discipline: key, year, error: 'selects_not_found', top15: [], fiona: null };
     }
 
+    // 1. Saison
     if (!await pfSelect(page, seasonId, season))
       return { discipline: key, year, error: 'season', top15: [], fiona: null };
 
+    // 2. Kategorie
     if (!await pfSelect(page, catId, CATEGORY_LABEL) && !await pfSelect(page, catId, 'U18', true))
       return { discipline: key, year, error: 'category', top15: [], fiona: null };
 
-    // Re-discover after AJAX
+    // Re-discover (discipline options reload after category)
     await wait(500);
     const comps2  = await discoverComponents(page);
     const yearId2 = findCompId(comps2, year) || findCompId(comps, year);
     const discId2 = findCompId(comps2, label) || findCompId(comps2, label, true)
-                 || findCompId(comps, label)   || findCompId(comps, label, true);
+                  || findCompId(comps, label)  || findCompId(comps, label, true);
 
-    if (!yearId2) { console.error(`  ✗ Jahr ${year} nicht gefunden`); return { discipline:key, year, error:'year_not_found', top15:[], fiona:null }; }
-    if (!discId2) { console.error(`  ✗ Disziplin "${label}" nicht gefunden`); return { discipline:key, year, error:'disc_not_found', top15:[], fiona:null }; }
+    if (!yearId2) return { discipline: key, year, error: 'year_not_found', top15: [], fiona: null };
+    if (!discId2) return { discipline: key, year, error: 'disc_not_found', top15: [], fiona: null };
 
+    // 3. Jahr
     if (!await pfSelect(page, yearId2, year))
       return { discipline: key, year, error: 'year', top15: [], fiona: null };
 
+    // 4. Disziplin
     if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
       return { discipline: key, year, error: 'discipline', top15: [], fiona: null };
 
-    // Extra wait after last dropdown
+    // 5. Typ: "Ein Resultat pro Athlet"
+    if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
+
+    // 6. Anzahl: 30
+    if (topsId) await pfSelect(page, topsId, '30');
+
     await wait(3000);
 
-    // Click search if present
-    try {
-      const btn = page.locator('button:has-text("Suchen"), button:has-text("Anzeigen"), input[type="submit"]').first();
-      if (await btn.isVisible({ timeout: 2000 })) {
-        await btn.click();
-        try { await page.waitForLoadState('networkidle', { timeout: 8000 }); } catch { await wait(3000); }
-      }
-    } catch (_) {}
-
-    const rawRows = await extractTable(page);
-    console.log(`  → ${rawRows.length} Zeilen`);
-    if (rawRows[0]) console.log(`  Roh[0]: ${JSON.stringify(rawRows[0])}`);
+    const rawRows = await extractResults(page);
+    console.log(`  → ${rawRows.length} div[data-ri]-Zeilen`);
+    if (rawRows[0]) console.log(`  Roh[0]: ${JSON.stringify(rawRows[0].cells)}`);
 
     const rows  = mapRows(rawRows);
     const top15 = rows.slice(0, TOP_N).map(r => ({
@@ -250,10 +267,7 @@ async function scrapeDiscipline(context, disc) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-dev-shm-usage']
-  });
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'
   });
