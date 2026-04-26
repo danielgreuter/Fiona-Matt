@@ -1,40 +1,72 @@
 #!/usr/bin/env node
-// Debug v3 — alles via console.log, keine Datei-Artefakte nötig
-const { chromium } = require('playwright');
-const wait = ms => new Promise(r => setTimeout(r, ms));
-const BASE_URL = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml?lang=de';
+// Debug v4: Dump des Full-POST HTML nach Resultaten durchsuchen
+
+const BASE_URL = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml';
+
+function extractViewState(text) {
+  const m = text.match(/javax\.faces\.ViewState[^>]*value="([^"]+)"/s)
+         || text.match(/<update id="javax\.faces\.ViewState"><!\[CDATA\[([^\]]+)\]\]>/);
+  return m ? m[1] : null;
+}
+function extractOptionValue(html, labelText) {
+  const re = new RegExp(`<option[^>]*value="([^"]*)"[^>]*>\\s*${labelText.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\s*</option>`);
+  const m = html.match(re);
+  return m ? m[1] : null;
+}
+function extractWindowGuid(html) {
+  const m = html.match(/name="aeswindowguid"[^>]*value="([^"]+)"/);
+  return m ? m[1] : '';
+}
 
 (async () => {
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
-  const page = await browser.newPage();
-  page.setDefaultTimeout(20000);
-
-  console.log('=== Lade Seite ===');
-  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
-  await wait(4000);
-
-  // Cookie-Banner schliessen
-  try {
-    for (const txt of ['Nein','Ablehnen','Akzeptieren','Ja']) {
-      const btn = page.locator(`button:has-text("${txt}")`).first();
-      if (await btn.isVisible({ timeout: 1500 })) { await btn.click(); await wait(800); console.log(`Cookie "${txt}" geklickt`); break; }
-    }
-  } catch(_) {}
-
-  // Alle select-Inhalte
-  const selects = await page.evaluate(() => {
-    const out = {};
-    document.querySelectorAll('select').forEach(s => { out[s.id] = Array.from(s.options).map(o=>o.text.trim()); });
-    return out;
+  // 1. Session holen
+  const r0 = await fetch(`${BASE_URL}?lang=de`, {
+    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' }
   });
-  console.log('=== SELECTS ===');
-  console.log(JSON.stringify(selects, null, 2));
+  const html0 = await r0.text();
+  const sessionCookie = (r0.headers.get('set-cookie')||'').match(/JSESSIONID=[^;]+/)?.[0] || '';
+  const viewState = extractViewState(html0);
+  const windowGuid = extractWindowGuid(html0);
+  const catVal  = extractOptionValue(html0, 'U18 Frauen');
+  const discVal = extractOptionValue(html0, '100 m');
+  const typeVal = extractOptionValue(html0, 'Ein Resultat pro Athlet');
 
-  // Body-Struktur: erste 8000 Zeichen
-  const body = await page.evaluate(() => document.body.innerHTML.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,''));
-  console.log('=== BODY HTML (8000 Zeichen) ===');
-  console.log(body.substring(0, 8000));
+  console.log(`VS=${viewState?.slice(0,20)} GUID=${windowGuid?.slice(0,20)} cat=${catVal?.slice(0,20)} disc=${discVal?.slice(0,20)}`);
 
-  await browser.close();
-  console.log('=== FERTIG ===');
+  const headers = {
+    'User-Agent': 'Mozilla/5.0',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Cookie': sessionCookie,
+    'Referer': `${BASE_URL}?lang=de`,
+  };
+
+  // 2. Full Form POST mit allen Feldern
+  const body = new URLSearchParams({
+    'form_anonym': 'form_anonym',
+    'form_anonym:bestlistYear': '2026',
+    'form_anonym:bestlistSeason': 'false',
+    'form_anonym:bestlistCategory': catVal,
+    'form_anonym:bestlistDiscipline': discVal,
+    'form_anonym:bestlistType': typeVal || '1',
+    'form_anonym:bestlistTops': '30',
+    'javax.faces.ViewState': viewState,
+    'aeswindowguid': windowGuid,
+  });
+
+  const r1 = await fetch(`${BASE_URL}?lang=de`, { method:'POST', headers, body: body.toString() });
+  const html1 = await r1.text();
+
+  console.log(`\nFull POST: ${html1.length} Zeichen`);
+
+  // Suche nach bekannten Athleten-Namen oder Zeitmuster
+  const hasLeonie = html1.includes('Leonie');
+  const hasTime   = /12\.\d{2}/.test(html1);
+  const hasDataRi = /data-ri/.test(html1);
+  const hasTr     = /<tr/.test(html1);
+  console.log(`Leonie: ${hasLeonie} | Zeit 12.xx: ${hasTime} | data-ri: ${hasDataRi} | <tr>: ${hasTr}`);
+
+  // Dump: Zeichen 20000–28000 (wo Resultate sein müssten)
+  console.log('\n=== HTML[20000:28000] ===');
+  console.log(html1.substring(20000, 28000));
+
 })();
