@@ -1,17 +1,10 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v21
+ * Swiss Athletics Bestenliste Scraper v22
  *
- * ERKENNTNIS: swiss-athletics.ch bettet die Resultate in einem <iframe> ein.
- * Die Iframe-URL ist eine direkte alabus-URL mit GET-Parametern.
- * → Wir navigieren direkt zu alabus mit den Parametern, ohne JSF-Formular.
- *
- * Stabile IDs (aus iframe-src extrahiert):
- *   blcat U18 Frauen : 5c4o3k5m-d686mo-j986g2ie-1-j986g45y-bn
- *   disci 100m       : 5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv
- *   disci 60m        : 5c4o3k5m-d686mo-j986g2ie-1-j986g3pt-79
- *   disci 200m       : 5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks
- *   disci Weit       : 5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp
+ * Fix: Jede <td> enthält einen <span class="ui-column-title"> als Prefix.
+ * allTextContents() gab "Nr1", "Resultat12.08" etc. → parseInt scheiterte.
+ * Lösung: ui-column-title Spans via evaluateAll() vor dem Lesen entfernen.
  */
 
 const { chromium } = require('playwright');
@@ -39,88 +32,80 @@ const DISCIPLINES = [
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 function buildUrl(disc) {
-  const p = new URLSearchParams({
-    lang:   'de',
-    mobile: 'false',
-    blyear: disc.year,
-    blcat:  CAT_U18F,
-    disci:  disc.discId,
-    top:    '30',
-  });
+  const p = new URLSearchParams({ lang:'de', mobile:'false', blyear:disc.year, blcat:CAT_U18F, disci:disc.discId, top:'30' });
   if (disc.indoor) p.set('indoor', 'true');
   return `${ALABUS_BASE}?${p}`;
 }
 
-// ── Resultate parsen (Playwright-Locator) ─────────────────────
+// ── Zeilen parsen — strippt ui-column-title Spans ─────────────
 
 async function parseRows(page, isJump) {
-  // Warten bis Tabelle erscheint (JSF rendert nach JS-Aufruf)
   try {
     await page.waitForSelector('table tbody tr', { timeout: 15000 });
   } catch(e) {
-    // Debug: was ist auf der Seite?
-    const info = await page.evaluate(() => ({
-      tables:   document.querySelectorAll('table').length,
-      allTr:    document.querySelectorAll('tr').length,
-      tbodyTr:  document.querySelectorAll('tbody tr').length,
-      bodySnip: document.body.innerText.replace(/\s+/g,' ').slice(0,300),
-    }));
-    console.log(`   ⚠️  Timeout: tables=${info.tables} tr=${info.allTr} tbody-tr=${info.tbodyTr}`);
-    console.log(`   Body: ${info.bodySnip}`);
+    console.log(`   ⚠️  Timeout warten auf Tabellenzeilen`);
     return [];
   }
 
   const rowEls = await page.locator('table tbody tr').all();
-  console.log(`   Rohe TR-Zeilen: ${rowEls.length}`);
+  console.log(`   Zeilen gefunden: ${rowEls.length}`);
 
   const rows = [];
   for (const row of rowEls) {
-    const cells = (await row.locator('td').allTextContents())
-      .map(c => c.replace(/\s+/g,' ').trim()).filter(Boolean);
+    // ui-column-title Spans im Clone entfernen, dann innerText lesen
+    const cells = await row.locator('td').evaluateAll(tds =>
+      tds.map(td => {
+        const clone = td.cloneNode(true);
+        clone.querySelectorAll('.ui-column-title').forEach(s => s.remove());
+        return clone.innerText.replace(/\s+/g, ' ').trim();
+      })
+    );
 
     if (cells.length < 3) continue;
+
+    // cells[0] = Rang-Nr, cells[1] = Resultat, cells[2] = Wind, cells[3] = Rang,
+    // cells[4] = Name, cells[5] = Verein, cells[6] = Nat., cells[7] = Geb.Dat,
+    // cells[8] = Wettkampf, cells[9] = Ort, cells[10] = Datum
+
     const rank = parseInt(cells[0]);
     if (isNaN(rank) || rank < 1 || rank > 2000) continue;
 
-    let result='', name='', wind='', date='', club='';
-    for (const c of cells.slice(1)) {
-      if (!result) {
-        if (isJump  && /^\d+[.,]\d{2}$/.test(c))              { result = c.replace(',','.'); continue; }
-        if (!isJump && /^\d{1,2}[:.]\d{2}(\.\d+)?$/.test(c)) { result = c; continue; }
-      }
-      if (result && !wind && /^[+-]?\d+[.,]\d$/.test(c))      { wind = c; continue; }
-      if (!name && /^[A-ZÄÖÜ][a-zäöüéàèêâß]+([ \-][A-ZÄÖÜ][a-zäöüéàèêâß]+)+$/.test(c)) { name = c; continue; }
-      if (!date && /^\d{2}\.\d{2}\.\d{4}$/.test(c))           { date = c; continue; }
-      if (name && result && !club && c.length > 2 && !/^\d/.test(c)) club = c;
-    }
+    const result = cells[1] || '';
+    const wind   = cells[2] || '';
+    const name   = cells[4] || '';
+    const club   = cells[5] || '';
+    const date   = cells[10] || cells[7] || ''; // Wettkampfdatum bevorzugen
 
-    if (!result || !name) continue;
-    rows.push({ rank, name, result, wind:wind||null, club:club||null, date:date||null,
-                isFiona: name.toLowerCase().includes('matt') });
+    // Resultat-Validierung
+    const validResult = isJump
+      ? /^\d+[.,]\d{2}$/.test(result)
+      : /^\d{1,2}[:.]\d{2}(\.\d+)?$/.test(result);
+    if (!validResult || !name) continue;
+
+    rows.push({
+      rank,
+      name,
+      result: result.replace(',', '.'),
+      wind:   wind || null,
+      club:   club || null,
+      date:   date || null,
+      isFiona: name.toLowerCase().includes('matt'),
+    });
   }
   return rows;
 }
 
 // ── Eine Disziplin scrapen ────────────────────────────────────
 
-async function scrapeDiscipline(page, disc, isFirst) {
+async function scrapeDiscipline(page, disc) {
   const url = buildUrl(disc);
   console.log(`   URL: ${url}`);
-
   await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-  await wait(2000);
-
-  // Debug nur für erste Disziplin
-  if (isFirst) {
-    await page.screenshot({ path: 'debug_result.png', fullPage: true });
-    fs.writeFileSync('debug_result.html', await page.content());
-    console.log(`   📸 debug_result.png + debug_result.html gespeichert`);
-  }
-
+  await wait(1500);
   return await parseRows(page, disc.isJump);
 }
 
-// ── Gap ──────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────
 
 function toSec(t) {
   if (!t) return null;
@@ -132,8 +117,6 @@ function calcGap(a, b) {
   return (d >= 0?'+':'')+Math.abs(d).toFixed(2);
 }
 
-// ── KV Upload ─────────────────────────────────────────────────
-
 async function uploadKV(data) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/bestenliste:fiona`;
   const res = await fetch(url, {
@@ -141,13 +124,13 @@ async function uploadKV(data) {
     headers:{ 'Authorization':`Bearer ${CF_API_TOKEN}`, 'Content-Type':'application/json' },
     body: JSON.stringify(data),
   });
-  console.log(res.ok ? '✅ KV Upload OK' : `❌ KV Fehler ${res.status}: ${await res.text()}`);
+  console.log(res.ok ? '✅ KV Upload OK' : `❌ KV Fehler ${res.status}`);
 }
 
 // ── Main ──────────────────────────────────────────────────────
 
 async function main() {
-  console.log('🚀 Bestenliste Scraper v21 (Direkte alabus-URL, kein JSF-Formular)\n');
+  console.log('🚀 Bestenliste Scraper v22 (ui-column-title Fix)\n');
 
   const browser = await chromium.launch({
     executablePath: '/usr/bin/google-chrome-stable',
@@ -165,19 +148,19 @@ async function main() {
     const disc = DISCIPLINES[i];
     console.log(`📋 ${disc.key} (${disc.indoor?'Indoor':'Outdoor'} ${disc.year})`);
     try {
-      const rows  = await scrapeDiscipline(page, disc, i === 0);
+      const rows  = await scrapeDiscipline(page, disc);
       const fiona = rows.find(r => r.isFiona);
       const top1  = rows[0];
       result.disciplines[disc.key] = {
         discipline:disc.key, year:disc.year, scraped:new Date().toISOString(),
         fiona: fiona ? {
           rank:fiona.rank, result:fiona.result, wind:fiona.wind||null, date:fiona.date,
-          gapToFirst: top1&&top1.name!==fiona.name ? calcGap(fiona.result,top1.result) : null,
+          gapToFirst: top1 && top1.name!==fiona.name ? calcGap(fiona.result, top1.result) : null,
         } : null,
         top15: rows.slice(0,15), total: rows.length,
       };
       if (fiona)            console.log(`   ✅ Fiona: Rang ${fiona.rank} · ${fiona.result}`);
-      else if (rows.length) console.log(`   ⚠️  Fiona nicht in Top ${rows.length}`);
+      else if (rows.length) console.log(`   ⚠️  Fiona nicht in Top ${rows.length} (PB ${rows[0].result}–${rows[rows.length-1].result})`);
       else                  console.log(`   ❌ 0 Einträge`);
     } catch(e) {
       console.log(`   ❌ ${e.message}`);
