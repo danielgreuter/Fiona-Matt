@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v20
- * Fix: Keine hardcodierten JSF-IDs mehr.
- *      Dropdowns werden anhand ihrer Option-Texte erkannt.
+ * Swiss Athletics Bestenliste Scraper v21
+ * - Frische Seite pro Disziplin (kein AJAX-Timing-Problem)
+ * - DOM-basierter Table-Parser statt Regex
  */
 
 const { chromium } = require('playwright');
@@ -32,6 +32,48 @@ const TOP_N = 15;
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
+// ── Select by option text, wait for AJAX to settle ───────────────────────────
+
+async function selectOption(page, selectId, labelText, partial = false) {
+  const esc = selectId.replace(/:/g, '\\:');
+  const sel = page.locator(`#${esc}`);
+  try {
+    await sel.waitFor({ state: 'visible', timeout: 15000 });
+  } catch {
+    console.warn(`  ⚠ Select #${selectId} nicht sichtbar`);
+    return false;
+  }
+  const options = await sel.locator('option').all();
+  for (const opt of options) {
+    const text = (await opt.textContent()).trim();
+    const match = partial
+      ? text.toLowerCase().includes(labelText.toLowerCase())
+      : text === labelText;
+    if (match) {
+      const val = await opt.getAttribute('value');
+      await sel.selectOption({ value: val });
+      // JSF change trigger
+      await page.evaluate(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof jsf !== 'undefined') {
+          jsf.ajax.request(el, null, { execute: '@this', render: '@form' });
+        }
+      }, selectId);
+      // Wait for AJAX to settle
+      try {
+        await page.waitForLoadState('networkidle', { timeout: 8000 });
+      } catch { await wait(2000); }
+      return true;
+    }
+  }
+  console.warn(`  ⚠ Option "${labelText}" nicht in #${selectId}`);
+  return false;
+}
+
+// ── Discover select IDs by option content ─────────────────────────────────────
+
 async function discoverSelects(page) {
   return await page.evaluate(() => {
     const out = {};
@@ -44,96 +86,61 @@ async function discoverSelects(page) {
 
 function findSelectId(selects, needle, partial = false) {
   for (const [id, opts] of Object.entries(selects)) {
-    const found = opts.some(o =>
-      partial ? o.toLowerCase().includes(needle.toLowerCase()) : o === needle
-    );
-    if (found) return id;
+    if (opts.some(o => partial
+      ? o.toLowerCase().includes(needle.toLowerCase())
+      : o === needle)) return id;
   }
   return null;
 }
 
-async function selectOption(page, selectId, labelText, partial = false) {
-  const esc = selectId.replace(/:/g, '\\:');
-  const select = page.locator(`#${esc}`);
-  await select.waitFor({ state: 'visible', timeout: 12000 });
-  const options = await select.locator('option').all();
-  for (const opt of options) {
-    const text = (await opt.textContent()).trim();
-    const match = partial
-      ? text.toLowerCase().includes(labelText.toLowerCase())
-      : text === labelText;
-    if (match) {
-      const val = await opt.getAttribute('value');
-      await select.selectOption({ value: val });
-      await page.evaluate(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        if (typeof jsf !== 'undefined') {
-          jsf.ajax.request(el, null, { execute: '@this', render: '@form' });
-        }
-      }, selectId);
-      await wait(1500);
-      return true;
+// ── DOM-based table extraction (PrimeFaces DataTable) ────────────────────────
+
+async function extractTable(page) {
+  return await page.evaluate((fionaName) => {
+    const rows = [];
+    // PrimeFaces renders tbody with data rows (tr[data-ri] or just tr inside tbody)
+    const tbodies = document.querySelectorAll('table tbody');
+    for (const tbody of tbodies) {
+      const trs = tbody.querySelectorAll('tr');
+      for (const tr of trs) {
+        const tds = Array.from(tr.querySelectorAll('td'));
+        if (tds.length < 4) continue;
+        const texts = tds.map(td => td.innerText.trim().replace(/\s+/g, ' '));
+
+        // First cell should be a row number (Nr)
+        const nr = parseInt(texts[0]);
+        if (isNaN(nr) || nr < 1 || nr > 500) continue;
+
+        rows.push(texts);
+      }
     }
-  }
-  console.warn(`  ⚠ Option "${labelText}" nicht gefunden in #${selectId}`);
-  return false;
+    return rows;
+  }, FIONA);
 }
 
-async function loadPage(context) {
-  const page = await context.newPage();
-  page.setDefaultTimeout(20000);
-  console.log('  🌐 Lade Seite neu…');
-  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
-  await wait(2500);
+// ── Map raw cell arrays to structured entries ─────────────────────────────────
+// Swiss Athletics table: Nr | Resultat | Wind | Rang | Name | Verein | Nat. | Geb.Dat. | Wettkampf | Ort | Datum
 
-  const selects = await discoverSelects(page);
-  const ids = Object.keys(selects);
-  console.log(`  📋 ${ids.length} Selects: ${ids.join(', ')}`);
-
-  const yearId   = findSelectId(selects, '2026') || findSelectId(selects, '2025');
-  const seasonId = findSelectId(selects, 'Outdoor') || findSelectId(selects, 'Indoor');
-  const catId    = findSelectId(selects, CATEGORY_LABEL) || findSelectId(selects, 'U18', true);
-  const discId   = findSelectId(selects, '100 m') || findSelectId(selects, '60 m') || findSelectId(selects, '200 m');
-
-  console.log(`  IDs → Jahr:${yearId}  Saison:${seasonId}  Kat:${catId}  Disziplin:${discId}`);
-
-  if (!yearId || !seasonId || !catId || !discId) {
-    console.error('  ✗ Dropdowns nicht gefunden. Seiteninhalte:');
-    console.error(JSON.stringify(selects, null, 2));
-    await page.close();
-    return null;
-  }
-  return { page, yearId, seasonId, catId, discId };
+function mapRows(rawRows, isJump) {
+  return rawRows.map(cells => {
+    const rank   = parseInt(cells[0]);
+    const result = cells[1] || '';
+    const wind   = cells[2] || null;
+    const name   = cells[4] || '';
+    const club   = cells[5] || '';
+    const date   = cells[10] || cells[9] || '';
+    return {
+      rank,
+      result,
+      wind: wind && wind !== '' && wind !== '0.0' ? wind : null,
+      name,
+      club,
+      date,
+    };
+  }).filter(r => r.result && r.name);
 }
 
-function parseTable(html, isJump) {
-  const rows = [];
-  const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let rowM;
-  while ((rowM = rowRe.exec(html)) !== null) {
-    const cells = [];
-    const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-    let cm;
-    while ((cm = cellRe.exec(rowM[1])) !== null) {
-      cells.push(cm[1].replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim());
-    }
-    if (cells.length < 4) continue;
-    const rank = parseInt((cells[0]||'').replace(/Nr\.?\s*/i,'').trim());
-    if (isNaN(rank) || rank < 1 || rank > 1000) continue;
-    let result='', name='', club='', date='', wind='';
-    for (const c of cells.slice(1)) {
-      if (!result && (isJump ? /^\d+\.\d{2}$/.test(c) : /^\d{1,2}[:.]\d{2}(\.\d+)?$/.test(c))) { result = c; }
-      else if (!wind && /^[+-]\d+\.\d$/.test(c))          { wind = c; }
-      else if (!date && /^\d{2}\.\d{2}\.\d{4}$/.test(c))  { date = c; }
-      else if (!name && /^[A-ZÁÀÂÄÉÈÊËÍÏÓÔÖÚÛÜÑÇ][a-záàâäéèêëíïóôöúûüñç\-' ]+$/.test(c) && c.length > 3) { name = c; }
-      else if (!club && c.length > 2 && !/^\d/.test(c))   { club = c; }
-    }
-    if (result && name) rows.push({ rank, name, result, wind: wind||null, club, date });
-  }
-  return rows;
-}
+// ── Upload to Cloudflare KV ───────────────────────────────────────────────────
 
 async function uploadToKV(key, value) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`;
@@ -146,6 +153,99 @@ async function uploadToKV(key, value) {
   if (!j.success) throw new Error(`KV upload failed: ${JSON.stringify(j.errors)}`);
 }
 
+// ── Scrape one discipline ─────────────────────────────────────────────────────
+
+async function scrapeDiscipline(context, disc) {
+  const { key, year, season, label } = disc;
+  const isJump = label.toLowerCase().includes('weit');
+  const page = await context.newPage();
+  page.setDefaultTimeout(20000);
+
+  try {
+    console.log(`  🌐 Lade Seite…`);
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
+    await wait(2500);
+
+    const selects = await discoverSelects(page);
+    const yearId   = findSelectId(selects, year);
+    const seasonId = findSelectId(selects, season);
+    const catId    = findSelectId(selects, CATEGORY_LABEL) || findSelectId(selects, 'U18', true);
+    const discId   = findSelectId(selects, label) || findSelectId(selects, label, true);
+
+    if (!yearId || !seasonId || !catId || !discId) {
+      console.error(`  ✗ Dropdowns nicht gefunden (Jahr:${yearId} Saison:${seasonId} Kat:${catId} Disc:${discId})`);
+      console.error('  Selects:', JSON.stringify(Object.fromEntries(Object.entries(selects).map(([k,v])=>[k,v.slice(0,5)]))));
+      return { discipline: key, year, error: 'selects_not_found', top15: [], fiona: null };
+    }
+
+    console.log(`  Selects → Jahr:${yearId} | Saison:${seasonId} | Kat:${catId} | Disc:${discId}`);
+
+    // Set dropdowns in order
+    if (!await selectOption(page, seasonId, season))              return { discipline:key, year, error:'season', top15:[], fiona:null };
+    if (!await selectOption(page, catId, CATEGORY_LABEL) &&
+        !await selectOption(page, catId, 'U18', true))            return { discipline:key, year, error:'category', top15:[], fiona:null };
+
+    // Re-discover after AJAX (options may have changed)
+    const selects2 = await discoverSelects(page);
+    const discId2  = findSelectId(selects2, label) || findSelectId(selects2, label, true) || discId;
+    const yearId2  = findSelectId(selects2, year) || yearId;
+
+    if (!await selectOption(page, yearId2, year))                 return { discipline:key, year, error:'year', top15:[], fiona:null };
+    if (!await selectOption(page, discId2, label) &&
+        !await selectOption(page, discId2, label, true))          return { discipline:key, year, error:'discipline', top15:[], fiona:null };
+
+    await wait(2000);
+
+    // Click search if visible
+    try {
+      const btn = page.locator([
+        'button[id*="search"]', 'input[type="submit"]',
+        'button:has-text("Suchen")', 'button:has-text("Anzeigen")',
+        'button:has-text("Liste anzeigen")'
+      ].join(', ')).first();
+      if (await btn.isVisible({ timeout: 2000 })) {
+        await btn.click();
+        try { await page.waitForLoadState('networkidle', { timeout: 8000 }); } catch { await wait(2500); }
+      }
+    } catch (_) {}
+
+    const rawRows = await extractTable(page);
+    console.log(`  → ${rawRows.length} Zeilen (DOM)`);
+
+    // Debug: dump first raw row
+    if (rawRows.length > 0) console.log(`  Roh[0]: ${JSON.stringify(rawRows[0])}`);
+    else {
+      // Fallback: dump table text for debugging
+      const tableText = await page.evaluate(() => {
+        const t = document.querySelector('table');
+        return t ? t.innerText.substring(0, 500) : '(keine Tabelle)';
+      });
+      console.log(`  Tabelle-Text: ${tableText}`);
+    }
+
+    const rows = mapRows(rawRows, isJump);
+    const top15 = rows.slice(0, TOP_N).map(r => ({
+      rank: r.rank, name: r.name, result: r.result,
+      wind: r.wind, club: r.club, date: r.date,
+      isFiona: r.name.includes(FIONA),
+    }));
+
+    const fEntry = rows.find(r => r.name.includes(FIONA));
+    const fiona  = fEntry ? {
+      rank: fEntry.rank, result: fEntry.result, wind: fEntry.wind, date: fEntry.date,
+      gapToFirst: rows[0] ? `+${(parseFloat(fEntry.result)-parseFloat(rows[0].result)).toFixed(2)}` : null,
+    } : null;
+
+    if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
+    return { discipline: key, year, scraped: new Date().toISOString(), fiona, top15 };
+
+  } finally {
+    await page.close();
+  }
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
@@ -156,72 +256,12 @@ async function uploadToKV(key, value) {
   });
 
   const results = {};
-  let lastSeason = null;
-  let ctx = null;
 
   for (const disc of DISCIPLINES) {
-    const { key, year, season, label } = disc;
-    const isJump = label.toLowerCase().includes('weit');
-    console.log(`\n📋 ${key}  (${season} ${year} — "${label}")`);
-
-    if (!ctx || season !== lastSeason) {
-      if (ctx) await ctx.page.close();
-      ctx = await loadPage(context);
-      if (!ctx) {
-        results[key] = { discipline: key, year, error: 'page_load_failed', top15: [] };
-        lastSeason = season;
-        continue;
-      }
-      const okSeason = await selectOption(ctx.page, ctx.seasonId, season);
-      if (!okSeason) { results[key] = { discipline: key, year, error: 'season_failed', top15: [] }; lastSeason = season; continue; }
-
-      const okCat = await selectOption(ctx.page, ctx.catId, CATEGORY_LABEL) ||
-                    await selectOption(ctx.page, ctx.catId, 'U18', true);
-      if (!okCat) { results[key] = { discipline: key, year, error: 'category_failed', top15: [] }; lastSeason = season; continue; }
-
-      // Re-discover disc dropdown after AJAX reload
-      await wait(1000);
-      const updated = await discoverSelects(ctx.page);
-      ctx.discId = findSelectId(updated, label) || findSelectId(updated, label, true) || ctx.discId;
-      lastSeason = season;
-    }
-
-    const okYear = await selectOption(ctx.page, ctx.yearId, year);
-    if (!okYear) { results[key] = { discipline: key, year, error: 'year_failed', top15: [] }; continue; }
-
-    const okDisc = await selectOption(ctx.page, ctx.discId, label) ||
-                   await selectOption(ctx.page, ctx.discId, label, true);
-    if (!okDisc) { results[key] = { discipline: key, year, error: 'disc_failed', top15: [] }; continue; }
-
-    await wait(2000);
-
-    try {
-      const btn = ctx.page.locator([
-        'button[id*="search"]', 'input[type="submit"]',
-        'button:has-text("Suchen")', 'button:has-text("Anzeigen")', 'button:has-text("Liste")'
-      ].join(', ')).first();
-      if (await btn.isVisible({ timeout: 2000 })) { await btn.click(); await wait(2500); }
-    } catch (_) {}
-
-    const html = await ctx.page.content();
-    const rows = parseTable(html, isJump);
-    console.log(`  → ${rows.length} Einträge  |  Erstes: ${rows[0]?.name} ${rows[0]?.result}`);
-
-    const top15 = rows.slice(0, TOP_N).map(r => ({
-      rank: r.rank, name: r.name, result: r.result, wind: r.wind,
-      club: r.club, date: r.date, isFiona: r.name.includes(FIONA)
-    }));
-    const fEntry = rows.find(r => r.name.includes(FIONA));
-    const fiona = fEntry ? {
-      rank: fEntry.rank, result: fEntry.result, wind: fEntry.wind, date: fEntry.date,
-      gapToFirst: rows[0] ? `+${(parseFloat(fEntry.result)-parseFloat(rows[0].result)).toFixed(2)}` : null
-    } : null;
-
-    results[key] = { discipline: key, year, scraped: new Date().toISOString(), fiona, top15 };
-    if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
+    console.log(`\n📋 ${disc.key}  (${disc.season} ${disc.year} — "${disc.label}")`);
+    results[disc.key] = await scrapeDiscipline(context, disc);
   }
 
-  if (ctx) await ctx.page.close();
   await context.close();
   await browser.close();
 
