@@ -2044,7 +2044,7 @@ function renderRankBanners() {
         // Saison hat begonnen (Live-Daten vorhanden) aber Fiona noch nicht in Liste
         const hasListData = live && live.total > 0 && liveSeasonMatch;
         rankEl.textContent = hasListData
-          ? 'Noch kein Resultat · ' + seasons[disc]
+          ? 'Fiona hat ' + yr + ' noch keine Resultate'
           : 'Keine Daten';
       }
     }
