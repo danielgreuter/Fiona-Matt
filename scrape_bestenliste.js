@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v17 — Playwright
- * Nutzt echten Browser (wie Athlete-Resultate v8 Vorgänger)
- * Navigiert per JSF durch Dropdowns — stabil gegenüber URL-Änderungen
+ * Swiss Athletics Bestenliste Scraper v18 — Playwright + JSF AJAX fix
+ * Nach jeder Dropdown-Auswahl wird change-Event gefeuert → AJAX wird ausgelöst
+ * Dann auf networkidle warten → neue Optionen laden
  */
 
 const { chromium } = require('playwright');
@@ -28,152 +28,114 @@ const DISCIPLINES = [
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-// ── Select helper ─────────────────────────────────────────────
+// ── Wählt eine Option und feuert JSF AJAX-Event ───────────────
 
-async function selectByLabel(page, selectId, labelText, partial = false) {
-  const select = page.locator(`#${selectId.replace(/:/g, '\\:')}`);
-  await select.waitFor({ timeout: 8000 });
-  const options = await select.locator('option').all();
+async function selectAndTrigger(page, selectId, value) {
+  const escaped = selectId.replace(/:/g, '\\:');
+  const loc = page.locator(`#${escaped}`);
+  await loc.waitFor({ timeout: 10000 });
+  await loc.selectOption({ value });
+  await loc.dispatchEvent('change');
+  // Auf JSF AJAX-Response warten
+  try {
+    await page.waitForLoadState('networkidle', { timeout: 5000 });
+  } catch(_) {}
+  await wait(800);
+}
+
+// ── Findet den Value einer Option anhand des Labels ───────────
+
+async function findOptionValue(page, selectId, labelMatch, partial = false) {
+  const escaped = selectId.replace(/:/g, '\\:');
+  const options = await page.locator(`#${escaped} option`).all();
   for (const opt of options) {
     const text = (await opt.textContent()).trim();
-    if (partial ? text.toLowerCase().includes(labelText.toLowerCase()) : text === labelText) {
-      const val = await opt.getAttribute('value');
-      await select.selectOption({ value: val });
-      await wait(800);
-      return true;
-    }
+    const match = partial
+      ? text.toLowerCase().includes(labelMatch.toLowerCase())
+      : text === labelMatch;
+    if (match) return await opt.getAttribute('value');
   }
-  return false;
+  return null;
 }
 
-// ── Parse results table ───────────────────────────────────────
-
-function parseTable(html, isJump) {
-  const rows = [];
-  const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let rowM;
-  while ((rowM = rowRe.exec(html)) !== null) {
-    const cells = [];
-    const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-    let cm;
-    while ((cm = cellRe.exec(rowM[1])) !== null) {
-      cells.push(cm[1].replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim());
-    }
-    if (cells.length < 4) continue;
-    const rank = parseInt((cells[0]||'').replace(/Nr\.?\s*/i,'').trim());
-    if (isNaN(rank)||rank<1||rank>1000) continue;
-    let result='',name='',club='',date='',wind='';
-    for (const c of cells.slice(1)) {
-      if (!result && (isJump ? /^\d+\.\d{2}$/ : /^\d+[:.]\d{2}$/).test(c)) { result=c; continue; }
-      if (result && !wind && /^[+-]?\d+\.\d$/.test(c)) { wind=c; continue; }
-      if (!name && /^[A-ZÄÖÜ][a-zäöüß]+([ -][A-ZÄÖÜ][a-zäöüß]+)+$/.test(c)) { name=c; continue; }
-      if (!date && /^\d{2}\.\d{2}\.\d{4}$/.test(c)) { date=c; continue; }
-      if (name&&result&&!club&&c.length>2&&!/^\d/.test(c)) club=c;
-    }
-    if (!name||!result) continue;
-    rows.push({ rank, name, result, wind, club, date, isFiona: name.includes('Matt') });
-  }
-  return rows;
-}
-
-function toSec(t) {
-  if (!t) return null;
-  const p = t.split(':');
-  return p.length===2 ? parseFloat(p[0])*60+parseFloat(p[1]) : parseFloat(t)||null;
-}
-
-function calcGap(a, b, isJump) {
-  const as=toSec(a), bs=toSec(b);
-  if (as==null||bs==null) return null;
-  const d = isJump ? (as-bs) : (as-bs);
-  return (d>=0?'+':'')+d.toFixed(2);
-}
-
-// ── Scrape one discipline ─────────────────────────────────────
+// ── Scrape eine Disziplin ─────────────────────────────────────
 
 async function scrapeDiscipline(page, disc) {
-  await page.goto(BASE_URL, { waitUntil: 'networkidle' });
-  await wait(1500);
+  await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
+  await wait(1000);
 
-  // Jahr
   const yearSel = 'form_anonym:bestlistYear_input';
-  const yearOk = await selectByLabel(page, yearSel, disc.year);
-  if (!yearOk) throw new Error(`Jahr ${disc.year} nicht gefunden`);
-  await wait(1000);
-
-  // Saison — alle Optionen loggen für Debugging
   const seasonSel = 'form_anonym:bestlistSeason_input';
-  const seasonSelect = page.locator(`#${seasonSel.replace(/:/g, '\\:')}`);
-  const seasonOptions = await seasonSelect.locator('option').all();
-  const seasonTexts = [];
-  for (const opt of seasonOptions) seasonTexts.push((await opt.textContent()).trim());
-  console.log(`   Saison-Optionen: ${seasonTexts.join(' | ')}`);
-
-  const isIndoor = disc.season === 'Indoor';
-  let seasonOk = false;
-  for (const opt of seasonOptions) {
-    const text = (await opt.textContent()).trim().toLowerCase();
-    if (isIndoor && (text.includes('halle') || text.includes('indoor') || text.includes('winter'))) {
-      await seasonSelect.selectOption({ value: await opt.getAttribute('value') });
-      seasonOk = true; break;
-    }
-    if (!isIndoor && (text.includes('outdoor') || text.includes('freiluft') || text.includes('sommer'))) {
-      await seasonSelect.selectOption({ value: await opt.getAttribute('value') });
-      seasonOk = true; break;
-    }
-  }
-  if (!seasonOk && seasonOptions.length > 1) {
-    const idx = isIndoor ? 1 : (seasonOptions.length > 2 ? 2 : 1);
-    await seasonSelect.selectOption({ value: await seasonOptions[idx].getAttribute('value') });
-    console.log(`   ⚠️  Saison-Fallback: Option ${idx}`);
-    seasonOk = true;
-  }
-  if (!seasonOk) throw new Error(`Saison ${disc.season} nicht gefunden`);
-  await wait(1000);
-
-  // Kategorie U18
   const catSel = 'form_anonym:bestlistCategory_input';
-  const catSelect = page.locator(`#${catSel.replace(/:/g, '\\:')}`);
-  const catOptions = await catSelect.locator('option').all();
-  const catTexts = [];
-  for (const opt of catOptions) catTexts.push((await opt.textContent()).trim());
-  console.log(`   Kat-Optionen: ${catTexts.join(' | ')}`);
-
-  let catOk = false;
-  for (const opt of catOptions) {
-    const text = (await opt.textContent()).trim().toLowerCase();
-    if (text.includes('u18') || text.includes('u 18')) {
-      await catSelect.selectOption({ value: await opt.getAttribute('value') });
-      catOk = true; break;
-    }
-  }
-  if (!catOk) throw new Error('Kategorie U18 nicht gefunden');
-  await wait(1000);
-
-  // Disziplin
   const discSel = 'form_anonym:bestlistDiscipline_input';
-  const discSelect = page.locator(`#${discSel.replace(/:/g, '\\:')}`);
-  const discOptions = await discSelect.locator('option').all();
-  const discTexts = [];
-  for (const opt of discOptions) discTexts.push((await opt.textContent()).trim());
-  console.log(`   Disc-Optionen: ${discTexts.slice(0,8).join(' | ')}`);
 
-  let discOk = false;
-  for (const opt of discOptions) {
-    const text = (await opt.textContent()).trim();
-    if (text === disc.label || text.startsWith(disc.label)) {
-      await discSelect.selectOption({ value: await opt.getAttribute('value') });
-      discOk = true; break;
+  // 1. Jahr
+  const yearVal = await findOptionValue(page, yearSel, disc.year);
+  if (!yearVal) throw new Error(`Jahr ${disc.year} nicht gefunden`);
+  await selectAndTrigger(page, yearSel, yearVal);
+
+  // 2. Saison
+  const isIndoor = disc.season === 'Indoor';
+  let seasonVal = null;
+  const seasonOpts = await page.locator(`#${seasonSel.replace(/:/g, '\\:')} option`).all();
+  for (const opt of seasonOpts) {
+    const t = (await opt.textContent()).trim().toLowerCase();
+    if (isIndoor && t === 'indoor') { seasonVal = await opt.getAttribute('value'); break; }
+    if (!isIndoor && t === 'outdoor') { seasonVal = await opt.getAttribute('value'); break; }
+  }
+  // Fallback: erste nicht-leere Option
+  if (!seasonVal) {
+    for (const opt of seasonOpts) {
+      const v = await opt.getAttribute('value');
+      if (v && v !== '') { seasonVal = v; break; }
     }
   }
-  if (!discOk) throw new Error(`Disziplin "${disc.label}" nicht gefunden`);
-  await wait(1000);
+  if (!seasonVal) throw new Error(`Saison ${disc.season} nicht gefunden`);
+  await selectAndTrigger(page, seasonSel, seasonVal);
 
-  // Anzeigen
+  // 3. Kategorie U18 Frauen
+  let catVal = null;
+  const catOpts = await page.locator(`#${catSel.replace(/:/g, '\\:')} option`).all();
+  const catTexts = [];
+  for (const opt of catOpts) {
+    const t = (await opt.textContent()).trim();
+    catTexts.push(t);
+    if (t === 'U18 Frauen') { catVal = await opt.getAttribute('value'); break; }
+  }
+  console.log(`   Kat-Optionen (${catTexts.length}): ${catTexts.slice(0,5).join(' | ')}...`);
+  if (!catVal) throw new Error(`U18 Frauen nicht gefunden. Optionen: ${catTexts.join(', ')}`);
+  await selectAndTrigger(page, catSel, catVal);
+
+  // 4. Disziplin — nach AJAX neu laden
+  let discVal = null;
+  const discOpts = await page.locator(`#${discSel.replace(/:/g, '\\:')} option`).all();
+  const discTexts = [];
+  for (const opt of discOpts) {
+    const t = (await opt.textContent()).trim();
+    discTexts.push(t);
+    if (t === disc.label || t.startsWith(disc.label)) {
+      discVal = await opt.getAttribute('value');
+      break;
+    }
+  }
+  console.log(`   Disc-Optionen: ${discTexts.slice(0,8).join(' | ')}`);
+  if (!discVal) throw new Error(`Disziplin "${disc.label}" nicht gefunden`);
+  await selectAndTrigger(page, discSel, discVal);
+
+  // 5. Anzeigen klicken
   const btn = page.locator('button, input[type=submit]').filter({ hasText: /[Aa]nzeig/ });
-  if (await btn.count() > 0) await btn.first().click();
-  else await page.keyboard.press('Enter');
-  await page.waitForLoadState('networkidle');
+  if (await btn.count() > 0) {
+    await btn.first().click();
+  } else {
+    // JSF submit fallback
+    await page.evaluate(() => {
+      const form = document.querySelector('form');
+      if (form) form.submit();
+    });
+  }
+  try {
+    await page.waitForLoadState('networkidle', { timeout: 8000 });
+  } catch(_) {}
   await wait(2000);
 
   const html = await page.content();
@@ -181,6 +143,69 @@ async function scrapeDiscipline(page, disc) {
   const rows = parseTable(html, isJump);
   console.log(`   ${rows.length} Einträge geparst`);
   return rows;
+}
+
+// ── Tabellen-Parser ───────────────────────────────────────────
+
+function parseTable(html, isJump) {
+  const rows = [];
+
+  // Suche nach Resultat-Tabelle (alabus hat data-scrollable oder ähnliche Klassen)
+  const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let rowM;
+
+  while ((rowM = rowRe.exec(html)) !== null) {
+    const cells = [];
+    const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    let cm;
+    while ((cm = cellRe.exec(rowM[1])) !== null) {
+      const text = cm[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&#[0-9]+;/g, '')
+        .trim();
+      if (text) cells.push(text);
+    }
+    if (cells.length < 3) continue;
+
+    // Rang: erste Zelle muss eine Zahl sein
+    const rank = parseInt(cells[0]);
+    if (isNaN(rank) || rank < 1 || rank > 2000) continue;
+
+    // Resultat suchen
+    let result = '', name = '', wind = '', date = '', club = '';
+    for (const c of cells.slice(1)) {
+      if (!result) {
+        if (isJump && /^\d+\.\d{2}$/.test(c)) { result = c; continue; }
+        if (!isJump && /^\d{1,2}[:.]\d{2}(\.\d+)?$/.test(c)) { result = c; continue; }
+      }
+      if (result && !wind && /^[+-]?\d+\.\d$/.test(c)) { wind = c; continue; }
+      if (!name && /^[A-ZÄÖÜ][a-zäöüéàèê]+([ \-][A-ZÄÖÜ][a-zäöüéàèê]+)+$/.test(c)) { name = c; continue; }
+      if (!date && /^\d{2}\.\d{2}\.\d{4}$/.test(c)) { date = c; continue; }
+      if (name && result && !club && c.length > 2 && !/^\d/.test(c) && !/^\d{2}\.\d{2}/.test(c)) club = c;
+    }
+
+    if (!result || !name) continue;
+    rows.push({ rank, name, result, wind, club, date, isFiona: name.includes('Matt') });
+  }
+
+  return rows;
+}
+
+// ── Gap-Berechnung ────────────────────────────────────────────
+
+function toSec(t) {
+  if (!t) return null;
+  const p = t.split(':');
+  return p.length === 2 ? parseFloat(p[0]) * 60 + parseFloat(p[1]) : parseFloat(t) || null;
+}
+
+function calcGap(a, b, isJump) {
+  const as = toSec(a), bs = toSec(b);
+  if (as == null || bs == null) return null;
+  const d = isJump ? (as - bs) : (as - bs);
+  return (d >= 0 ? '+' : '') + Math.abs(d).toFixed(2);
 }
 
 // ── KV Upload ─────────────────────────────────────────────────
@@ -198,17 +223,10 @@ async function uploadKV(data) {
 // ── Main ──────────────────────────────────────────────────────
 
 async function main() {
-  console.log('🚀 Swiss Athletics Bestenliste Scraper v17 (Playwright)\n');
-
-  const chromePath = process.env.CHROME_PATH
-    || (fs.existsSync('/usr/bin/google-chrome-stable') ? '/usr/bin/google-chrome-stable' : null)
-    || (fs.existsSync('/usr/bin/chromium-browser') ? '/usr/bin/chromium-browser' : null);
-
-  if (chromePath) console.log(`✅ Chrome: ${chromePath}`);
-  else console.log('⚠️  Kein Chrome-Pfad — Playwright nutzt Bundled-Browser');
+  console.log('🚀 Swiss Athletics Bestenliste Scraper v18 (Playwright + JSF AJAX fix)\n');
 
   const browser = await chromium.launch({
-    executablePath: chromePath || undefined,
+    executablePath: '/usr/bin/google-chrome-stable',
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
@@ -238,14 +256,15 @@ async function main() {
           result: fiona.result,
           wind: fiona.wind || null,
           date: fiona.date,
-          gapToFirst: top1 ? calcGap(fiona.result, top1.result, isJump) : null,
+          gapToFirst: top1 && top1.name !== fiona.name ? calcGap(fiona.result, top1.result, isJump) : null,
         } : null,
         top15: rows.slice(0, 15),
         total: rows.length,
       };
 
       if (fiona) console.log(`   ✅ Fiona: Rang ${fiona.rank} · ${fiona.result}`);
-      else       console.log(`   ⚠️  Fiona nicht in Top ${rows.length}`);
+      else if (rows.length > 0) console.log(`   ⚠️  Fiona nicht in Top ${rows.length}`);
+      else console.log(`   ❌ 0 Einträge — Parser-Problem`);
     } catch(e) {
       console.log(`   ❌ ${e.message}`);
       result.disciplines[disc.key] = { error: e.message, fiona: null, top15: [], total: 0 };
