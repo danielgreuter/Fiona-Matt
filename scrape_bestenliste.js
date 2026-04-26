@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v22
+ * Swiss Athletics Bestenliste Scraper v23
  *
- * Fix: Jede <td> enthält einen <span class="ui-column-title"> als Prefix.
- * allTextContents() gab "Nr1", "Resultat12.08" etc. → parseInt scheiterte.
- * Lösung: ui-column-title Spans via evaluateAll() vor dem Lesen entfernen.
+ * Fix 1: Name dynamisch suchen (nicht mehr cells[4]) → Indoor ohne Wind-Spalte OK
+ * Fix 2: Datum = letztes Datum in der Zeile (Wettkampfdatum, nicht Geburtsdatum)
+ * Fix 3: isFiona auch via Vereinsname "Eschen-Mauren" (Fallback)
+ * Fix 4: Longer timeout + Retry für 200m 2026
  */
 
 const { chromium } = require('playwright');
@@ -37,22 +38,36 @@ function buildUrl(disc) {
   return `${ALABUS_BASE}?${p}`;
 }
 
-// ── Zeilen parsen — strippt ui-column-title Spans ─────────────
+const NAME_RE   = /^[A-ZÄÖÜ][a-zäöüéàèêâßë]+([ \-][A-ZÄÖÜ][a-zäöüéàèêâßë]+)+$/;
+const DATE_RE   = /^\d{2}\.\d{2}\.\d{4}$/;
+const WIND_RE   = /^[+-]?\d+[.,]\d$/;
+
+// ── Zeilen parsen ─────────────────────────────────────────────
 
 async function parseRows(page, isJump) {
-  try {
-    await page.waitForSelector('table tbody tr', { timeout: 15000 });
-  } catch(e) {
-    console.log(`   ⚠️  Timeout warten auf Tabellenzeilen`);
-    return [];
+  // Warten auf Tabellenzeilen mit Retry
+  let found = false;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await page.waitForSelector('table tbody tr', { timeout: 15000 });
+      found = true;
+      break;
+    } catch(_) {
+      if (attempt === 1) {
+        console.log(`   ⚠️  Timeout Versuch 1 — Seite neu laden...`);
+        await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
+        await wait(2000);
+      }
+    }
   }
+  if (!found) { console.log(`   ❌ Keine Tabellenzeilen nach Retry`); return []; }
 
   const rowEls = await page.locator('table tbody tr').all();
-  console.log(`   Zeilen gefunden: ${rowEls.length}`);
+  console.log(`   Zeilen: ${rowEls.length}`);
 
   const rows = [];
   for (const row of rowEls) {
-    // ui-column-title Spans im Clone entfernen, dann innerText lesen
+    // ui-column-title Spans entfernen, dann innerText
     const cells = await row.locator('td').evaluateAll(tds =>
       tds.map(td => {
         const clone = td.cloneNode(true);
@@ -60,37 +75,48 @@ async function parseRows(page, isJump) {
         return clone.innerText.replace(/\s+/g, ' ').trim();
       })
     );
-
     if (cells.length < 3) continue;
 
-    // cells[0] = Rang-Nr, cells[1] = Resultat, cells[2] = Wind, cells[3] = Rang,
-    // cells[4] = Name, cells[5] = Verein, cells[6] = Nat., cells[7] = Geb.Dat,
-    // cells[8] = Wettkampf, cells[9] = Ort, cells[10] = Datum
-
+    // cells[0] = Rang-Nr (immer)
     const rank = parseInt(cells[0]);
     if (isNaN(rank) || rank < 1 || rank > 2000) continue;
 
+    // cells[1] = Resultat (immer)
     const result = cells[1] || '';
-    const wind   = cells[2] || '';
-    const name   = cells[4] || '';
-    const club   = cells[5] || '';
-    const date   = cells[10] || cells[7] || ''; // Wettkampfdatum bevorzugen
-
-    // Resultat-Validierung
     const validResult = isJump
       ? /^\d+[.,]\d{2}$/.test(result)
       : /^\d{1,2}[:.]\d{2}(\.\d+)?$/.test(result);
-    if (!validResult || !name) continue;
+    if (!validResult) continue;
 
-    rows.push({
-      rank,
-      name,
-      result: result.replace(',', '.'),
-      wind:   wind || null,
-      club:   club || null,
-      date:   date || null,
-      isFiona: name.toLowerCase().includes('matt'),
-    });
+    // Name: dynamisch suchen (ab cells[2], Indoor hat keine Wind-Spalte)
+    let name = '', wind = '', club = '', date = '';
+    let nameIdx = -1;
+    for (let ci = 2; ci < cells.length; ci++) {
+      if (NAME_RE.test(cells[ci])) { name = cells[ci]; nameIdx = ci; break; }
+    }
+
+    // Wind: Zelle vor dem Namen (falls vorhanden und passt)
+    if (nameIdx > 2 && WIND_RE.test(cells[nameIdx - 1])) {
+      wind = cells[nameIdx - 1];
+    }
+
+    // Verein: Zelle nach dem Namen
+    if (nameIdx >= 0 && nameIdx + 1 < cells.length) {
+      club = cells[nameIdx + 1];
+    }
+
+    // Datum: letztes Datum in der Zeile (= Wettkampfdatum, nicht Geburtsdatum)
+    for (let ci = cells.length - 1; ci >= 0; ci--) {
+      if (DATE_RE.test(cells[ci])) { date = cells[ci]; break; }
+    }
+
+    if (!name) continue;
+
+    const isFiona = name.toLowerCase().includes('matt') ||
+                    club.toLowerCase().includes('eschen-mauren');
+
+    rows.push({ rank, name, result: result.replace(',','.'),
+                wind: wind||null, club: club||null, date: date||null, isFiona });
   }
   return rows;
 }
@@ -130,7 +156,7 @@ async function uploadKV(data) {
 // ── Main ──────────────────────────────────────────────────────
 
 async function main() {
-  console.log('🚀 Bestenliste Scraper v22 (ui-column-title Fix)\n');
+  console.log('🚀 Bestenliste Scraper v23 (Dynamic Name + Retry)\n');
 
   const browser = await chromium.launch({
     executablePath: '/usr/bin/google-chrome-stable',
@@ -160,7 +186,7 @@ async function main() {
         top15: rows.slice(0,15), total: rows.length,
       };
       if (fiona)            console.log(`   ✅ Fiona: Rang ${fiona.rank} · ${fiona.result}`);
-      else if (rows.length) console.log(`   ⚠️  Fiona nicht in Top ${rows.length} (PB ${rows[0].result}–${rows[rows.length-1].result})`);
+      else if (rows.length) console.log(`   ⚠️  Fiona nicht in Top ${rows.length}`);
       else                  console.log(`   ❌ 0 Einträge`);
     } catch(e) {
       console.log(`   ❌ ${e.message}`);
