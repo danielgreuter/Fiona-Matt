@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v25
+ * Swiss Athletics Bestenliste Scraper v26
  *
- * Korrekte Lösung für Indoor/Outdoor:
- * Die Disziplin-Dropdowns in der Form haben UNTERSCHIEDLICHE Option-Values
- * für Indoor vs Outdoor. v25 liest die Outdoor-Discipline-IDs direkt aus
- * dem Formular (Year + Outdoor + U18 Frauen → Disziplin-Optionen).
- * Danach direkte URL-Navigation zu alabus mit den korrekten IDs.
+ * Fazit nach Debugging: alabus hat keinen URL-basierten Outdoor-Filter.
+ * Discipline-IDs sind saisonunabhängig — sie zeigen Indoor + Outdoor gemischt.
+ * Lösung: top=200 abrufen, dann nach Datum filtern (Monat >= 4 = Outdoor).
  */
 
 const { chromium } = require('playwright');
@@ -20,105 +18,38 @@ const UPLOAD = process.argv.includes('--upload');
 const ALABUS_BASE = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml';
 const CAT_U18F    = '5c4o3k5m-d686mo-j986g2ie-1-j986g45y-bn';
 
-// Feste IDs (Indoor) — bleiben unverändert
-const FIXED_IDS = {
-  '100m':  '5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv',
-  '60m':   '5c4o3k5m-d686mo-j986g2ie-1-j986g3pt-79',
-};
-
 const DISCIPLINES = [
-  { key:'100m',           year:'2026', label:'100 m', indoor:false, isJump:false, discover:false },
-  { key:'100m_2025',      year:'2025', label:'100 m', indoor:false, isJump:false, discover:false },
-  { key:'60m',            year:'2026', label:'60 m',  indoor:true,  isJump:false, discover:false },
-  { key:'60m_2025',       year:'2025', label:'60 m',  indoor:true,  isJump:false, discover:false },
-  { key:'200m',           year:'2026', label:'200 m', indoor:false, isJump:false, discover:true  },
-  { key:'200m_2025',      year:'2025', label:'200 m', indoor:false, isJump:false, discover:true  },
-  { key:'Long Jump',      year:'2026', label:'Weit',  indoor:false, isJump:true,  discover:true  },
-  { key:'Long Jump_2025', year:'2025', label:'Weit',  indoor:false, isJump:true,  discover:true  },
+  { key:'100m',           year:'2026', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv', indoor:false, isJump:false, outdoorOnly:false },
+  { key:'100m_2025',      year:'2025', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv', indoor:false, isJump:false, outdoorOnly:false },
+  { key:'60m',            year:'2026', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986g3pt-79',  indoor:true,  isJump:false, outdoorOnly:false },
+  { key:'60m_2025',       year:'2025', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986g3pt-79',  indoor:true,  isJump:false, outdoorOnly:false },
+  { key:'200m',           year:'2026', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks', indoor:false, isJump:false, outdoorOnly:true  },
+  { key:'200m_2025',      year:'2025', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks', indoor:false, isJump:false, outdoorOnly:true  },
+  { key:'Long Jump',      year:'2026', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp', indoor:false, isJump:true,  outdoorOnly:true  },
+  { key:'Long Jump_2025', year:'2025', discId:'5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp', indoor:false, isJump:true,  outdoorOnly:true  },
 ];
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
-const yearSel   = 'form_anonym:bestlistYear_input';
-const seasonSel = 'form_anonym:bestlistSeason_input';
-const catSel    = 'form_anonym:bestlistCategory_input';
-const discSel   = 'form_anonym:bestlistDiscipline_input';
-
-async function selectAndTrigger(page, selectId, value) {
-  const esc = selectId.replace(/:/g, '\\:');
-  const loc = page.locator(`#${esc}`);
-  await loc.waitFor({ timeout: 10000 });
-  await loc.selectOption({ value });
-  await loc.dispatchEvent('change');
-  try { await page.waitForLoadState('networkidle', { timeout: 6000 }); } catch(_) {}
-  await wait(600);
-}
-
-async function findOptionValue(page, selectId, labelMatch) {
-  const esc = selectId.replace(/:/g, '\\:');
-  for (const opt of await page.locator(`#${esc} option`).all()) {
-    const t = (await opt.textContent()).trim();
-    if (t === labelMatch || t.startsWith(labelMatch)) return await opt.getAttribute('value');
-  }
-  return null;
-}
-
-// ── Outdoor Discipline-IDs aus Form lesen ──────────────────────
-
-async function discoverOutdoorIds(page, year) {
-  console.log(`  🔍 Entdecke Outdoor-IDs für ${year}...`);
-  await page.goto(`${ALABUS_BASE}?lang=de`, { waitUntil: 'networkidle', timeout: 30000 });
-  await wait(800);
-
-  // Jahr
-  const yearVal = await findOptionValue(page, yearSel, year);
-  if (!yearVal) { console.log(`  ⚠️  Jahr ${year} nicht gefunden`); return {}; }
-  await selectAndTrigger(page, yearSel, yearVal);
-
-  // Saison Outdoor
-  let outdoorVal = null;
-  for (const opt of await page.locator(`#${seasonSel.replace(/:/g,'\\:')} option`).all()) {
-    const t = (await opt.textContent()).trim().toLowerCase();
-    if (t === 'outdoor') { outdoorVal = await opt.getAttribute('value'); break; }
-  }
-  if (!outdoorVal) { console.log(`  ⚠️  Outdoor-Option nicht gefunden`); return {}; }
-  await selectAndTrigger(page, seasonSel, outdoorVal);
-
-  // Kategorie U18 Frauen
-  let catVal = null;
-  for (const opt of await page.locator(`#${catSel.replace(/:/g,'\\:')} option`).all()) {
-    if ((await opt.textContent()).trim() === 'U18 Frauen') { catVal = await opt.getAttribute('value'); break; }
-  }
-  if (!catVal) { console.log(`  ⚠️  U18 Frauen nicht gefunden`); return {}; }
-  await selectAndTrigger(page, catSel, catVal);
-
-  // Alle Disziplin-Optionen lesen
-  const ids = {};
-  for (const opt of await page.locator(`#${discSel.replace(/:/g,'\\:')} option`).all()) {
-    const t = (await opt.textContent()).trim();
-    const v = await opt.getAttribute('value');
-    if (v && v !== '') ids[t] = v;
-  }
-  console.log(`  → Gefundene Outdoor-Disziplinen: ${Object.keys(ids).join(', ')}`);
-  return ids;
-}
-
-// ── URL bauen ─────────────────────────────────────────────────
-
-function buildUrl(discId, year, indoor) {
-  const top = '30';
-  const p = new URLSearchParams({ lang:'de', mobile:'false', blyear:year, blcat:CAT_U18F, disci:discId, top });
-  if (indoor) p.set('indoor', 'true');
+function buildUrl(disc) {
+  // Outdoor-Disziplinen: top=200 damit outdoor-Resultate sicher enthalten sind
+  const top = disc.outdoorOnly ? '200' : '30';
+  const p = new URLSearchParams({ lang:'de', mobile:'false', blyear:disc.year, blcat:CAT_U18F, disci:disc.discId, top });
+  if (disc.indoor) p.set('indoor', 'true');
   return `${ALABUS_BASE}?${p}`;
 }
 
-// ── Zeilen parsen ─────────────────────────────────────────────
+function isOutdoor(dateStr) {
+  if (!dateStr) return false;
+  const m = parseInt((dateStr.split('.')[1]) || '0');
+  return m >= 4; // April–Dezember = Outdoor
+}
 
 const NAME_RE = /^[A-ZÄÖÜ][a-zäöüéàèêâßë]+([ \-][A-ZÄÖÜ][a-zäöüéàèêâßë]+)+$/;
 const DATE_RE = /^\d{2}\.\d{2}\.\d{4}$/;
 const WIND_RE = /^[+-]?\d+[.,]\d$/;
 
-async function parseRows(page, isJump) {
+async function parseRows(page, disc) {
   let found = false;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try { await page.waitForSelector('table tbody tr', { timeout: 15000 }); found = true; break; }
@@ -133,7 +64,7 @@ async function parseRows(page, isJump) {
   if (!found) { console.log(`   ❌ Keine Zeilen`); return []; }
 
   const rowEls = await page.locator('table tbody tr').all();
-  console.log(`   Zeilen: ${rowEls.length}`);
+  console.log(`   Rohe Zeilen: ${rowEls.length}`);
 
   const rows = [];
   for (const row of rowEls) {
@@ -150,11 +81,12 @@ async function parseRows(page, isJump) {
     if (isNaN(rank) || rank < 1 || rank > 2000) continue;
 
     const result = cells[1] || '';
-    const validResult = isJump
+    const validResult = disc.isJump
       ? /^\d+[.,]\d{2}$/.test(result)
       : /^\d{1,2}[:.]\d{2}(\.\d+)?$/.test(result);
     if (!validResult) continue;
 
+    // Name dynamisch suchen (Indoor hat keine Wind-Spalte)
     let name = '', wind = '', club = '', date = '';
     let nameIdx = -1;
     for (let ci = 2; ci < cells.length; ci++) {
@@ -162,10 +94,14 @@ async function parseRows(page, isJump) {
     }
     if (nameIdx > 2 && WIND_RE.test(cells[nameIdx - 1])) wind = cells[nameIdx - 1];
     if (nameIdx >= 0 && nameIdx + 1 < cells.length) club = cells[nameIdx + 1];
+    // Letztes Datum = Wettkampfdatum (nicht Geburtsdatum)
     for (let ci = cells.length - 1; ci >= 0; ci--) {
       if (DATE_RE.test(cells[ci])) { date = cells[ci]; break; }
     }
     if (!name) continue;
+
+    // Outdoor-Filter
+    if (disc.outdoorOnly && !isOutdoor(date)) continue;
 
     const isFiona = name.toLowerCase().includes('matt') ||
                     club.toLowerCase().includes('eschen-mauren');
@@ -173,10 +109,13 @@ async function parseRows(page, isJump) {
     rows.push({ rank, name, result: result.replace(',','.'),
                 wind: wind||null, club: club||null, date: date||null, isFiona });
   }
+
+  // Rang neu vergeben nach Filterung
+  if (disc.outdoorOnly) rows.forEach((r, i) => { r.rank = i + 1; });
+
+  console.log(`   Nach Outdoor-Filter: ${rows.length} Einträge`);
   return rows;
 }
-
-// ── Helpers ───────────────────────────────────────────────────
 
 function toSec(t) {
   if (!t) return null;
@@ -198,10 +137,8 @@ async function uploadKV(data) {
   console.log(res.ok ? '✅ KV Upload OK' : `❌ KV Fehler ${res.status}`);
 }
 
-// ── Main ──────────────────────────────────────────────────────
-
 async function main() {
-  console.log('🚀 Bestenliste Scraper v25 (Outdoor-IDs aus Form)\n');
+  console.log('🚀 Bestenliste Scraper v26 (top=200 + Outdoor-Datumfilter)\n');
 
   const browser = await chromium.launch({
     executablePath: '/usr/bin/google-chrome-stable',
@@ -213,50 +150,17 @@ async function main() {
     locale: 'de-CH',
   }).then(ctx => ctx.newPage());
 
-  // Outdoor-IDs einmalig für 2026 und 2025 entdecken
-  const outdoorIds = {
-    '2026': await discoverOutdoorIds(page, '2026'),
-    '2025': await discoverOutdoorIds(page, '2025'),
-  };
-  console.log('');
-
-  // Feste IDs für 100m und 60m (Indoor)
-  const fixedDiscIds = {
-    '100m':  FIXED_IDS['100m'],
-    '60m':   FIXED_IDS['60m'],
-  };
-
   const result = { updated: new Date().toISOString().split('T')[0], disciplines:{} };
 
   for (const disc of DISCIPLINES) {
-    console.log(`📋 ${disc.key} (${disc.indoor?'Indoor':'Outdoor'} ${disc.year})`);
-
-    // Discipline-ID bestimmen
-    let discId;
-    if (disc.discover) {
-      discId = outdoorIds[disc.year][disc.label];
-      if (!discId) {
-        // Fallback: startsWith-Suche
-        const match = Object.entries(outdoorIds[disc.year]).find(([k]) => k.startsWith(disc.label));
-        discId = match ? match[1] : null;
-      }
-      if (!discId) {
-        console.log(`   ❌ Kein Outdoor-ID für "${disc.label}" ${disc.year} gefunden`);
-        result.disciplines[disc.key] = { error:'Outdoor-ID nicht gefunden', fiona:null, top15:[], total:0 };
-        console.log(''); continue;
-      }
-      console.log(`   ID: ${discId}`);
-    } else {
-      discId = disc.indoor ? FIXED_IDS['60m'] : FIXED_IDS['100m'];
-    }
-
-    const url = buildUrl(discId, disc.year, disc.indoor);
+    const tag = disc.indoor ? 'Indoor' : disc.outdoorOnly ? 'Outdoor' : 'Outdoor';
+    console.log(`📋 ${disc.key} (${tag} ${disc.year})`);
+    const url = buildUrl(disc);
     console.log(`   URL: ${url}`);
-
     try {
       await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
       await wait(1500);
-      const rows  = await parseRows(page, disc.isJump);
+      const rows  = await parseRows(page, disc);
       const fiona = rows.find(r => r.isFiona);
       const top1  = rows[0];
       result.disciplines[disc.key] = {
@@ -269,7 +173,7 @@ async function main() {
       };
       if (fiona)            console.log(`   ✅ Fiona: Rang ${fiona.rank} · ${fiona.result}`);
       else if (rows.length) console.log(`   ⚠️  Fiona nicht in Top ${rows.length}`);
-      else                  console.log(`   ⚪ Keine Resultate`);
+      else                  console.log(`   ⚪ Noch keine Outdoor-Resultate`);
     } catch(e) {
       console.log(`   ❌ ${e.message}`);
       result.disciplines[disc.key] = { error:e.message, fiona:null, top15:[], total:0 };
