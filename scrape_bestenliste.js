@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * Swiss Athletics Bestenliste Scraper v24
- * Fixes:
- * - PF Panel-ID ist _items nicht _panel
- * - Resultate in div[data-ri], nicht in <table>
- * - Cookie-Banner Dismissal
- * - "Ein Resultat pro Athlet" + "30" setzen
+ * Swiss Athletics Bestenliste Scraper v25
+ * - waitForFunction statt blindem wait() nach Dropdowns
+ * - robuster Button-Click via JS-Fallback
+ * - Extraktion aus div[data-ri] oder Fallback auf Text-Parsing
  */
 
 const { chromium } = require('playwright');
@@ -36,34 +34,28 @@ const TOP_N = 15;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const esc  = s => s.replace(/:/g, '\\:');
 
-// ── PrimeFaces SelectOneMenu: click wrapper → wait for _items panel → click li ──
+// ── PrimeFaces SelectOneMenu ──────────────────────────────────────────────────
 
 async function pfSelect(page, inputId, labelText, partial = false) {
   const compId = inputId.replace(/_input$/, '');
-
-  // Click the visible wrapper div to open panel
   const wrapper = page.locator(`#${esc(compId)}`);
   await wrapper.waitFor({ state: 'visible', timeout: 12000 });
   await wrapper.click();
 
-  // Panel ID is <compId>_items (not _panel!)
-  const panel = page.locator(`#${esc(compId)}_items`);
-  try {
-    await panel.waitFor({ state: 'visible', timeout: 8000 });
-  } catch {
-    // Fallback: try _panel
-    const panel2 = page.locator(`#${esc(compId)}_panel`);
-    try { await panel2.waitFor({ state: 'visible', timeout: 4000 }); }
+  // Panel kann _items oder _panel heissen
+  let panel = page.locator(`#${esc(compId)}_items`);
+  try { await panel.waitFor({ state: 'visible', timeout: 5000 }); }
+  catch {
+    panel = page.locator(`#${esc(compId)}_panel`);
+    try { await panel.waitFor({ state: 'visible', timeout: 5000 }); }
     catch {
-      console.warn(`  ⚠ Panel für ${compId} nicht gefunden`);
+      console.warn(`  ⚠ Panel für ${compId} nicht sichtbar`);
       await page.keyboard.press('Escape');
       return false;
     }
   }
 
-  // Find and click the matching li item
-  const liSel = `#${esc(compId)}_items li, #${esc(compId)}_panel li`;
-  const allItems = await page.locator(liSel).all();
+  const allItems = await panel.locator('li').all();
   for (const item of allItems) {
     const text = ((await item.textContent()) || '').trim();
     const match = partial
@@ -71,8 +63,9 @@ async function pfSelect(page, inputId, labelText, partial = false) {
       : text === labelText;
     if (match) {
       await item.click();
-      try { await page.waitForLoadState('networkidle', { timeout: 10000 }); }
-      catch { await wait(2500); }
+      // Warte bis AJAX settled (max 8s), kein harter Fehler wenn nicht networkidle
+      try { await page.waitForLoadState('networkidle', { timeout: 8000 }); }
+      catch { await wait(2000); }
       console.log(`  ✓ "${text}" in ${compId}`);
       return true;
     }
@@ -105,57 +98,116 @@ function findCompId(comps, needle, partial = false) {
   return null;
 }
 
-// ── Extract results from PrimeFaces div[data-ri] rows ────────────────────────
+// ── Klick "Anzeigen"-Button (PrimeFaces CommandButton) ────────────────────────
 
-async function extractResults(page) {
-  // Wait for at least one result row
-  try {
-    await page.waitForSelector('div[data-ri]', { timeout: 8000 });
-  } catch {
-    // Debug: what's on the page?
-    const info = await page.evaluate(() => ({
-      dataRiCount: document.querySelectorAll('[data-ri]').length,
-      divCount: document.querySelectorAll('div').length,
-      bodySnippet: document.body.innerText.substring(0, 300).replace(/\n/g,' '),
-    }));
-    console.log(`  ⚠ Keine div[data-ri] gefunden. Info: ${JSON.stringify(info)}`);
-    return [];
+async function clickAnzeigen(page) {
+  // Versuche verschiedene Selektoren
+  const selectors = [
+    'button:has-text("Anzeigen")',
+    'a:has-text("Anzeigen")',
+    '[id*="search"]',
+    '[id*="anzeigen"]',
+    '[id*="show"]',
+    'button[type="submit"]',
+  ];
+  for (const sel of selectors) {
+    try {
+      const el = page.locator(sel).first();
+      if (await el.isVisible({ timeout: 1500 })) {
+        await el.click();
+        console.log(`  ✓ Button geklickt: ${sel}`);
+        return true;
+      }
+    } catch(_) {}
   }
 
+  // JS-Fallback: finde alle Buttons und klicke den mit "Anzeigen"-Text
+  const clicked = await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll('button, a, input[type="submit"], span[role="button"]'));
+    for (const b of btns) {
+      if ((b.textContent || '').trim().toLowerCase().includes('anzeigen')) {
+        b.click();
+        return b.textContent.trim();
+      }
+    }
+    return null;
+  });
+  if (clicked) { console.log(`  ✓ JS-Click: "${clicked}"`); return true; }
+
+  console.warn('  ⚠ Kein Anzeigen-Button gefunden');
+  return false;
+}
+
+// ── Warte auf Resultate und extrahiere ───────────────────────────────────────
+
+async function waitAndExtract(page) {
+  // Warte bis div[data-ri] erscheint (max 15s)
+  try {
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-ri]').length > 0,
+      { timeout: 15000, polling: 500 }
+    );
+    console.log('  ✓ div[data-ri] gefunden');
+  } catch {
+    // Noch kein Resultat — versuche Button klicken
+    console.log('  → Noch keine Resultate, klicke Anzeigen…');
+    await clickAnzeigen(page);
+    try {
+      await page.waitForFunction(
+        () => document.querySelectorAll('[data-ri]').length > 0,
+        { timeout: 15000, polling: 500 }
+      );
+      console.log('  ✓ div[data-ri] nach Button-Click');
+    } catch {
+      // Letzte Chance: raw text parsing
+      const divCount = await page.evaluate(() => document.querySelectorAll('[data-ri]').length);
+      const body = await page.evaluate(() => document.body.innerText.substring(0, 500).replace(/\n/g,' '));
+      console.warn(`  ✗ Keine Resultate. data-ri=${divCount} | body: ${body}`);
+      return [];
+    }
+  }
+
+  // Extrahiere Zeilen
   return await page.evaluate(() => {
     const rows = [];
-    document.querySelectorAll('div[data-ri]').forEach(row => {
-      // Each cell is a div with ui-cell-data or similar
-      const cells = Array.from(row.querySelectorAll('[class*="cell"], [class*="col"], div > span, div'))
-        .map(el => (el.children.length === 0 ? (el.innerText||'').trim() : null))
-        .filter(t => t !== null && t !== '');
-
-      // Also try: just get all direct child divs' text
-      const directCells = Array.from(row.children)
-        .map(c => (c.innerText || '').trim().replace(/\s+/g,' '));
-
-      const best = directCells.length >= 4 ? directCells : cells;
-      if (best.length >= 4) rows.push({ ri: row.getAttribute('data-ri'), cells: best });
+    document.querySelectorAll('[data-ri]').forEach(row => {
+      // Sammle alle Leaf-Text-Nodes
+      const texts = [];
+      const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        const t = node.textContent.trim();
+        if (t) texts.push(t);
+      }
+      if (texts.length >= 4) rows.push({ ri: row.getAttribute('data-ri'), texts });
     });
     return rows;
   });
 }
 
-// ── Map extracted rows to structured data ────────────────────────────────────
-// Expected columns: Nr | Resultat | Wind | Rang | Name | Verein | Nat. | Geb.Dat. | Wettkampf | Ort | Datum
+// ── Mappe Rohdaten auf strukturierte Einträge ─────────────────────────────────
 
 function mapRows(rawRows) {
   return rawRows.map(r => {
-    const c = r.cells;
-    return {
-      rank:   parseInt(c[0]) || (parseInt(r.ri) + 1),
-      result: (c[1] || '').trim(),
-      wind:   (c[2] || '').trim() || null,
-      name:   (c[4] || '').trim(),
-      club:   (c[5] || '').trim(),
-      date:   (c[10] || c[9] || '').trim(),
-    };
-  }).filter(r => r.result && r.name);
+    const t = r.texts;
+    // Layout: Nr, Resultat, Wind, Rang, Name, Verein, Nat, Geb.Dat, Wettkampf, Ort, Datum
+    // Manchmal fehlt Wind wenn kein Windwert
+    const nr = parseInt(t[0]);
+    if (isNaN(nr)) return null;
+
+    // Resultat: zweite Zelle — Zeit (7.xx / 12.xx / 24.xx) oder Weite (5.xx)
+    const result = t[1] || '';
+    // Wind: dritte Zelle wenn +/- Vorzeichen
+    let wind = null, nameIdx = 4;
+    if (t[2] && /^[+-]?\d+\.\d$/.test(t[2])) { wind = t[2]; }
+    else { nameIdx = 3; } // kein Wind, Name rückt vor
+
+    const name = t[nameIdx] || '';
+    const club = t[nameIdx + 1] || '';
+    const date = t.find(s => /^\d{2}\.\d{2}\.\d{4}$/.test(s)) || '';
+
+    return { rank: nr, result, wind, name, club, date };
+  }).filter(r => r && r.result && r.name);
 }
 
 // ── Upload to Cloudflare KV ───────────────────────────────────────────────────
@@ -182,15 +234,13 @@ async function scrapeDiscipline(context, disc) {
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 40000 });
     await wait(3000);
 
-    // Dismiss cookie banner
+    // Cookie-Banner
     try {
       for (const txt of ['Nein','Ablehnen','Akzeptieren','Ja']) {
         const btn = page.locator(`button:has-text("${txt}")`).first();
-        if (await btn.isVisible({ timeout: 1500 })) {
-          await btn.click();
-          await wait(800);
-          console.log(`  Cookie "${txt}" geklickt`);
-          break;
+        if (await btn.isVisible({ timeout: 1000 })) {
+          await btn.click(); await wait(600);
+          console.log(`  Cookie "${txt}" geklickt`); break;
         }
       }
     } catch(_) {}
@@ -201,20 +251,16 @@ async function scrapeDiscipline(context, disc) {
     const typeId   = findCompId(comps, 'Ein Resultat pro Athlet');
     const topsId   = findCompId(comps, '30');
 
-    if (!seasonId || !catId) {
-      console.error(`  ✗ Saison/Kat IDs nicht gefunden`);
+    if (!seasonId || !catId)
       return { discipline: key, year, error: 'selects_not_found', top15: [], fiona: null };
-    }
 
-    // 1. Saison
     if (!await pfSelect(page, seasonId, season))
       return { discipline: key, year, error: 'season', top15: [], fiona: null };
 
-    // 2. Kategorie
     if (!await pfSelect(page, catId, CATEGORY_LABEL) && !await pfSelect(page, catId, 'U18', true))
       return { discipline: key, year, error: 'category', top15: [], fiona: null };
 
-    // Re-discover (discipline options reload after category)
+    // Re-discover nach Kategorie-AJAX
     await wait(500);
     const comps2  = await discoverComponents(page);
     const yearId2 = findCompId(comps2, year) || findCompId(comps, year);
@@ -224,25 +270,18 @@ async function scrapeDiscipline(context, disc) {
     if (!yearId2) return { discipline: key, year, error: 'year_not_found', top15: [], fiona: null };
     if (!discId2) return { discipline: key, year, error: 'disc_not_found', top15: [], fiona: null };
 
-    // 3. Jahr
     if (!await pfSelect(page, yearId2, year))
       return { discipline: key, year, error: 'year', top15: [], fiona: null };
 
-    // 4. Disziplin
     if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
       return { discipline: key, year, error: 'discipline', top15: [], fiona: null };
 
-    // 5. Typ: "Ein Resultat pro Athlet"
     if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
-
-    // 6. Anzahl: 30
     if (topsId) await pfSelect(page, topsId, '30');
 
-    await wait(3000);
-
-    const rawRows = await extractResults(page);
-    console.log(`  → ${rawRows.length} div[data-ri]-Zeilen`);
-    if (rawRows[0]) console.log(`  Roh[0]: ${JSON.stringify(rawRows[0].cells)}`);
+    // Warte auf Resultate + extrahiere
+    const rawRows = await waitAndExtract(page);
+    console.log(`  → ${rawRows.length} Zeilen | Roh[0]: ${JSON.stringify(rawRows[0]?.texts?.slice(0,6))}`);
 
     const rows  = mapRows(rawRows);
     const top15 = rows.slice(0, TOP_N).map(r => ({
