@@ -144,13 +144,12 @@ async function waitForResults(page) {
 async function extractResults(page) {
   return await page.evaluate(() => {
     const container = document.getElementById('form_anonym:bestlistSearches');
-    if (!container) return [];
+    if (!container) return [['ERROR: container not found']];
 
     const rows = [];
 
-    // Strategie: alle Elemente mit data-ri (PrimeFaces DataTable Rows)
+    // Strategie 1: data-ri (PrimeFaces DataTable)
     container.querySelectorAll('[data-ri]').forEach(row => {
-      // TreeWalker für alle Text-Nodes
       const texts = [];
       const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
       let node;
@@ -160,26 +159,34 @@ async function extractResults(page) {
       }
       if (texts.length >= 4) rows.push(texts);
     });
-
     if (rows.length > 0) return rows;
 
-    // Fallback: Zeilen aus innerText des Containers parsen
-    const lines = (container.innerText || '').split('\n')
-      .map(l => l.trim()).filter(Boolean);
-
-    // Gruppenweise: jede Zeile die mit einer Zahl beginnt ist eine neue Ergebnis-Row
-    let current = [];
-    for (const line of lines) {
-      if (/^\d+$/.test(line) && current.length > 0) {
-        rows.push(current);
-        current = [line];
-      } else {
-        current.push(line);
-      }
+    // Strategie 2: Suche nach div mit Klassen die auf DataTable-Rows hinweisen
+    const rowSelectors = [
+      '.ui-datatable-data tr',
+      '.ui-widget-content',
+      'tr[class*="ui-"]',
+      'div[class*="row"]:not([class*="panelgrid"])',
+    ];
+    for (const sel of rowSelectors) {
+      container.querySelectorAll(sel).forEach(row => {
+        const texts = [];
+        const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          const t = node.textContent.trim();
+          if (t) texts.push(t);
+        }
+        // Nur Zeilen die mit einer Zahl beginnen (Nr-Spalte)
+        if (texts.length >= 5 && /^\d+$/.test(texts[0])) rows.push(texts);
+      });
+      if (rows.length > 0) return rows;
     }
-    if (current.length > 0) rows.push(current);
 
-    return rows;
+    // Strategie 3: innerText zeilenweise, nur Zeilen die mit Nr. anfangen
+    // Dump innerHTML für Diagnose (erste 3000 Zeichen)
+    const snippet = container.innerHTML.substring(0, 3000);
+    return [['DEBUG_HTML', snippet]];
   });
 }
 
@@ -284,6 +291,13 @@ async function scrapeDiscipline(context, disc) {
       return { discipline:key, year, error:'no_results', top15:[], fiona:null };
 
     const rawRows = await extractResults(page);
+
+    // Debug-Dump wenn kein Resultat gefunden
+    if (rawRows.length > 0 && rawRows[0][0] === 'DEBUG_HTML') {
+      console.log(`  🔍 innerHTML snippet:\n${rawRows[0][1]}`);
+      return { discipline:key, year, error:'no_rows_parsed', top15:[], fiona:null };
+    }
+
     console.log(`  → ${rawRows.length} Zeilen | [0]: ${JSON.stringify(rawRows[0]?.slice?.(0,6) ?? rawRows[0])}`);
 
     const rows  = mapRows(rawRows);
