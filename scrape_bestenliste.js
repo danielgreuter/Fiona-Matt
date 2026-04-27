@@ -118,7 +118,7 @@ async function uploadToKV(key, value) {
   if (!j.success) throw new Error(`KV: ${JSON.stringify(j.errors)}`);
 }
 
-async function scrapeDiscipline(context, disc, isFirst) {
+async function scrapeDiscipline(context, disc) {
   const { key, year, season, label } = disc;
   const page = await context.newPage();
   page.setDefaultTimeout(25000);
@@ -182,12 +182,6 @@ async function scrapeDiscipline(context, disc, isFirst) {
     const hasDate = /\d{2}\.\d{2}\.\d{4}/.test(html);
     console.log(`  Datum: ${hasDate} | HTML: ${html.length}`);
 
-    if (isFirst) {
-      await page.screenshot({ path:'screenshot_results.png', fullPage:true });
-      fs.writeFileSync('page_results.html', html);
-      console.log('  📸 gespeichert');
-    }
-
     const rawRows = parseHtml(html);
     console.log(`  → ${rawRows.length} Zeilen | [0]: ${JSON.stringify(rawRows[0]?.slice(0,5))}`);
 
@@ -211,7 +205,7 @@ async function scrapeDiscipline(context, disc, isFirst) {
   for (let i=0; i<DISCIPLINES.length; i++) {
     const disc = DISCIPLINES[i];
     console.log(`\n📋 ${disc.key}  (${disc.season} ${disc.year} — "${disc.label}")`);
-    results[disc.key] = await scrapeDiscipline(context, disc, i===0);
+    results[disc.key] = await scrapeDiscipline(context, disc);
   }
 
   await context.close();
