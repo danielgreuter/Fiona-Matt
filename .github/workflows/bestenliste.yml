@@ -3,7 +3,7 @@ name: Bestenliste scrapen & in KV speichern
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '0 5 * * *'   # täglich 05:00 UTC
 
 jobs:
   scrape:
@@ -29,17 +29,6 @@ jobs:
           CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
           CF_KV_NS_ID:   ${{ secrets.CF_KV_NS_ID }}
         run: node scrape_bestenliste.js --upload
-
-      - name: Debug-Artefakte hochladen
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-${{ github.run_id }}
-          path: |
-            screenshot_results.png
-            page_results.html
-          if-no-files-found: warn
-          retention-days: 7
 
       - name: Ergebnis als Artefakt speichern
         if: always()
