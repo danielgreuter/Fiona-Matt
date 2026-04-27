@@ -293,17 +293,29 @@ async function scrapeDiscipline(context, disc) {
     if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
     if (topsId) await pfSelect(page, topsId, '30');
 
-    // Disziplin als LETZTES — responsePromise VOR dem Click registrieren!
-    const responsePromise = page.waitForResponse(
-      resp => resp.url().includes('bestlist') && resp.request().method() === 'POST',
-      { timeout: 25000 }
-    );
+    // Alle Requests nach Discipline-Click loggen
+    const requests = [];
+    const reqHandler = req => requests.push(`${req.method()} ${req.url()}`);
+    const errHandler = err => console.log(`  🔴 JS Error: ${err.message}`);
+    const consoleHandler = msg => { if (msg.type() === 'error') console.log(`  🔴 Console: ${msg.text()}`); };
+    page.on('request', reqHandler);
+    page.on('pageerror', errHandler);
+    page.on('console', consoleHandler);
+
     if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
       return { discipline:key, year, error:'discipline', top15:[], fiona:null };
 
-    // Warte auf doSpot Response
-    const hasResults = await waitForResults(page, responsePromise);
-    if (!hasResults)
+    // Warte 8s und logge alle Requests
+    await wait(8000);
+    page.off('request', reqHandler);
+    page.off('pageerror', errHandler);
+    page.off('console', consoleHandler);
+    console.log(`  📡 Requests nach Click (${requests.length}): ${requests.slice(-10).join(' | ')}`);
+
+    const html = await page.content();
+    const hasDate = /\d{2}\.\d{2}\.\d{4}/.test(html);
+    console.log(`  Datum in HTML: ${hasDate} | Länge: ${html.length}`);
+    if (!hasDate)
       return { discipline:key, year, error:'no_results', top15:[], fiona:null };
 
     // Screenshot + HTML-Dump für erste Disziplin
