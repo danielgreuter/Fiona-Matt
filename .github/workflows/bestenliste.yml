@@ -9,7 +9,6 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     name: Bestenliste scrapen & in KV speichern
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,8 +22,6 @@ jobs:
         run: |
           npm install playwright
           npx playwright install chromium --with-deps
-          wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y /tmp/chrome.deb
 
       - name: Bestenliste scrapen
         env:
@@ -32,24 +29,6 @@ jobs:
           CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
           CF_KV_NS_ID:   ${{ secrets.CF_KV_NS_ID }}
         run: node scrape_bestenliste.js --upload
-
-      - name: Debug Seite
-        if: always()
-        run: node debug_page.js
-
-      - name: Debug-Artefakte hochladen
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-output-${{ github.run_id }}
-          path: |
-            debug_before.png
-            debug_after.png
-            debug_tables.txt
-            debug_result.html
-            debug_result.png
-          if-no-files-found: warn
-          retention-days: 7
 
       - name: Ergebnis als Artefakt speichern
         if: always()
