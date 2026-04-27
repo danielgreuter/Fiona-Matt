@@ -276,6 +276,22 @@ async function scrapeDiscipline(context, disc) {
     if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
     if (topsId) await pfSelect(page, topsId, '30');
 
+    // doSpot() direkt aufrufen — triggert die eigentliche Suche
+    console.log('  → doSpot() aufrufen…');
+    await page.evaluate(() => {
+      if (typeof doSpot === 'function') {
+        doSpot();
+      } else {
+        // Fallback: Anzeigen-Button suchen und klicken
+        const btns = document.querySelectorAll('button, a, input[type="submit"]');
+        for (const b of btns) {
+          if (/anzeigen|suchen|show|search/i.test(b.textContent || b.value || '')) {
+            b.click(); return;
+          }
+        }
+      }
+    });
+
     // Warte auf Resultate
     const hasResults = await waitForResults(page);
     if (!hasResults)
