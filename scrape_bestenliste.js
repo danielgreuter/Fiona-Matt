@@ -188,7 +188,15 @@ async function scrapeDiscipline(context, disc, isFirst) {
       return { discipline:key, year, error:'discipline', top15:[], fiona:null };
 
     // Extra wait nach letztem Dropdown
-    await wait(3000);
+    await wait(1000);
+
+    // "Anzeigen"-Button klicken — startet die Suche
+    const anzeigenBtn = page.locator('button:has-text("Anzeigen")').first();
+    await anzeigenBtn.waitFor({ state:'visible', timeout:8000 });
+    await anzeigenBtn.click();
+    console.log('  ✓ "Anzeigen" geklickt');
+    try { await page.waitForLoadState('networkidle', { timeout:15000 }); }
+    catch { await wait(3000); }
 
     // IMMER Screenshot + HTML speichern (erste Disziplin)
     if (isFirst) {
