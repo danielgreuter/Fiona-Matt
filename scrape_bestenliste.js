@@ -144,76 +144,91 @@ async function waitForResults(page) {
 async function extractResults(page) {
   return await page.evaluate(() => {
     const container = document.getElementById('form_anonym:bestlistSearches');
-    if (!container) return [['ERROR: container not found']];
+    if (!container) return [['ERR', 'container not found']];
+
+    const fullText = container.innerText || '';
+    const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
+
+    // Log erste 80 Zeilen zur Diagnose (als erste "Zeile" zurückgeben)
+    const preview = lines.slice(0, 80).join(' | ');
 
     const rows = [];
 
-    // Strategie 1: data-ri (PrimeFaces DataTable)
-    container.querySelectorAll('[data-ri]').forEach(row => {
-      const texts = [];
-      const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
-      let node;
-      while ((node = walker.nextNode())) {
-        const t = node.textContent.trim();
-        if (t) texts.push(t);
-      }
-      if (texts.length >= 4) rows.push(texts);
-    });
-    if (rows.length > 0) return rows;
-
-    // Strategie 2: Suche nach div mit Klassen die auf DataTable-Rows hinweisen
-    const rowSelectors = [
-      '.ui-datatable-data tr',
-      '.ui-widget-content',
-      'tr[class*="ui-"]',
-      'div[class*="row"]:not([class*="panelgrid"])',
-    ];
-    for (const sel of rowSelectors) {
-      container.querySelectorAll(sel).forEach(row => {
-        const texts = [];
-        const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
-        let node;
-        while ((node = walker.nextNode())) {
-          const t = node.textContent.trim();
-          if (t) texts.push(t);
+    // Finde "Datum" als letzten Spalten-Header, Resultate kommen danach
+    let startIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i] === 'Datum' && i > 0) {
+        // Prüfe ob vorherige Zeilen Spalten-Header sind
+        const context = lines.slice(Math.max(0, i-10), i+1).join(' ');
+        if (/Nr/i.test(context) && /Resultat/i.test(context) && /Name/i.test(context)) {
+          startIdx = i + 1;
+          break;
         }
-        // Nur Zeilen die mit einer Zahl beginnen (Nr-Spalte)
-        if (texts.length >= 5 && /^\d+$/.test(texts[0])) rows.push(texts);
-      });
-      if (rows.length > 0) return rows;
+      }
     }
 
-    // Strategie 3: innerText zeilenweise, nur Zeilen die mit Nr. anfangen
-    // Dump innerHTML für Diagnose (erste 3000 Zeichen)
-    const snippet = container.innerHTML.substring(0, 3000);
-    return [['DEBUG_HTML', snippet]];
+    // Fallback: erste Zeile die wie ein Datum aussieht + vorherige Zeile ist Zeit
+    if (startIdx < 0) {
+      for (let i = 2; i < lines.length; i++) {
+        if (/^\d{2}\.\d{2}\.\d{4}$/.test(lines[i])) {
+          // Geh zurück zur Nr-Zeile
+          for (let j = i; j >= 0; j--) {
+            if (/^\d{1,2}$/.test(lines[j]) && parseInt(lines[j]) === 1) {
+              startIdx = j;
+              break;
+            }
+          }
+          if (startIdx >= 0) break;
+        }
+      }
+    }
+
+    const dataLines = startIdx >= 0 ? lines.slice(startIdx) : [];
+
+    // Gruppiere: neue Row beginnt wenn Zeile = "1", "2", "3", ... in aufsteigender Reihenfolge
+    let expectedNr = 1;
+    let current = null;
+    for (const line of dataLines) {
+      const nr = parseInt(line);
+      if (/^\d{1,3}$/.test(line) && nr === expectedNr) {
+        if (current && current.length >= 3) rows.push(current);
+        current = [line];
+        expectedNr++;
+      } else if (current) {
+        current.push(line);
+      }
+    }
+    if (current && current.length >= 3) rows.push(current);
+
+    // Erste "Zeile" = Diagnose-Preview
+    return [['PREVIEW', preview], ...rows];
   });
 }
 
 // ── Text-Rows mappen ──────────────────────────────────────────────────────────
+// Format: ["1", "12.08", "-0.7", "1r1", "Leonie Steffen", "TV Saanen-Gstaad", "SUI", "10.12.2009", "Wettkampf", "Ort", "25.04.2026"]
 
 function mapRows(rawRows) {
   return rawRows.map(texts => {
     const nr = parseInt(texts[0]);
     if (isNaN(nr) || nr < 1 || nr > 500) return null;
 
-    // Finde Resultat (Zeit oder Weite)
-    const resultIdx = texts.findIndex((t,i) => i > 0 &&
-      /^\d{1,2}[.:]\d{2}(\.\d+)?$/.test(t) || /^\d+\.\d{2}$/.test(t));
+    // Resultat: erste Zeit/Weite nach Nr
+    const resultIdx = texts.findIndex((t, i) => i >= 1 &&
+      (/^\d{1,2}[.:]\d{2}(\.\d+)?$/.test(t) || /^\d+\.\d{2}$/.test(t)));
     if (resultIdx < 0) return null;
-
     const result = texts[resultIdx];
-    // Wind direkt nach Resultat wenn +/-
-    let wind = null, nameSearch = resultIdx + 1;
-    if (texts[resultIdx+1] && /^[+-]\d+\.\d$/.test(texts[resultIdx+1])) {
-      wind = texts[resultIdx+1];
-      nameSearch = resultIdx + 2;
-    }
-    // Überspringe Rang (z.B. "1r1")
-    if (texts[nameSearch] && /^\d+r\d+$/.test(texts[nameSearch])) nameSearch++;
 
-    const name = texts[nameSearch] || '';
-    const club = texts[nameSearch+1] || '';
+    // Wind: +/- Zahl direkt nach Resultat
+    let wind = null, offset = resultIdx + 1;
+    if (texts[offset] && /^[+-]\d+\.\d$/.test(texts[offset])) {
+      wind = texts[offset]; offset++;
+    }
+    // Rang überspringen (z.B. "1r1", "2r1")
+    if (texts[offset] && /^\d+r\d+$/.test(texts[offset])) offset++;
+
+    const name = (texts[offset] || '').trim();
+    const club = (texts[offset+1] || '').trim();
     const date = texts.find(t => /^\d{2}\.\d{2}\.\d{4}$/.test(t)) || '';
 
     return { rank: nr, result, wind, name, club, date };
@@ -292,13 +307,14 @@ async function scrapeDiscipline(context, disc) {
 
     const rawRows = await extractResults(page);
 
-    // Immer HTML-Dump für erste Disziplin
-    if (key === '100m') {
-      const dump = await page.evaluate(() => {
-        const c = document.getElementById('form_anonym:bestlistSearches');
-        return c ? c.innerHTML.substring(0, 4000) : 'NOT FOUND';
-      });
-      console.log(`  🔍 DUMP:\n${dump}\n🔍 END`);
+    // PREVIEW-Zeile loggen und entfernen
+    if (rawRows.length > 0 && rawRows[0][0] === 'PREVIEW') {
+      console.log(`  📄 innerText Zeilen: ${rawRows[0][1].substring(0, 500)}`);
+      rawRows.shift();
+    }
+    if (rawRows.length > 0 && rawRows[0][0] === 'ERR') {
+      console.error(`  ✗ ${rawRows[0][1]}`);
+      return { discipline:key, year, error:'extract_error', top15:[], fiona:null };
     }
 
     // Debug-Dump wenn kein Resultat gefunden
