@@ -19,14 +19,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const esc  = s => s.replace(/:/g, '\\:');
 
 const DISCIPLINES = [
-  { key:'100m',           year:'2026', season:'Outdoor', label:'100 m' },
-  { key:'100m_2025',      year:'2025', season:'Outdoor', label:'100 m' },
-  { key:'60m',            year:'2026', season:'Indoor',  label:'60 m'  },
-  { key:'60m_2025',       year:'2025', season:'Indoor',  label:'60 m'  },
-  { key:'200m',           year:'2026', season:'Outdoor', label:'200 m' },
-  { key:'200m_2025',      year:'2025', season:'Outdoor', label:'200 m' },
-  { key:'Long Jump',      year:'2026', season:'Outdoor', label:'Weit'  },
-  { key:'Long Jump_2025', year:'2025', season:'Outdoor', label:'Weit'  },
+  { key:'100m',      year:'2026', season:'Outdoor', label:'100 m' },
+  { key:'60m',       year:'2026', season:'Indoor',  label:'60 m'  },
+  { key:'200m',      year:'2026', season:'Outdoor', label:'200 m' },
+  { key:'Long Jump', year:'2026', season:'Outdoor', label:'Weit'  },
 ];
 
 async function dismissCookie(page) {
