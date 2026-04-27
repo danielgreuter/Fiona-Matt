@@ -149,45 +149,32 @@ async function extractResults(page) {
     const fullText = container.innerText || '';
     const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
 
-    // Log erste 80 Zeilen zur Diagnose (als erste "Zeile" zurückgeben)
-    const preview = lines.slice(0, 80).join(' | ');
-
-    const rows = [];
-
-    // Finde "Datum" als letzten Spalten-Header, Resultate kommen danach
-    let startIdx = -1;
+    // Finde erstes Datum (dd.mm.yyyy) — kommt NUR in Resultaten vor, nie im Formular
+    let firstDateIdx = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i] === 'Datum' && i > 0) {
-        // Prüfe ob vorherige Zeilen Spalten-Header sind
-        const context = lines.slice(Math.max(0, i-10), i+1).join(' ');
-        if (/Nr/i.test(context) && /Resultat/i.test(context) && /Name/i.test(context)) {
-          startIdx = i + 1;
-          break;
-        }
+      if (/^\d{2}\.\d{2}\.\d{4}$/.test(lines[i])) {
+        firstDateIdx = i;
+        break;
       }
     }
 
-    // Fallback: erste Zeile die wie ein Datum aussieht + vorherige Zeile ist Zeit
-    if (startIdx < 0) {
-      for (let i = 2; i < lines.length; i++) {
-        if (/^\d{2}\.\d{2}\.\d{4}$/.test(lines[i])) {
-          // Geh zurück zur Nr-Zeile
-          for (let j = i; j >= 0; j--) {
-            if (/^\d{1,2}$/.test(lines[j]) && parseInt(lines[j]) === 1) {
-              startIdx = j;
-              break;
-            }
-          }
-          if (startIdx >= 0) break;
-        }
-      }
+    if (firstDateIdx < 0) {
+      // Kein Datum gefunden — Preview für Diagnose
+      return [['PREVIEW', `Kein Datum gefunden. Erste 100 Zeilen: ${lines.slice(0,100).join(' | ')}`]];
     }
 
-    const dataLines = startIdx >= 0 ? lines.slice(startIdx) : [];
+    // Geh rückwärts von erstem Datum zur "1" (Nr der ersten Zeile)
+    let startIdx = firstDateIdx;
+    for (let i = firstDateIdx; i >= Math.max(0, firstDateIdx - 20); i--) {
+      if (lines[i] === '1') { startIdx = i; break; }
+    }
 
-    // Gruppiere: neue Row beginnt wenn Zeile = "1", "2", "3", ... in aufsteigender Reihenfolge
-    let expectedNr = 1;
+    // Gruppiere: neue Row wenn Zeile = nächste erwartete Nr
+    const dataLines = lines.slice(startIdx);
+    const rows = [];
     let current = null;
+    let expectedNr = 1;
+
     for (const line of dataLines) {
       const nr = parseInt(line);
       if (/^\d{1,3}$/.test(line) && nr === expectedNr) {
@@ -200,8 +187,7 @@ async function extractResults(page) {
     }
     if (current && current.length >= 3) rows.push(current);
 
-    // Erste "Zeile" = Diagnose-Preview
-    return [['PREVIEW', preview], ...rows];
+    return rows;
   });
 }
 
