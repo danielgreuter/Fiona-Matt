@@ -91,8 +91,11 @@ function parseHtml(html) {
     const cells = [];
     const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/g;
     let cm;
-    while ((cm = cellRe.exec(m[2])) !== null)
-      cells.push(cm[1].replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim());
+    while ((cm = cellRe.exec(m[2])) !== null) {
+      // Entferne ui-column-title Span (Label), behalte nur den Wert
+      const cellHtml = cm[1].replace(/<span[^>]*ui-column-title[^>]*>[^<]*<\/span>/g, '');
+      cells.push(cellHtml.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim());
+    }
     if (cells.length >= 4 && /^\d+$/.test(cells[0])) rows.push(cells);
   }
   return rows;
