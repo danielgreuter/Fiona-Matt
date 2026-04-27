@@ -116,25 +116,16 @@ function findId(comps, needle, partial=false) {
 // ── Warte auf Resultate ───────────────────────────────────────────────────────
 
 async function waitForResults(page) {
-  // Warte bis form_anonym:bestlistSearches Resultate enthält
-  // Erkennung: mindestens ein Element mit einer Zeit oder Weite (z.B. "12.08")
   try {
     await page.waitForFunction(() => {
-      const container = document.getElementById('form_anonym:bestlistSearches');
-      if (!container) return false;
-      const text = container.innerText || '';
-      // Mindestens eine Sprint-Zeit (7.xx, 12.xx, 24.xx) oder Weite (5.xx)
-      return /\b\d{1,2}\.\d{2}\b/.test(text) && text.length > 200;
+      // Echtes Datum dd.mm.yyyy suchen — nur in Ergebniszeilen vorhanden
+      return /\d{2}\.\d{2}\.\d{4}/.test(document.body.innerText);
     }, { timeout: 20000, polling: 500 });
     console.log('  ✓ Resultate erschienen');
     return true;
   } catch {
-    // Debug
-    const info = await page.evaluate(() => {
-      const c = document.getElementById('form_anonym:bestlistSearches');
-      return c ? c.innerText.substring(0,300).replace(/\n/g,' ') : '(Container nicht gefunden)';
-    });
-    console.warn(`  ✗ Keine Resultate nach 20s. Container: ${info}`);
+    const body = await page.evaluate(() => document.body.innerText.substring(0, 300).replace(/\n/g,' '));
+    console.warn(`  ✗ Keine Resultate nach 20s. Body: ${body}`);
     return false;
   }
 }
@@ -143,13 +134,11 @@ async function waitForResults(page) {
 
 async function extractResults(page) {
   return await page.evaluate(() => {
-    const container = document.getElementById('form_anonym:bestlistSearches');
-    if (!container) return [['ERR', 'container not found']];
-
-    const fullText = container.innerText || '';
+    // Suche im gesamten Body — doSpot() rendert Resultate möglicherweise ausserhalb des Formulars
+    const fullText = document.body.innerText || '';
     const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
 
-    // Finde erstes Datum (dd.mm.yyyy) — kommt NUR in Resultaten vor, nie im Formular
+    // Finde erstes Datum (dd.mm.yyyy) — kommt NUR in Resultaten vor
     let firstDateIdx = -1;
     for (let i = 0; i < lines.length; i++) {
       if (/^\d{2}\.\d{2}\.\d{4}$/.test(lines[i])) {
@@ -159,8 +148,7 @@ async function extractResults(page) {
     }
 
     if (firstDateIdx < 0) {
-      // Kein Datum gefunden — Preview für Diagnose
-      return [['PREVIEW', `Kein Datum gefunden. Erste 100 Zeilen: ${lines.slice(0,100).join(' | ')}`]];
+      return [['PREVIEW', `Kein Datum in Body (${lines.length} Zeilen). Letzte 20: ${lines.slice(-20).join(' | ')}`]];
     }
 
     // Geh rückwärts von erstem Datum zur "1" (Nr der ersten Zeile)
@@ -169,7 +157,7 @@ async function extractResults(page) {
       if (lines[i] === '1') { startIdx = i; break; }
     }
 
-    // Gruppiere: neue Row wenn Zeile = nächste erwartete Nr
+    // Gruppiere sequenziell: neue Row wenn Zeile = nächste erwartete Nr
     const dataLines = lines.slice(startIdx);
     const rows = [];
     let current = null;
@@ -183,6 +171,8 @@ async function extractResults(page) {
         expectedNr++;
       } else if (current) {
         current.push(line);
+        // Stop nach 30 Einträgen
+        if (expectedNr > 31) break;
       }
     }
     if (current && current.length >= 3) rows.push(current);
