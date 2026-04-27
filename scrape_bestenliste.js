@@ -306,6 +306,14 @@ async function scrapeDiscipline(context, disc) {
     if (!hasResults)
       return { discipline:key, year, error:'no_results', top15:[], fiona:null };
 
+    // Screenshot + HTML-Dump für erste Disziplin
+    if (key === '100m') {
+      await page.screenshot({ path: 'screenshot_results.png', fullPage: true });
+      const fs2 = require('fs');
+      fs2.writeFileSync('page_results.html', await page.content());
+      console.log('  📸 Screenshot + HTML gespeichert');
+    }
+
     const rawRows = await extractResults(page);
 
     // PREVIEW-Zeile loggen und entfernen
