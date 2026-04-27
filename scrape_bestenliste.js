@@ -292,6 +292,15 @@ async function scrapeDiscipline(context, disc) {
 
     const rawRows = await extractResults(page);
 
+    // Immer HTML-Dump für erste Disziplin
+    if (key === '100m') {
+      const dump = await page.evaluate(() => {
+        const c = document.getElementById('form_anonym:bestlistSearches');
+        return c ? c.innerHTML.substring(0, 4000) : 'NOT FOUND';
+      });
+      console.log(`  🔍 DUMP:\n${dump}\n🔍 END`);
+    }
+
     // Debug-Dump wenn kein Resultat gefunden
     if (rawRows.length > 0 && rawRows[0][0] === 'DEBUG_HTML') {
       console.log(`  🔍 innerHTML snippet:\n${rawRows[0][1]}`);
