@@ -78,9 +78,8 @@ async function pfSelect(page, inputId, labelText, partial = false) {
       : text === labelText;
     if (match) {
       await item.click();
-      // Warte auf doSpot() AJAX
-      try { await page.waitForLoadState('networkidle', { timeout: 8000 }); }
-      catch { await wait(1500); }
+      // Kurzes festes Wait — kein networkidle damit doSpot() danach noch feuern kann
+      await wait(800);
       console.log(`  ✓ "${text}"`);
       return true;
     }
@@ -115,19 +114,39 @@ function findId(comps, needle, partial=false) {
 
 // ── Warte auf Resultate ───────────────────────────────────────────────────────
 
-async function waitForResults(page) {
+async function waitForResults(page, responsePromise) {
   try {
-    // innerHTML inkl. CSS-versteckte Elemente durchsuchen
-    await page.waitForFunction(() => {
-      return /\d{2}\.\d{2}\.\d{4}/.test(document.documentElement.innerHTML);
-    }, { timeout: 20000, polling: 500 });
-    console.log('  ✓ Resultate erschienen');
-    return true;
-  } catch {
+    // Erste Response abwarten (vom Disziplin-AJAX oder doSpot)
+    const resp1 = await responsePromise;
+    console.log(`  ✓ Response 1: ${resp1.status()} ${resp1.url().split('?')[0]}`);
+    await wait(800);
+
+    // Prüfe ob Datum schon da
+    let html = await page.content();
+    if (/\d{2}\.\d{2}\.\d{4}/.test(html)) {
+      console.log(`  ✓ Resultate erschienen (${html.length} Zeichen)`);
+      return true;
+    }
+
+    // doSpot feuert oft als zweite Response — nochmals warten
+    console.log('  → Warte auf doSpot Response...');
+    const resp2Promise = page.waitForResponse(
+      resp => resp.url().includes('bestlist') && resp.request().method() === 'POST',
+      { timeout: 15000 }
+    );
+    const resp2 = await resp2Promise;
+    console.log(`  ✓ Response 2: ${resp2.status()} (${(await resp2.body()).length} bytes)`);
+    await wait(800);
+
+    html = await page.content();
+    const hasDate = /\d{2}\.\d{2}\.\d{4}/.test(html);
+    console.log(`  ${hasDate ? '✓' : '✗'} Datum in HTML: ${hasDate} | Länge: ${html.length}`);
+    return hasDate;
+  } catch(e) {
     const html = await page.content();
     const hasDate = /\d{2}\.\d{2}\.\d{4}/.test(html);
-    console.warn(`  ✗ Keine Resultate nach 20s. HTML-Datum: ${hasDate} | Länge: ${html.length}`);
-    return hasDate; // Trotzdem extrahieren versuchen
+    console.warn(`  ✗ Timeout: ${e.message.substring(0,60)} | Datum: ${hasDate} | Länge: ${html.length}`);
+    return hasDate;
   }
 }
 
@@ -274,12 +293,16 @@ async function scrapeDiscipline(context, disc) {
     if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
     if (topsId) await pfSelect(page, topsId, '30');
 
-    // Disziplin als LETZTES → onco:doSpot() feuert und startet die Suche
+    // Disziplin als LETZTES — responsePromise VOR dem Click registrieren!
+    const responsePromise = page.waitForResponse(
+      resp => resp.url().includes('bestlist') && resp.request().method() === 'POST',
+      { timeout: 25000 }
+    );
     if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
       return { discipline:key, year, error:'discipline', top15:[], fiona:null };
 
-    // Warte auf Resultate (doSpot() feuert automatisch nach Disziplin-Auswahl)
-    const hasResults = await waitForResults(page);
+    // Warte auf doSpot Response
+    const hasResults = await waitForResults(page, responsePromise);
     if (!hasResults)
       return { discipline:key, year, error:'no_results', top15:[], fiona:null };
 
