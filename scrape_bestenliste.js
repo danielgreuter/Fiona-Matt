@@ -117,16 +117,17 @@ function findId(comps, needle, partial=false) {
 
 async function waitForResults(page) {
   try {
+    // innerHTML inkl. CSS-versteckte Elemente durchsuchen
     await page.waitForFunction(() => {
-      // Echtes Datum dd.mm.yyyy suchen — nur in Ergebniszeilen vorhanden
-      return /\d{2}\.\d{2}\.\d{4}/.test(document.body.innerText);
+      return /\d{2}\.\d{2}\.\d{4}/.test(document.documentElement.innerHTML);
     }, { timeout: 20000, polling: 500 });
     console.log('  ✓ Resultate erschienen');
     return true;
   } catch {
-    const body = await page.evaluate(() => document.body.innerText.substring(0, 300).replace(/\n/g,' '));
-    console.warn(`  ✗ Keine Resultate nach 20s. Body: ${body}`);
-    return false;
+    const html = await page.content();
+    const hasDate = /\d{2}\.\d{2}\.\d{4}/.test(html);
+    console.warn(`  ✗ Keine Resultate nach 20s. HTML-Datum: ${hasDate} | Länge: ${html.length}`);
+    return hasDate; // Trotzdem extrahieren versuchen
   }
 }
 
@@ -135,7 +136,8 @@ async function waitForResults(page) {
 async function extractResults(page) {
   return await page.evaluate(() => {
     // Suche im gesamten Body — doSpot() rendert Resultate möglicherweise ausserhalb des Formulars
-    const fullText = document.body.innerText || '';
+    // textContent erfasst auch CSS-versteckte Elemente (im Gegensatz zu innerText)
+    const fullText = document.documentElement.textContent || document.body.textContent || '';
     const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
 
     // Finde erstes Datum (dd.mm.yyyy) — kommt NUR in Resultaten vor
