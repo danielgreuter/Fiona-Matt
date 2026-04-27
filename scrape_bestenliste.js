@@ -268,31 +268,15 @@ async function scrapeDiscipline(context, disc) {
     if (!await pfSelect(page, yearId2, year))
       return { discipline:key, year, error:'year', top15:[], fiona:null };
 
-    // Disziplin
-    if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
-      return { discipline:key, year, error:'discipline', top15:[], fiona:null };
-
-    // Typ + Tops
+    // Typ + Tops VOR Disziplin — Disziplin hat onco:doSpot() und muss als LETZTES kommen
     if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
     if (topsId) await pfSelect(page, topsId, '30');
 
-    // doSpot() direkt aufrufen — triggert die eigentliche Suche
-    console.log('  → doSpot() aufrufen…');
-    await page.evaluate(() => {
-      if (typeof doSpot === 'function') {
-        doSpot();
-      } else {
-        // Fallback: Anzeigen-Button suchen und klicken
-        const btns = document.querySelectorAll('button, a, input[type="submit"]');
-        for (const b of btns) {
-          if (/anzeigen|suchen|show|search/i.test(b.textContent || b.value || '')) {
-            b.click(); return;
-          }
-        }
-      }
-    });
+    // Disziplin als LETZTES → onco:doSpot() feuert und startet die Suche
+    if (!await pfSelect(page, discId2, label) && !await pfSelect(page, discId2, label, true))
+      return { discipline:key, year, error:'discipline', top15:[], fiona:null };
 
-    // Warte auf Resultate
+    // Warte auf Resultate (doSpot() feuert automatisch nach Disziplin-Auswahl)
     const hasResults = await waitForResults(page);
     if (!hasResults)
       return { discipline:key, year, error:'no_results', top15:[], fiona:null };
