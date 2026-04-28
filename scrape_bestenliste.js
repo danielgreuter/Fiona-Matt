@@ -1,222 +1,358 @@
-#!/usr/bin/env node
-/**
- * Swiss Athletics Bestenliste Scraper v32
- * Fix: Nach Anzeigen-Click iframe-Content statt page-Content lesen
- */
+// scrape_bestenliste.js
+// Swiss Athletics U18 Frauen Bestenliste scraper
+// Schreibt 2026 immer neu; 2025 nur einmal (danach eingefroren).
 
 const { chromium } = require('playwright');
 const fs = require('fs');
 
-const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID || '';
-const CF_API_TOKEN  = process.env.CF_API_TOKEN  || '';
-const CF_KV_NS_ID   = process.env.CF_KV_NS_ID   || '';
-const UPLOAD = process.argv.includes('--upload');
+const UPLOAD    = process.argv.includes('--upload');
+const FIONA     = 'Fiona Matt';
+const FIONA_DOB = '02.09.2009';   // Geburtsdatum zur Identifikation
+const BASE_URL  = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml?lang=de&mobile=false&';
 
-const FORM_URL = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml?lang=de';
-const FIONA = 'Fiona Matt';
-const TOP_N = 15;
-const wait = ms => new Promise(r => setTimeout(r, ms));
-const esc  = s => s.replace(/:/g, '\\:');
+// ─── Cloudflare KV ──────────────────────────────────────────────────────────
+const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
+const CF_API_TOKEN  = process.env.CF_API_TOKEN;
+const CF_KV_NS_ID   = process.env.CF_KV_NS_ID;
 
-const DISCIPLINES = [
-  { key:'100m',      year:'2026', season:'Outdoor', label:'100 m' },
-  { key:'60m',       year:'2026', season:'Indoor',  label:'60 m'  },
-  { key:'200m',      year:'2026', season:'Outdoor', label:'200 m' },
-  { key:'Long Jump', year:'2026', season:'Outdoor', label:'Weit'  },
+async function kvGet(key) {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`,
+    { headers: { Authorization: `Bearer ${CF_API_TOKEN}` } }
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`KV GET ${key}: ${res.status}`);
+  return res.text();
+}
+
+async function kvPut(key, value) {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${CF_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: typeof value === 'string' ? value : JSON.stringify(value),
+    }
+  );
+  if (!res.ok) throw new Error(`KV PUT ${key}: ${res.status} ${await res.text()}`);
+}
+
+// ─── Disziplinen ─────────────────────────────────────────────────────────────
+// label      = Ausgabe-Key im JSON
+// saLabel    = Text auf swiss-athletics.ch
+// season     = "Outdoor" | "Indoor"
+// isJump     = true → kein Wind-Feld
+
+const DISCIPLINES_2026 = [
+  { label: '100m',       saLabel: '100 m', season: 'Outdoor', isJump: false },
+  { label: '60m',        saLabel: '60 m',  season: 'Indoor',  isJump: false },
+  { label: '200m',       saLabel: '200 m', season: 'Outdoor', isJump: false },
+  { label: 'Long Jump',  saLabel: 'Weit',  season: 'Outdoor', isJump: true  },
 ];
 
-async function dismissCookie(page) {
-  for (const txt of ['Nein','Ablehnen','Ja','Akzeptieren']) {
-    try {
-      const btn = page.locator(`button:has-text("${txt}")`).first();
-      await btn.waitFor({ state:'visible', timeout:4000 });
-      await btn.click();
-      await wait(500);
-      return;
-    } catch(_) {}
-  }
+const DISCIPLINES_2025 = [
+  { label: '100m',       saLabel: '100 m', season: 'Outdoor', isJump: false },
+  { label: '60m',        saLabel: '60 m',  season: 'Indoor',  isJump: false },
+  { label: '200m',       saLabel: '200 m', season: 'Outdoor', isJump: false },
+  { label: 'Long Jump',  saLabel: 'Weit',  season: 'Outdoor', isJump: true  },
+];
+
+// ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
+
+function isFionaRow(cols) {
+  // Fiona erkennen: Name-Spalte enthält "Matt" oder DOB stimmt
+  return cols.some(c => c.includes('Matt')) || cols.some(c => c === FIONA_DOB);
 }
 
-async function pfSelect(page, inputId, labelText, partial=false) {
-  const compId = inputId.replace(/_input$/, '');
-  const wrapper = page.locator(`#${esc(compId)}`);
-  await wrapper.waitFor({ state:'visible', timeout:12000 });
-  await wrapper.click();
-  let panel = null;
-  for (const suffix of ['_items','_panel']) {
-    const p = page.locator(`#${esc(compId)}${suffix}`);
-    try { await p.waitFor({ state:'visible', timeout:4000 }); panel = p; break; }
-    catch(_) {}
-  }
-  if (!panel) { await page.keyboard.press('Escape'); return false; }
-  const items = await panel.locator('li').all();
-  for (const item of items) {
-    const text = ((await item.textContent())||'').trim();
-    const match = partial ? text.toLowerCase().includes(labelText.toLowerCase()) : text === labelText;
-    if (match) {
-      await item.click();
-      try { await page.waitForLoadState('networkidle', { timeout:8000 }); } catch { await wait(2000); }
-      console.log(`  ✓ "${text}"`);
-      return true;
-    }
-  }
-  console.warn(`  ⚠ "${labelText}" nicht gefunden`);
-  await page.keyboard.press('Escape');
-  return false;
-}
+function parseRows(rows, isJump) {
+  // Spalten je nach Disziplin:
+  // Sprint mit Wind: rank | result | wind | round? | name | club | dob
+  // Sprint ohne Wind (Halle): rank | result | round? | name | club | dob
+  // Weitsprung: rank | result | wind | versuch? | name | club | dob
+  const results = [];
+  for (const cols of rows) {
+    if (cols.length < 4) continue;
+    const rank   = parseInt(cols[0]);
+    const result = cols[1];
+    if (isNaN(rank) || !result) continue;
 
-async function discover(page) {
-  return await page.evaluate(() => {
-    const out = {};
-    document.querySelectorAll('select').forEach(s => { out[s.id] = Array.from(s.options).map(o=>o.text.trim()); });
-    return out;
-  });
-}
-
-function findId(comps, needle, partial=false) {
-  for (const [id,opts] of Object.entries(comps))
-    if (opts.some(o => partial ? o.toLowerCase().includes(needle.toLowerCase()) : o === needle)) return id;
-  return null;
-}
-
-function parseHtml(html) {
-  const rows = [];
-  const rowRe = /data-ri="(\d+)"[^>]*>([\s\S]*?)(?=data-ri="\d+"|<\/tbody>|$)/g;
-  let m;
-  while ((m = rowRe.exec(html)) !== null) {
-    const cells = [];
-    const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/g;
-    let cm;
-    while ((cm = cellRe.exec(m[2])) !== null) {
-      // Entferne ui-column-title Span (Label), behalte nur den Wert
-      const cellHtml = cm[1].replace(/<span[^>]*ui-column-title[^>]*>[^<]*<\/span>/g, '');
-      cells.push(cellHtml.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim());
-    }
-    if (cells.length >= 4 && /^\d+$/.test(cells[0])) rows.push(cells);
-  }
-  return rows;
-}
-
-function mapRows(rawRows) {
-  return rawRows.map(cells => {
-    const rank = parseInt(cells[0]);
-    if (isNaN(rank)||rank<1||rank>500) return null;
-    const result = (cells[1]||'').trim();
-    let wind=null, nameIdx=4;
-    if ((cells[2]||'').match(/^[+-]?\d+\.\d$/)) wind = cells[2]; else nameIdx = 3;
-    const name = (cells[nameIdx]||'').trim();
-    const club = (cells[nameIdx+1]||'').trim();
-    const date = cells.find(c=>/^\d{2}\.\d{2}\.\d{4}$/.test((c||'').trim()))||'';
-    return { rank, result, wind, name, club, date };
-  }).filter(r=>r&&r.result&&r.name&&r.name.length>2);
-}
-
-async function uploadToKV(key, value) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`;
-  const res = await fetch(url, { method:'PUT', headers:{'Authorization':`Bearer ${CF_API_TOKEN}`,'Content-Type':'application/json'}, body:JSON.stringify(value) });
-  const j = await res.json();
-  if (!j.success) throw new Error(`KV: ${JSON.stringify(j.errors)}`);
-}
-
-async function scrapeDiscipline(context, disc) {
-  const { key, year, season, label } = disc;
-  const page = await context.newPage();
-  page.setDefaultTimeout(25000);
-
-  try {
-    await page.goto(FORM_URL, { waitUntil:'domcontentloaded', timeout:40000 });
-    await wait(2000);
-    await dismissCookie(page);
-
-    const comps   = await discover(page);
-    const seasonId = findId(comps, season);
-    const catId    = findId(comps, 'U18 Frauen') || findId(comps,'U18',true);
-    const typeId   = findId(comps,'Ein Resultat pro Athlet');
-    const topsId   = findId(comps,'30');
-
-    if (!await pfSelect(page, seasonId, season)) return { discipline:key, year, error:'season', top15:[], fiona:null };
-    if (!await pfSelect(page, catId, 'U18 Frauen')) return { discipline:key, year, error:'category', top15:[], fiona:null };
-
-    await wait(300);
-    const comps2  = await discover(page);
-    const yearId2 = findId(comps2,year)||findId(comps,year);
-    const discId2 = findId(comps2,label)||findId(comps2,label,true)||findId(comps,label)||findId(comps,label,true);
-
-    if (!await pfSelect(page, yearId2, year)) return { discipline:key, year, error:'year', top15:[], fiona:null };
-    if (typeId) await pfSelect(page, typeId, 'Ein Resultat pro Athlet');
-    if (topsId) await pfSelect(page, topsId, '30');
-    if (!await pfSelect(page, discId2, label)) return { discipline:key, year, error:'discipline', top15:[], fiona:null };
-
-    // Anzeigen klicken → Seite wechselt zu swiss-athletics.ch mit iFrame
-    const anzeigenBtn = page.locator('button:has-text("Anzeigen")').first();
-    await anzeigenBtn.waitFor({ state:'visible', timeout:8000 });
-    await anzeigenBtn.click();
-    console.log('  ✓ "Anzeigen" geklickt');
-
-    // Warte auf iFrame mit alabus-Content
-    await page.waitForFunction(() => {
-      const iframe = document.getElementById('alabusContentIframe');
-      return iframe && iframe.src && iframe.src.includes('blyear');
-    }, { timeout: 15000 }).catch(() => {});
-
-    // iFrame-URL aus dem DOM holen und direkt navigieren
-    const iframeUrl = await page.evaluate(() => {
-      const iframe = document.getElementById('alabusContentIframe');
-      return iframe ? iframe.src : null;
-    });
-    console.log(`  iFrame URL: ${iframeUrl ? iframeUrl.substring(0,100)+'…' : 'NICHT GEFUNDEN'}`);
-
-    let html = '';
-    if (iframeUrl) {
-      // Direkt zur iFrame-URL navigieren
-      await page.goto(iframeUrl, { waitUntil:'networkidle', timeout:20000 });
-      html = await page.content();
+    // Wind: wenn cols[2] wie "+0.0" oder "-1.2" oder "0.0" aussieht → Windwert
+    const windLike = /^[+-]?\d+\.\d+$/.test(cols[2]);
+    let wind = null, nameIdx;
+    if (isJump) {
+      wind    = windLike ? cols[2] : null;
+      nameIdx = windLike ? 4 : 3;
     } else {
-      // Fallback: versuche Frame-Content direkt
-      const frames = page.frames();
-      console.log(`  Frames: ${frames.map(f=>f.url().substring(0,60)).join(' | ')}`);
-      const alabusFrame = frames.find(f => f.url().includes('alabus') && f.url().includes('blyear'));
-      if (alabusFrame) html = await alabusFrame.content();
+      wind    = windLike ? cols[2] : null;
+      nameIdx = windLike ? 4 : 3;
     }
 
-    const hasDate = /\d{2}\.\d{2}\.\d{4}/.test(html);
-    console.log(`  Datum: ${hasDate} | HTML: ${html.length}`);
+    const name = cols[nameIdx] || '';
+    const club = cols[nameIdx + 1] || '';
+    const dob  = cols[nameIdx + 2] || '';
 
-    const rawRows = parseHtml(html);
-    console.log(`  → ${rawRows.length} Zeilen | [0]: ${JSON.stringify(rawRows[0]?.slice(0,5))}`);
-
-    const rows  = mapRows(rawRows);
-    const top15 = rows.slice(0,TOP_N).map(r=>({ rank:r.rank, name:r.name, result:r.result, wind:r.wind, club:r.club, date:r.date, isFiona:r.name.includes(FIONA) }));
-    const fEntry = rows.find(r=>r.name.includes(FIONA));
-    const fiona  = fEntry ? { rank:fEntry.rank, result:fEntry.result, wind:fEntry.wind, date:fEntry.date, gapToFirst: rows[0]?`+${(parseFloat(fEntry.result)-parseFloat(rows[0].result)).toFixed(2)}`:null } : null;
-
-    if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
-    else if (rows[0]) console.log(`  1.: ${rows[0].name} ${rows[0].result}`);
-    return { discipline:key, year, scraped:new Date().toISOString(), fiona, top15 };
-
-  } finally { await page.close(); }
+    results.push({
+      rank,
+      name,
+      result,
+      wind,
+      club,
+      date: dob,
+      isFiona: name.includes('Matt') || dob === FIONA_DOB,
+    });
+  }
+  return results;
 }
+
+function buildFionaEntry(rows) {
+  const fRow = rows.find(r => r.isFiona);
+  if (!fRow) return null;
+  const first   = rows[0];
+  const gap     = first && first.result !== fRow.result
+    ? calcGap(fRow.result, first.result, fRow.result.includes('.'))
+    : null;
+  return {
+    rank:       fRow.rank,
+    result:     fRow.result,
+    wind:       fRow.wind,
+    date:       fRow.date,
+    gapToFirst: gap,
+  };
+}
+
+function calcGap(fionaResult, firstResult, isTime) {
+  const f = parseFloat(fionaResult);
+  const b = parseFloat(firstResult);
+  if (isNaN(f) || isNaN(b)) return null;
+  const diff = isTime ? (f - b) : (b - f);  // Zeit: Fiona langsamer = positiv; Weite: Fiona kürzer = positiv
+  return (diff >= 0 ? '+' : '') + diff.toFixed(2);
+}
+
+// ─── Playwright: eine Disziplin scrapen ──────────────────────────────────────
+
+async function scrapeDiscipline(page, disc, year) {
+  const yr     = String(year);
+  const label  = `${disc.label}  (${disc.season} ${yr} — "${disc.saLabel}")`;
+  console.log(`\n📋 ${label}`);
+
+  // Seite laden (fresh reload damit Filter zurückgesetzt)
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForTimeout(1500);
+
+  // ── Filter setzen ─────────────────────────────────────────────────────────
+  async function selectOption(labelText, value) {
+    // Sucht das <select>-Element dessen zugehöriges Label den Text enthält
+    // und setzt es auf den Wert der die gesuchte Option enthält
+    const selected = await page.evaluate(({ lbl, val }) => {
+      const labels = Array.from(document.querySelectorAll('label, span, td'));
+      for (const el of labels) {
+        if (!el.textContent.trim().includes(lbl)) continue;
+        // Suche naheliegendes Select
+        let sel = el.nextElementSibling;
+        if (!sel || sel.tagName !== 'SELECT') {
+          const parent = el.closest('tr,td,div');
+          if (parent) sel = parent.querySelector('select');
+        }
+        if (!sel) continue;
+        const opt = Array.from(sel.options).find(o => o.text.trim().includes(val));
+        if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles:true})); return true; }
+      }
+      return false;
+    }, { lbl: labelText, val: value });
+    if (selected) {
+      console.log(`  ✓ "${value}"`);
+    } else {
+      console.warn(`  ✗ "${value}" nicht gefunden (${labelText})`);
+    }
+    await page.waitForTimeout(400);
+  }
+
+  // Alternativ-Methode: Text-Match in Select direkt
+  async function selectDirect(value) {
+    const done = await page.evaluate((val) => {
+      const selects = document.querySelectorAll('select');
+      for (const sel of selects) {
+        const opt = Array.from(sel.options).find(o => o.text.trim() === val || o.text.trim().includes(val));
+        if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles:true})); return sel.id || true; }
+      }
+      return false;
+    }, value);
+    if (done) console.log(`  ✓ "${value}"`);
+    else      console.warn(`  ✗ "${value}" nicht gefunden`);
+    await page.waitForTimeout(400);
+  }
+
+  await selectDirect(disc.season);
+  await page.waitForTimeout(600);
+  await selectDirect('U18 Frauen');
+  await page.waitForTimeout(600);
+  await selectDirect(yr);
+  await page.waitForTimeout(600);
+  await selectDirect('Ein Resultat pro Athlet');
+  await page.waitForTimeout(400);
+  await selectDirect('30');
+  await page.waitForTimeout(400);
+  await selectDirect(disc.saLabel);
+  await page.waitForTimeout(400);
+
+  // Anzeigen-Button klicken
+  const btn = await page.$('input[type=submit][value*=Anzeigen], button:has-text("Anzeigen")');
+  if (btn) { await btn.click(); console.log(`  ✓ "Anzeigen" geklickt`); }
+  else      { console.warn(`  ✗ Anzeigen-Button nicht gefunden`); }
+  await page.waitForTimeout(3000);
+
+  // ── iFrame finden & parsen ────────────────────────────────────────────────
+  const frames = page.frames();
+  let iframeFrame = null;
+  for (const f of frames) {
+    if (f.url().includes('bestlist.xhtml')) { iframeFrame = f; break; }
+  }
+  if (!iframeFrame) {
+    // Fallback: iframe-Element holen
+    const iframeEl = await page.$('iframe');
+    if (iframeEl) {
+      const iUrl = await iframeEl.getAttribute('src');
+      console.log(`  iFrame URL: ${iUrl?.substring(0,80)}…`);
+      iframeFrame = await iframeEl.contentFrame();
+    }
+  } else {
+    console.log(`  iFrame URL: ${iframeFrame.url().substring(0,80)}…`);
+  }
+
+  if (!iframeFrame) {
+    console.warn('  ✗ Kein iFrame gefunden');
+    return null;
+  }
+
+  await iframeFrame.waitForTimeout(2000);
+
+  // Tabelle parsen
+  const html = await iframeFrame.content();
+  const hasDate = html.includes('Datum') || html.includes('2009') || html.includes('2010');
+  console.log(`  Datum: ${hasDate} | HTML: ${html.length}`);
+
+  const rows = await iframeFrame.evaluate(() => {
+    const trs = document.querySelectorAll('table tr');
+    const result = [];
+    for (const tr of trs) {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 3) continue;
+      const cols = Array.from(tds).map(td => td.textContent.trim());
+      // Nur Zeilen die mit einer Zahl beginnen (Rang)
+      if (/^\d+$/.test(cols[0])) result.push(cols);
+    }
+    return result;
+  });
+
+  console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0])}`);
+
+  if (rows.length === 0) return null;
+
+  const parsed = parseRows(rows, disc.isJump);
+  const top15  = parsed.slice(0, 15);
+  const fiona  = buildFionaEntry(parsed);
+
+  if (fiona) {
+    console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
+  } else {
+    console.log(`  — Fiona nicht in Top ${rows.length}`);
+  }
+
+  const top1 = parsed[0];
+  if (top1) console.log(`  1.: ${top1.name} ${top1.result}`);
+
+  return {
+    discipline: disc.label,
+    year: yr,
+    scraped: new Date().toISOString(),
+    fiona,
+    top15,
+  };
+}
+
+// ─── Hauptprogramm ───────────────────────────────────────────────────────────
 
 (async () => {
-  const browser = await chromium.launch({ headless:true, args:['--no-sandbox','--disable-dev-shm-usage'] });
-  const context = await browser.newContext({ userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36' });
-
-  const results = {};
-  for (let i=0; i<DISCIPLINES.length; i++) {
-    const disc = DISCIPLINES[i];
-    console.log(`\n📋 ${disc.key}  (${disc.season} ${disc.year} — "${disc.label}")`);
-    results[disc.key] = await scrapeDiscipline(context, disc);
+  // Prüfen ob 2025-Daten bereits eingefroren sind
+  let skip2025 = false;
+  if (UPLOAD) {
+    console.log('\n🔍 Prüfe ob 2025-Daten bereits eingefroren…');
+    try {
+      const existing = await kvGet('bestenliste_2025:fiona');
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        if (parsed && parsed.disciplines && parsed.frozen) {
+          skip2025 = true;
+          console.log('  ✅ 2025 bereits eingefroren — wird nicht neu gescraped');
+        } else {
+          console.log('  ℹ️  2025-Key vorhanden aber noch nicht frozen → wird aktualisiert');
+        }
+      } else {
+        console.log('  ℹ️  2025-Key noch nicht vorhanden → wird erstmalig gescraped');
+      }
+    } catch (e) {
+      console.warn('  ⚠️  KV-Prüfung fehlgeschlagen:', e.message);
+    }
   }
 
-  await context.close();
-  await browser.close();
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext();
+  const page    = await context.newPage();
 
-  const output = { updated:new Date().toISOString(), disciplines:results };
-  fs.writeFileSync('bestenliste.json', JSON.stringify(output,null,2));
+  // ── 2026 scrapen ────────────────────────────────────────────────────────
+  console.log('\n══════════════════════════════');
+  console.log('  SAISON 2026');
+  console.log('══════════════════════════════');
+
+  const disciplines2026 = {};
+  for (const disc of DISCIPLINES_2026) {
+    const result = await scrapeDiscipline(page, disc, 2026);
+    if (result) disciplines2026[disc.label] = result;
+  }
+
+  const json2026 = {
+    updated:     new Date().toISOString(),
+    disciplines: disciplines2026,
+  };
+
+  fs.writeFileSync('bestenliste.json', JSON.stringify(json2026, null, 2));
   console.log('\n✅ bestenliste.json');
 
   if (UPLOAD) {
-    await uploadToKV('bestenliste', output);
-    console.log('✅ KV fertig');
+    await kvPut('bestenliste:fiona', json2026);
+    console.log('✅ KV fertig (2026)');
   }
+
+  // ── 2025 scrapen (nur wenn nicht eingefroren) ────────────────────────────
+  if (!skip2025) {
+    console.log('\n══════════════════════════════');
+    console.log('  SAISON 2025');
+    console.log('══════════════════════════════');
+
+    const disciplines2025 = {};
+    for (const disc of DISCIPLINES_2025) {
+      const result = await scrapeDiscipline(page, disc, 2025);
+      if (result) disciplines2025[disc.label] = result;
+    }
+
+    const json2025 = {
+      updated:     new Date().toISOString(),
+      frozen:      true,     // ← Ab jetzt nicht mehr überschreiben
+      disciplines: disciplines2025,
+    };
+
+    fs.writeFileSync('bestenliste_2025.json', JSON.stringify(json2025, null, 2));
+    console.log('\n✅ bestenliste_2025.json');
+
+    if (UPLOAD) {
+      await kvPut('bestenliste_2025:fiona', json2025);
+      console.log('✅ KV fertig (2025 — eingefroren)');
+    }
+  }
+
+  await browser.close();
+  console.log('\n✅ Fertig');
 })();
