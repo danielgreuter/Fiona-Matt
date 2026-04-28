@@ -4081,5 +4081,114 @@ function renderSAResults() {
 })();
 
 </script>
+<!-- ═══════════════════════════════════════════════
+     RANKING BUG FIX v2
+     Einfach VOR </body> einfügen — überschreibt die
+     fehlerhaften Funktionen weiter oben
+═══════════════════════════════════════════════ -->
+<script>
+var liveRankData25 = null;
+
+function _rankDataForYear(yr) {
+  return yr === '2026' ? liveRankData : (yr === '2025' ? liveRankData25 : null);
+}
+
+// Überschreibt die fehlerhafte loadBestenliste() weiter oben
+async function loadBestenliste() {
+  // 2026
+  try {
+    const res = await fetch(PROXY_URL + '?action=bestenliste');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.disciplines) {
+        liveRankData = data;
+        renderRankingBars(data);
+        if (currentRankYear === '2026') { renderRankBanners(); renderRankList(); }
+      }
+    }
+  } catch(e) { console.log('bestenliste 2026:', e.message); }
+
+  // 2025 (separater KV-Key)
+  try {
+    const res25 = await fetch(PROXY_URL + '?action=bestenliste_2025');
+    if (res25.ok) {
+      const data25 = await res25.json();
+      if (data25 && data25.disciplines) {
+        liveRankData25 = data25;
+        if (currentRankYear === '2025') { renderRankBanners(); renderRankList(); }
+      }
+    }
+  } catch(e) { console.log('bestenliste 2025:', e.message); }
+}
+
+// Überschreibt die fehlerhafte renderRankBanners() weiter oben
+function renderRankBanners() {
+  const yr   = currentRankYear;
+  const data = _rankDataForYear(yr);
+
+  const labels  = {
+    '60m':       '60m Halle',
+    '100m':      '100m',
+    '200m':      '200m',
+    'Long Jump': 'Weitsprung'
+  };
+  const seasons = {
+    '60m':       yr === '2026' ? 'Indoor 2026' : 'Indoor 2025',
+    '100m':      'Outdoor ' + yr,
+    '200m':      'Outdoor ' + yr,
+    'Long Jump': 'Outdoor ' + yr,
+  };
+
+  ['60m', '100m', '200m', 'Long Jump'].forEach(function(disc) {
+    const resEl  = document.getElementById('rank-res-'  + disc);
+    const gapEl  = document.getElementById('rank-gap-'  + disc);
+    const rankEl = document.getElementById('rank-rank-' + disc);
+    if (!resEl || !gapEl || !rankEl) return;
+
+    const unit = disc === 'Long Jump' ? ' m' : 's';
+
+    // ── KERNFIX: Live-Daten NUR verwenden wenn Jahr exakt passt ──
+    let live = null;
+    if (data && data.disciplines) {
+      const byYrKey = data.disciplines[disc + '_' + yr]; // z.B. "60m_2026"
+      const plain   = data.disciplines[disc];             // z.B. "60m"
+      if (byYrKey && byYrKey.year === yr)  live = byYrKey;
+      else if (plain && plain.year === yr) live = plain;
+      // Wenn year ≠ yr: live bleibt null → kein cross-year Fallback!
+    }
+
+    if (live && live.fiona != null) {
+      // ✅ Fiona steht in der Rangliste
+      resEl.textContent  = live.fiona.result + unit;
+      gapEl.textContent  = live.fiona.gapToFirst
+        ? 'Δ' + live.fiona.gapToFirst + ' zu #1' : '';
+      rankEl.textContent = 'Rang ' + live.fiona.rank + ' · ' + seasons[disc];
+
+    } else if (live && live.fiona === null) {
+      // ✅ Rangliste OK, aber Fiona hat in diesem Jahr kein Resultat
+      resEl.textContent  = '—';
+      gapEl.textContent  = '';
+      rankEl.textContent = 'Kein ' + yr + '-Resultat · ' + labels[disc];
+
+    } else {
+      // ✅ Keine Live-Daten → statische Fallback-Daten
+      const rd = FIONA.rankingData[disc] && FIONA.rankingData[disc][yr];
+      if (rd) {
+        resEl.textContent  = rd.result + unit;
+        gapEl.textContent  = '';
+        rankEl.textContent = rd.rank
+          ? 'Rang ' + rd.rank + ' · ' + rd.season
+          : rd.season;
+      } else {
+        resEl.textContent  = '—';
+        gapEl.textContent  = '';
+        rankEl.textContent = 'Keine Daten für ' + yr;
+      }
+    }
+  });
+}
+
+console.log('[FIX v2] renderRankBanners + loadBestenliste überschrieben ✓');
+</script>  
 </body>
 </html>
