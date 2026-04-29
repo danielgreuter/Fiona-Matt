@@ -90,9 +90,11 @@ function parseRows(rows, isJump) {
       nameIdx = windLike ? 4 : 3;
     }
 
-    const name = cols[nameIdx] || '';
-    const club = cols[nameIdx + 1] || '';
-    const dob  = cols[nameIdx + 2] || '';
+    const name    = cols[nameIdx] || '';
+    const club    = cols[nameIdx + 1] || '';
+    const dob     = cols[nameIdx + 2] || '';
+    // Wettkampfdatum: letzte Spalte die wie ein Datum aussieht (dd.mm.yyyy)
+    const dateCol = cols.slice().reverse().find(c => /^\d{2}\.\d{2}\.\d{4}$/.test(c)) || '';
 
     results.push({
       rank,
@@ -100,7 +102,8 @@ function parseRows(rows, isJump) {
       result,
       wind,
       club,
-      date: dob,
+      date:        dob,
+      compDate:    dateCol,
       isFiona: name.includes('Matt') || dob === FIONA_DOB,
     });
   }
@@ -260,6 +263,15 @@ async function scrapeDiscipline(page, disc, year) {
   if (rows.length === 0) return null;
 
   const parsed = parseRows(rows, disc.isJump);
+
+  // Prüfen ob die Resultate wirklich aus dem gewünschten Jahr stammen
+  // (Swiss Athletics liefert manchmal Vorjahres-Daten wenn aktuelle Saison noch leer ist)
+  const yrCheck = parsed.slice(0, 5).filter(r => r.compDate && r.compDate.endsWith(yr));
+  if (parsed.length > 0 && yrCheck.length === 0) {
+    const sampleDate = parsed[0].compDate || '(kein Datum)';
+    console.warn(`  ⚠️  Keine ${yr}-Daten gefunden (Beispiel: ${sampleDate}) — ${disc.label} wird übersprungen`);
+    return null;
+  }
   const top15  = parsed.slice(0, 15);
   const fiona  = buildFionaEntry(parsed);
 
