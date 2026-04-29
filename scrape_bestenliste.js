@@ -249,14 +249,14 @@ async function scrapeDiscipline(page, disc, year) {
     }
     return { rows: result, firstThree };
   });
-  const { rows: rowsRaw, firstThree } = rows;
+  const { rows: parsedRows, firstThree } = rows;
   if (firstThree.length > 0) console.log('  Debug rows:', JSON.stringify(firstThree));
   else console.log('  ⚠️  Keine td-Zeilen gefunden');
 
   console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0])}`);
 
-  const rows = rowsRaw;
-  if (rows.length === 0) return null;
+  if (parsedRows.length === 0) return null;
+  const rows = parsedRows;
 
   const parsed = parseRows(rows, disc.isJump);
   const top15  = parsed.slice(0, 15);
