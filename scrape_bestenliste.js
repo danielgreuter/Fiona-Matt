@@ -191,19 +191,22 @@ async function scrapeDiscipline(page, disc, year) {
   await page.waitForTimeout(600);
   await selectDirect(yr);
   await page.waitForTimeout(600);
-  // Checkbox 'Nur Athlet/innen / Teams dieser Kategorie' aktivieren (PrimeFaces)
-  await page.evaluate(() => {
-    const cb = document.querySelector('[id="form_anonym:categoryExclusive"] .ui-chkbox-box');
-    if (cb) cb.click();
-  });
-  await page.waitForTimeout(800);
-  console.log('  ✓ Checkbox categoryExclusive geklickt');
+
   await selectDirect('Ein Resultat pro Athlet');
   await page.waitForTimeout(400);
   await selectDirect('30');
   await page.waitForTimeout(400);
   await selectDirect(disc.saLabel);
   await page.waitForTimeout(400);
+
+  // Checkbox 'Nur Athlet/innen / Teams dieser Kategorie' — nativer Playwright-Click
+  try {
+    await page.click('[id="form_anonym:categoryExclusive"] .ui-chkbox-box', { timeout: 3000 });
+    console.log('  ✓ Checkbox categoryExclusive aktiviert');
+    await page.waitForTimeout(600);
+  } catch(e) {
+    console.warn('  ✗ Checkbox nicht gefunden');
+  }
 
   // Anzeigen-Button klicken
   const btn = await page.$('input[type=submit][value*=Anzeigen], button:has-text("Anzeigen")');
