@@ -90,11 +90,9 @@ function parseRows(rows, isJump) {
       nameIdx = windLike ? 4 : 3;
     }
 
-    const name    = cols[nameIdx] || '';
-    const club    = cols[nameIdx + 1] || '';
-    const dob     = cols[nameIdx + 2] || '';
-    // Wettkampfdatum: letzte Spalte die wie ein Datum aussieht (dd.mm.yyyy)
-    const dateCol = cols.slice().reverse().find(c => /^\d{2}\.\d{2}\.\d{4}$/.test(c)) || '';
+    const name = cols[nameIdx] || '';
+    const club = cols[nameIdx + 1] || '';
+    const dob  = cols[nameIdx + 2] || '';
 
     results.push({
       rank,
@@ -102,8 +100,7 @@ function parseRows(rows, isJump) {
       result,
       wind,
       club,
-      date:        dob,
-      compDate:    dateCol,
+      date: dob,
       isFiona: name.includes('Matt') || dob === FIONA_DOB,
     });
   }
@@ -173,7 +170,7 @@ async function scrapeDiscipline(page, disc, year) {
     await page.waitForTimeout(400);
   }
 
-  // Alternativ-Methode: Text-Match in Select direkt — gibt true/false zurück
+  // Alternativ-Methode: Text-Match in Select direkt
   async function selectDirect(value) {
     const done = await page.evaluate((val) => {
       const selects = document.querySelectorAll('select');
@@ -186,22 +183,14 @@ async function scrapeDiscipline(page, disc, year) {
     if (done) console.log(`  ✓ "${value}"`);
     else      console.warn(`  ✗ "${value}" nicht gefunden`);
     await page.waitForTimeout(400);
-    return !!done;
   }
 
   await selectDirect(disc.season);
   await page.waitForTimeout(600);
   await selectDirect('U18 Frauen');
   await page.waitForTimeout(600);
-
-  // Jahr-Auswahl: wenn nicht vorhanden → Disziplin überspringen
-  const yearFound = await selectDirect(yr);
-  if (!yearFound) {
-    console.warn(`  ⚠️  Jahr ${yr} nicht im Dropdown — ${disc.label} wird übersprungen`);
-    return null;
-  }
+  await selectDirect(yr);
   await page.waitForTimeout(600);
-
   await selectDirect('Ein Resultat pro Athlet');
   await page.waitForTimeout(400);
   await selectDirect('30');
@@ -260,18 +249,12 @@ async function scrapeDiscipline(page, disc, year) {
 
   console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0])}`);
 
-  if (rows.length === 0) return null;
+  if (rows.length === 0) {
+    console.warn(`  ⚠️  Keine Resultate — leeres Objekt wird geschrieben`);
+    return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona: null, top15: [], empty: true };
+  }
 
   const parsed = parseRows(rows, disc.isJump);
-
-  // Prüfen ob die Resultate wirklich aus dem gewünschten Jahr stammen
-  // (Swiss Athletics liefert manchmal Vorjahres-Daten wenn aktuelle Saison noch leer ist)
-  const yrCheck = parsed.slice(0, 5).filter(r => r.compDate && r.compDate.endsWith(yr));
-  if (parsed.length > 0 && yrCheck.length === 0) {
-    const sampleDate = parsed[0].compDate || '(kein Datum)';
-    console.warn(`  ⚠️  Keine ${yr}-Daten gefunden (Beispiel: ${sampleDate}) — ${disc.label} wird übersprungen`);
-    return null;
-  }
   const top15  = parsed.slice(0, 15);
   const fiona  = buildFionaEntry(parsed);
 
@@ -330,7 +313,8 @@ async function scrapeDiscipline(page, disc, year) {
   const disciplines2026 = {};
   for (const disc of DISCIPLINES_2026) {
     const result = await scrapeDiscipline(page, disc, 2026);
-    if (result) disciplines2026[disc.label] = result;
+    // Immer schreiben — auch leere Objekte überschreiben alte KV-Daten
+    disciplines2026[disc.label] = result || { discipline: disc.label, year: '2026', scraped: new Date().toISOString(), fiona: null, top15: [], empty: true };
   }
 
   const json2026 = {
