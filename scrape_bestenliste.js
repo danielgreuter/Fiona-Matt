@@ -191,30 +191,13 @@ async function scrapeDiscipline(page, disc, year) {
   await page.waitForTimeout(600);
   await selectDirect(yr);
   await page.waitForTimeout(600);
-  // Checkbox 'Nur Athlet/innen / Teams dieser Kategorie' aktivieren
-  const cbResult = await page.evaluate(() => {
-    // Log alle Checkboxen
-    const allCBs = document.querySelectorAll(
-      'input[type=checkbox], div[role=checkbox], .ui-chkbox-box, [class*=chkbox], [class*=checkbox]'
-    );
-    const info = Array.from(allCBs).map(el => ({
-      tag: el.tagName, id: el.id, cls: el.className.toString().substring(0,40),
-      checked: el.checked || el.getAttribute('aria-checked'),
-      near: el.closest('label,div,td,tr')?.textContent?.trim()?.substring(0,60)
-    }));
-    // Klicken: Element das "Kategorie" im Text-Kontext hat
-    for (const el of allCBs) {
-      const ctx = el.closest('label,div,td,tr')?.textContent || '';
-      if (ctx.includes('dieser Kategorie') || ctx.includes('Kategorie')) {
-        el.click(); return { clicked: true, info };
-      }
-    }
-    // Fallback: ersten klicken
-    if (allCBs[0]) { allCBs[0].click(); return { clicked: 'first', info }; }
-    return { clicked: false, info };
+  // Checkbox 'Nur Athlet/innen / Teams dieser Kategorie' aktivieren (PrimeFaces)
+  await page.evaluate(() => {
+    const cb = document.querySelector('[id="form_anonym:categoryExclusive"] .ui-chkbox-box');
+    if (cb) cb.click();
   });
-  console.log('  CB debug:', JSON.stringify(cbResult));
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(800);
+  console.log('  ✓ Checkbox categoryExclusive geklickt');
   await selectDirect('Ein Resultat pro Athlet');
   await page.waitForTimeout(400);
   await selectDirect('30');
