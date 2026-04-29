@@ -192,20 +192,20 @@ async function scrapeDiscipline(page, disc, year) {
   await selectDirect(yr);
   await page.waitForTimeout(600);
   // Checkbox 'Nur Athlet/innen / Teams dieser Kategorie' aktivieren
-  await page.evaluate(() => {
-    const labels = document.querySelectorAll('label, span');
-    for (const el of labels) {
-      if (el.textContent.includes('dieser Kategorie')) {
-        const cb = el.closest('div,td,tr')?.querySelector('input[type=checkbox]') || el.previousElementSibling || el.nextElementSibling;
-        if (cb && cb.type === 'checkbox' && !cb.checked) { cb.click(); return true; }
-      }
+  try {
+    const cbLabel = await page.locator('text=dieser Kategorie').first();
+    const cbBox   = await page.locator('input[type=checkbox]').first();
+    const checked = await cbBox.isChecked().catch(() => false);
+    if (!checked) {
+      await cbBox.click({ timeout: 2000 });
+      console.log("  ✓ Checkbox aktiviert");
+    } else {
+      console.log("  ✓ Checkbox bereits aktiv");
     }
-    // Fallback: alle Checkboxen suchen
-    const cbs = document.querySelectorAll('input[type=checkbox]');
-    if (cbs.length > 0 && !cbs[0].checked) { cbs[0].click(); return true; }
-    return false;
-  });
-  await page.waitForTimeout(400);
+  } catch(e) {
+    console.warn("  ✗ Checkbox nicht gefunden:", e.message.substring(0,60));
+  }
+  await page.waitForTimeout(600);
   await selectDirect('Ein Resultat pro Athlet');
   await page.waitForTimeout(400);
   await selectDirect('30');
