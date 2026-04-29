@@ -2111,7 +2111,7 @@ function renderRankList() {
   // Render top 15
   top15Slice.forEach(r => {
     const isFiona = r.isFiona || r.name === 'Fiona Matt';
-    html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona);
+    html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona, r.wind, r.location, r.date);
   });
 
   // If Fiona not in top15, add separator + Fiona row
@@ -2130,18 +2130,27 @@ function renderRankList() {
   container.innerHTML = html;
 }
 
-function rankRow(rank, name, club, result, disc, isFiona) {
+function rankRow(rank, name, club, result, disc, isFiona, wind, location, date) {
   const col = DISC_COLORS[disc]?.hex || '#2563EB';
   const unit = disc === 'Long Jump' ? ' m' : 's';
   const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '.';
   const resultColor = isFiona ? col : 'var(--text)';
+  const windStr = wind ? `<span style="color:var(--text-dim);font-size:10px;margin-left:4px">${wind > 0 ? '+' : ''}${wind}m/s</span>` : '';
+  const metaArr = [];
+  if (location) metaArr.push('📍 ' + location);
+  if (date) metaArr.push(date);
+  const metaStr = metaArr.length ? `<div style="font-size:9px;color:var(--text-dim);margin-top:1px">${metaArr.join(' · ')}</div>` : '';
   return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);${isFiona?'background:var(--blue-light);border-radius:10px;padding:7px 10px;margin:2px -6px;border-bottom:none':''}">
     <div style="font-size:13px;min-width:32px;text-align:center;font-weight:700">${medal}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:${isFiona?'800':'600'};color:${isFiona?'var(--blue)':'var(--text)'}">${name}${isFiona?' 🇱🇮':''}</div>
       <div style="font-size:10px;color:var(--text-dim)">${club}</div>
+      ${metaStr}
     </div>
-    <div style="font-size:15px;font-weight:800;color:${resultColor};font-family:'DM Mono',monospace">${result}${unit}</div>
+    <div style="text-align:right">
+      <div style="font-size:15px;font-weight:800;color:${resultColor};font-family:'DM Mono',monospace">${result}${unit}</div>
+      ${windStr}
+    </div>
   </div>`;
 }
 
@@ -4251,7 +4260,7 @@ function renderRankList() {
   } else {
     top15.forEach(function(r) {
       var isFiona = r.isFiona || r.name === 'Fiona Matt';
-      html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona);
+      html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona, r.wind, r.location, r.date);
     });
     if (!fionaInList && fionaRd && fionaRd.result) {
       html += '<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0">· · ·</div>';
