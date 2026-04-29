@@ -170,7 +170,7 @@ async function scrapeDiscipline(page, disc, year) {
     await page.waitForTimeout(400);
   }
 
-  // Alternativ-Methode: Text-Match in Select direkt
+  // Alternativ-Methode: Text-Match in Select direkt — gibt true/false zurück
   async function selectDirect(value) {
     const done = await page.evaluate((val) => {
       const selects = document.querySelectorAll('select');
@@ -183,14 +183,22 @@ async function scrapeDiscipline(page, disc, year) {
     if (done) console.log(`  ✓ "${value}"`);
     else      console.warn(`  ✗ "${value}" nicht gefunden`);
     await page.waitForTimeout(400);
+    return !!done;
   }
 
   await selectDirect(disc.season);
   await page.waitForTimeout(600);
   await selectDirect('U18 Frauen');
   await page.waitForTimeout(600);
-  await selectDirect(yr);
+
+  // Jahr-Auswahl: wenn nicht vorhanden → Disziplin überspringen
+  const yearFound = await selectDirect(yr);
+  if (!yearFound) {
+    console.warn(`  ⚠️  Jahr ${yr} nicht im Dropdown — ${disc.label} wird übersprungen`);
+    return null;
+  }
   await page.waitForTimeout(600);
+
   await selectDirect('Ein Resultat pro Athlet');
   await page.waitForTimeout(400);
   await selectDirect('30');
