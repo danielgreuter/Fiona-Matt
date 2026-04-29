@@ -1,21 +1,15 @@
-// scrape_bestenliste_v2.js — direkte URL-Abfrage, kein Playwright nötig
+// scrape_bestenliste.js — v3, Playwright mit page.selectOption()
 
+const { chromium } = require('playwright');
 const fs = require('fs');
 
-const UPLOAD = process.argv.includes('--upload');
+const UPLOAD    = process.argv.includes('--upload');
+const FIONA_DOB = '02.09.2009';
+const BASE_URL  = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml?lang=de&mobile=false&';
 
 const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
 const CF_API_TOKEN  = process.env.CF_API_TOKEN;
 const CF_KV_NS_ID   = process.env.CF_KV_NS_ID;
-
-async function kvPut(key, value) {
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`,
-    { method: 'PUT', headers: { Authorization: `Bearer ${CF_API_TOKEN}`, 'Content-Type': 'application/json' },
-      body: typeof value === 'string' ? value : JSON.stringify(value) }
-  );
-  if (!res.ok) throw new Error(`KV PUT ${key}: ${res.status}`);
-}
 
 async function kvGet(key) {
   const res = await fetch(
@@ -26,102 +20,153 @@ async function kvGet(key) {
   return res.text();
 }
 
-// ─── IDs direkt von Swiss Athletics (stabil) ─────────────────────────────────
-const CAT_U18_FRAUEN = '5c4o3k5m-d686mo-j986g2ie-1-j986g45y-bn';
+async function kvPut(key, value) {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`,
+    { method: 'PUT', headers: { Authorization: `Bearer ${CF_API_TOKEN}`, 'Content-Type': 'application/json' },
+      body: typeof value === 'string' ? value : JSON.stringify(value) }
+  );
+  if (!res.ok) throw new Error(`KV PUT ${key}: ${res.status}`);
+}
 
-const DISCIPLINES_2026 = [
-  { label: '100m',      id: '5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv', season: 'Outdoor' },
-  { label: '200m',      id: '5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks', season: 'Outdoor' },
-  { label: 'Long Jump', id: '5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp', season: 'Outdoor' },
+const DISCIPLINES = [
+  { label: '60m',       saLabel: '60 m',  season: 'Indoor',  isJump: false },
+  { label: '100m',      saLabel: '100 m', season: 'Outdoor', isJump: false },
+  { label: '200m',      saLabel: '200 m', season: 'Outdoor', isJump: false },
+  { label: 'Long Jump', saLabel: 'Weit',  season: 'Outdoor', isJump: true  },
 ];
 
-const DISCIPLINES_INDOOR_2026 = [
-  { label: '60m',       id: '5c4o3k5m-d686mo-j986g2ie-1-j986g3pt-79',  season: 'Indoor'  },
-];
+const SEL = {
+  year:     '#form_anonym\\:bestlistYear_input',
+  season:   '#form_anonym\\:bestlistSeason_input',
+  category: '#form_anonym\\:bestlistCategory_input',
+  disc:     '#form_anonym\\:bestlistDiscipline_input',
+  type:     '#form_anonym\\:bestlistType_input',
+  tops:     '#form_anonym\\:bestlistTops_input',
+};
 
-const FIONA_DOB = '02.09.2009';
+async function scrapeDiscipline(page, disc, year) {
+  const yr = String(year);
+  console.log(`\n📋 ${disc.label} (${disc.season} ${yr})`);
 
-// ─── URL Scraper ─────────────────────────────────────────────────────────────
-async function scrapeDiscipline(disc, year) {
-  const url = `https://www.swiss-athletics.ch/bestenliste-pro-disziplin-und-kategorie/?&mobile=false&blyear=${year}&blcat=${CAT_U18_FRAUEN}&disci=${disc.id}&top=30`;
-  console.log(`\n📋 ${disc.label} ${year}`);
-  console.log(`   ${url}`);
+  await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
+  await page.waitForTimeout(1000);
 
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FionaBot/1.0)' }
-  });
+  await page.selectOption(SEL.season, { label: disc.season });
+  console.log(`  ✓ Saison: ${disc.season}`);
+  await page.waitForTimeout(800);
 
-  if (!res.ok) { console.warn(`  ✗ HTTP ${res.status}`); return null; }
+  await page.selectOption(SEL.category, { label: 'U18 Frauen' });
+  console.log(`  ✓ Kategorie: U18 Frauen`);
+  await page.waitForTimeout(800);
 
-  const html = await res.text();
+  await page.selectOption(SEL.year, { label: yr });
+  console.log(`  ✓ Jahr: ${yr}`);
+  await page.waitForTimeout(800);
 
-  // Tabellen-Rows parsen
-  const rows = [];
-  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let trMatch;
-  while ((trMatch = trRegex.exec(html)) !== null) {
-    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-    const cols = [];
-    let tdMatch;
-    while ((tdMatch = tdRegex.exec(trMatch[1])) !== null) {
-      // Strip HTML tags
-      const text = tdMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      cols.push(text);
-    }
-    if (cols.length >= 4 && /^\d+$/.test(cols[0])) {
-      rows.push(cols);
-    }
+  await page.selectOption(SEL.type, { label: 'Ein Resultat pro Athlet' }).catch(() => {});
+  await page.waitForTimeout(600);
+
+  await page.selectOption(SEL.tops, { label: '30' }).catch(() => {});
+  await page.waitForTimeout(600);
+
+  await page.selectOption(SEL.disc, { label: disc.saLabel });
+  console.log(`  ✓ Disziplin: ${disc.saLabel}`);
+  await page.waitForTimeout(800);
+
+  // Kategorie verify & re-set if needed
+  const catSelected = await page.locator(`${SEL.category} option:checked`).innerText().catch(() => '');
+  if (!catSelected.includes('U18 Frauen')) {
+    await page.selectOption(SEL.category, { label: 'U18 Frauen' });
+    await page.waitForTimeout(800);
+    console.log(`  ✓ Kategorie nochmals gesetzt`);
   }
 
-  console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0]?.slice(0,6))}`);
-  if (rows.length === 0) return { discipline: disc.label, year: String(year), scraped: new Date().toISOString(), fiona: null, top15: [] };
+  // Anzeigen klicken
+  await page.locator('input[type=submit][value*=Anzeigen], button:has-text("Anzeigen")').first().click();
+  console.log(`  ✓ Anzeigen geklickt`);
+  await page.waitForTimeout(4000);
 
-  const top15 = rows.slice(0, 15).map(cols => ({
-    rank:    parseInt(cols[0]),
-    result:  cols[1],
-    wind:    cols[2]?.match(/^[+-]?\d+\.\d+$/) ? cols[2] : null,
-    name:    cols[4] || cols[3],
-    club:    cols[5] || cols[4],
-    date:    cols[7] || '',
-    isFiona: (cols[4]||'').includes('Matt') || (cols[7]||'') === FIONA_DOB,
-  }));
+  // iFrame finden
+  let iframeFrame = null;
+  for (const f of page.frames()) {
+    if (f.url().includes('bestlist.xhtml')) { iframeFrame = f; break; }
+  }
+  if (!iframeFrame) {
+    const el = await page.$('iframe');
+    if (el) iframeFrame = await el.contentFrame();
+  }
+  if (!iframeFrame) { console.warn('  ✗ Kein iFrame'); return null; }
+  await iframeFrame.waitForTimeout(3000);
 
-  const fionaRow = rows.find(c => (c[4]||'').includes('Matt') || (c[7]||'') === FIONA_DOB);
-  const fiona = fionaRow ? {
-    rank: parseInt(fionaRow[0]),
-    result: fionaRow[1],
-    wind: fionaRow[2]?.match(/^[+-]?\d+\.\d+$/) ? fionaRow[2] : null,
-    date: fionaRow[7] || '',
-    gapToFirst: rows[0] ? (parseFloat(fionaRow[1]) - parseFloat(rows[0][1])).toFixed(2) : null,
+  const scraped = await iframeFrame.evaluate(() => {
+    const trs = document.querySelectorAll('table tr');
+    const result = [], first3 = [];
+    let i = 0;
+    for (const tr of trs) {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 3) continue;
+      const cols = Array.from(tds).map(td =>
+        td.textContent.trim().replace(/^(Nr|Resultat|Wind|Rang|Name|Verein|Nat\.|Geb\. Dat\.|Wettkampf|Ort|Datum)/, '').trim()
+      );
+      if (i++ < 3) first3.push(cols.slice(0, 7));
+      const rank = parseInt(cols[0]);
+      if (rank > 0 && rank <= 100) result.push(cols);
+    }
+    return { result, first3 };
+  });
+
+  const rows = scraped.result;
+  console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(scraped.first3[0])}`);
+
+  if (rows.length === 0) return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona: null, top15: [] };
+
+  const top15 = rows.slice(0, 15).map(cols => {
+    const windLike = /^[+-]?\d+\.\d$/.test(cols[2]);
+    const nameIdx  = windLike ? 4 : 3;
+    return {
+      rank:    parseInt(cols[0]),
+      result:  cols[1],
+      wind:    windLike ? cols[2] : null,
+      name:    cols[nameIdx] || '',
+      club:    cols[nameIdx + 1] || '',
+      isFiona: (cols[nameIdx] || '').includes('Matt'),
+    };
+  });
+
+  const fRow  = top15.find(r => r.isFiona);
+  const fiona = fRow ? {
+    rank: fRow.rank, result: fRow.result, wind: fRow.wind,
+    gapToFirst: top15[0] ? (parseFloat(fRow.result) - parseFloat(top15[0].result) >= 0 ? '+' : '') + (parseFloat(fRow.result) - parseFloat(top15[0].result)).toFixed(2) : null,
   } : null;
 
   if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
   else console.log(`  — Fiona nicht in Top ${rows.length}`);
-  console.log(`  1.: ${top15[0]?.name} ${top15[0]?.result}`);
+  if (top15[0]) console.log(`  1.: ${top15[0].name} ${top15[0].result}`);
 
-  return { discipline: disc.label, year: String(year), scraped: new Date().toISOString(), fiona, top15 };
+  return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona, top15 };
 }
 
-// ─── Hauptprogramm ───────────────────────────────────────────────────────────
 (async () => {
-  // 2025 eingefroren?
   let skip2025 = false;
   if (UPLOAD) {
-    const existing = await kvGet('bestenliste_2025:fiona').catch(() => null);
-    if (existing) {
-      try { if (JSON.parse(existing).frozen) { skip2025 = true; console.log('✅ 2025 eingefroren'); } }
-      catch(e) {}
-    }
+    try {
+      const ex = await kvGet('bestenliste_2025:fiona');
+      if (ex && JSON.parse(ex).frozen) { skip2025 = true; console.log('✅ 2025 eingefroren'); }
+    } catch(e) {}
   }
+
+  const browser = await chromium.launch({ headless: true });
+  const page    = await (await browser.newContext()).newPage();
 
   // 2026
   console.log('\n══ SAISON 2026 ══');
-  const disciplines2026 = {};
-  for (const disc of [...DISCIPLINES_2026, ...DISCIPLINES_INDOOR_2026]) {
-    const result = await scrapeDiscipline(disc, 2026);
-    if (result) disciplines2026[disc.label] = result;
+  const disc2026 = {};
+  for (const disc of DISCIPLINES) {
+    const r = await scrapeDiscipline(page, disc, 2026);
+    if (r) disc2026[disc.label] = r;
   }
-  const json2026 = { updated: new Date().toISOString(), disciplines: disciplines2026 };
+  const json2026 = { updated: new Date().toISOString(), disciplines: disc2026 };
   fs.writeFileSync('bestenliste.json', JSON.stringify(json2026, null, 2));
   console.log('\n✅ bestenliste.json');
   if (UPLOAD) { await kvPut('bestenliste:fiona', json2026); console.log('✅ KV (2026)'); }
@@ -129,16 +174,17 @@ async function scrapeDiscipline(disc, year) {
   // 2025
   if (!skip2025) {
     console.log('\n══ SAISON 2025 ══');
-    const disciplines2025 = {};
-    for (const disc of [...DISCIPLINES_2026, ...DISCIPLINES_INDOOR_2026]) {
-      const result = await scrapeDiscipline(disc, 2025);
-      if (result) disciplines2025[disc.label] = result;
+    const disc2025 = {};
+    for (const disc of DISCIPLINES) {
+      const r = await scrapeDiscipline(page, disc, 2025);
+      if (r) disc2025[disc.label] = r;
     }
-    const json2025 = { updated: new Date().toISOString(), frozen: true, disciplines: disciplines2025 };
+    const json2025 = { updated: new Date().toISOString(), frozen: true, disciplines: disc2025 };
     fs.writeFileSync('bestenliste_2025.json', JSON.stringify(json2025, null, 2));
     console.log('\n✅ bestenliste_2025.json');
     if (UPLOAD) { await kvPut('bestenliste_2025:fiona', json2025); console.log('✅ KV (2025)'); }
   }
 
+  await browser.close();
   console.log('\n✅ Fertig');
 })();
