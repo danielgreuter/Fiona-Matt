@@ -227,7 +227,7 @@ async function scrapeDiscipline(page, disc, year) {
     return null;
   }
 
-  await iframeFrame.waitForTimeout(2000);
+  await iframeFrame.waitForTimeout(4000);
 
   // Tabelle parsen
   const html = await iframeFrame.content();
@@ -237,18 +237,25 @@ async function scrapeDiscipline(page, disc, year) {
   const rows = await iframeFrame.evaluate(() => {
     const trs = document.querySelectorAll('table tr');
     const result = [];
+    const firstThree = [];
+    let i = 0;
     for (const tr of trs) {
       const tds = tr.querySelectorAll('td');
       if (tds.length < 3) continue;
       const cols = Array.from(tds).map(td => td.textContent.trim());
-      // Nur Zeilen die mit einer Zahl beginnen (Rang)
-      if (/^\d+$/.test(cols[0])) result.push(cols);
+      if (i++ < 3) firstThree.push(cols.slice(0,6));
+      const rankNum = parseInt(cols[0]);
+      if (rankNum > 0 && rankNum <= 100) result.push(cols);
     }
-    return result;
+    return { rows: result, firstThree };
   });
+  const { rows: rowsRaw, firstThree } = rows;
+  if (firstThree.length > 0) console.log('  Debug rows:', JSON.stringify(firstThree));
+  else console.log('  ⚠️  Keine td-Zeilen gefunden');
 
   console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0])}`);
 
+  const rows = rowsRaw;
   if (rows.length === 0) return null;
 
   const parsed = parseRows(rows, disc.isJump);
