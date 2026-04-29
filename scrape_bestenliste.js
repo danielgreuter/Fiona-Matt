@@ -176,11 +176,13 @@ async function scrapeDiscipline(page, disc, year) {
       const selects = document.querySelectorAll('select');
       for (const sel of selects) {
         const opt = Array.from(sel.options).find(o => o.text.trim() === val || o.text.trim().includes(val));
-        if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles:true})); return sel.id || true; }
+        if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles:true})); return sel.id + '|' + opt.text.trim(); }
       }
+      // Log all available options for debugging
+      const allOpts = Array.from(selects).map(s => s.id + ': ' + Array.from(s.options).map(o=>o.text.trim()).slice(0,5).join(', ')).join(' | ');
       return false;
     }, value);
-    if (done) console.log(`  ✓ "${value}"`);
+    if (done) console.log(`  ✓ "${value}" → ${done}`);
     else      console.warn(`  ✗ "${value}" nicht gefunden`);
     await page.waitForTimeout(400);
   }
