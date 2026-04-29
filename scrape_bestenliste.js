@@ -1,19 +1,21 @@
-// scrape_bestenliste.js
-// Swiss Athletics U18 Frauen Bestenliste scraper
-// Schreibt 2026 immer neu; 2025 nur einmal (danach eingefroren).
+// scrape_bestenliste_v2.js — direkte URL-Abfrage, kein Playwright nötig
 
-const { chromium } = require('playwright');
 const fs = require('fs');
 
-const UPLOAD    = process.argv.includes('--upload');
-const FIONA     = 'Fiona Matt';
-const FIONA_DOB = '02.09.2009';   // Geburtsdatum zur Identifikation
-const BASE_URL  = 'https://alabus.swiss-athletics.ch/satweb/faces/bestlist.xhtml?lang=de&mobile=false&';
+const UPLOAD = process.argv.includes('--upload');
 
-// ─── Cloudflare KV ──────────────────────────────────────────────────────────
 const CF_ACCOUNT_ID = process.env.CF_ACCOUNT_ID;
 const CF_API_TOKEN  = process.env.CF_API_TOKEN;
 const CF_KV_NS_ID   = process.env.CF_KV_NS_ID;
+
+async function kvPut(key, value) {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`,
+    { method: 'PUT', headers: { Authorization: `Bearer ${CF_API_TOKEN}`, 'Content-Type': 'application/json' },
+      body: typeof value === 'string' ? value : JSON.stringify(value) }
+  );
+  if (!res.ok) throw new Error(`KV PUT ${key}: ${res.status}`);
+}
 
 async function kvGet(key) {
   const res = await fetch(
@@ -21,360 +23,122 @@ async function kvGet(key) {
     { headers: { Authorization: `Bearer ${CF_API_TOKEN}` } }
   );
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`KV GET ${key}: ${res.status}`);
   return res.text();
 }
 
-async function kvPut(key, value) {
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${CF_KV_NS_ID}/values/${encodeURIComponent(key)}`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${CF_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: typeof value === 'string' ? value : JSON.stringify(value),
-    }
-  );
-  if (!res.ok) throw new Error(`KV PUT ${key}: ${res.status} ${await res.text()}`);
-}
-
-// ─── Disziplinen ─────────────────────────────────────────────────────────────
-// label      = Ausgabe-Key im JSON
-// saLabel    = Text auf swiss-athletics.ch
-// season     = "Outdoor" | "Indoor"
-// isJump     = true → kein Wind-Feld
+// ─── IDs direkt von Swiss Athletics (stabil) ─────────────────────────────────
+const CAT_U18_FRAUEN = '5c4o3k5m-d686mo-j986g2ie-1-j986g45y-bn';
 
 const DISCIPLINES_2026 = [
-  { label: '100m',       saLabel: '100 m', season: 'Outdoor', isJump: false },
-  { label: '60m',        saLabel: '60 m',  season: 'Indoor',  isJump: false },
-  { label: '200m',       saLabel: '200 m', season: 'Outdoor', isJump: false },
-  { label: 'Long Jump',  saLabel: 'Weit',  season: 'Outdoor', isJump: true  },
+  { label: '100m',      id: '5c4o3k5m-d686mo-j986g2ie-1-j986gfpc-4zv', season: 'Outdoor' },
+  { label: '200m',      id: '5c4o3k5m-d686mo-j986g2ie-1-j986ghgt-6ks', season: 'Outdoor' },
+  { label: 'Long Jump', id: '5c4o3k5m-d686mo-j986g2ie-1-j986ge5c-3mp', season: 'Outdoor' },
 ];
 
-const DISCIPLINES_2025 = [
-  { label: '100m',       saLabel: '100 m', season: 'Outdoor', isJump: false },
-  { label: '60m',        saLabel: '60 m',  season: 'Indoor',  isJump: false },
-  { label: '200m',       saLabel: '200 m', season: 'Outdoor', isJump: false },
-  { label: 'Long Jump',  saLabel: 'Weit',  season: 'Outdoor', isJump: true  },
+const DISCIPLINES_INDOOR_2026 = [
+  { label: '60m',       id: '5c4o3k5m-d686mo-j986g2ie-1-j986g3pt-79',  season: 'Indoor'  },
 ];
 
-// ─── Hilfsfunktionen ─────────────────────────────────────────────────────────
+const FIONA_DOB = '02.09.2009';
 
-function isFionaRow(cols) {
-  // Fiona erkennen: Name-Spalte enthält "Matt" oder DOB stimmt
-  return cols.some(c => c.includes('Matt')) || cols.some(c => c === FIONA_DOB);
-}
+// ─── URL Scraper ─────────────────────────────────────────────────────────────
+async function scrapeDiscipline(disc, year) {
+  const url = `https://www.swiss-athletics.ch/bestenliste-pro-disziplin-und-kategorie/?&mobile=false&blyear=${year}&blcat=${CAT_U18_FRAUEN}&disci=${disc.id}&top=30`;
+  console.log(`\n📋 ${disc.label} ${year}`);
+  console.log(`   ${url}`);
 
-function parseRows(rows, isJump) {
-  // Spalten je nach Disziplin:
-  // Sprint mit Wind: rank | result | wind | round? | name | club | dob
-  // Sprint ohne Wind (Halle): rank | result | round? | name | club | dob
-  // Weitsprung: rank | result | wind | versuch? | name | club | dob
-  const results = [];
-  for (const cols of rows) {
-    if (cols.length < 4) continue;
-    const rank   = parseInt(cols[0]);
-    const result = cols[1];
-    if (isNaN(rank) || !result) continue;
-
-    // Wind: wenn cols[2] wie "+0.0" oder "-1.2" oder "0.0" aussieht → Windwert
-    const windLike = /^[+-]?\d+\.\d+$/.test(cols[2]);
-    let wind = null, nameIdx;
-    if (isJump) {
-      wind    = windLike ? cols[2] : null;
-      nameIdx = windLike ? 4 : 3;
-    } else {
-      wind    = windLike ? cols[2] : null;
-      nameIdx = windLike ? 4 : 3;
-    }
-
-    const name = cols[nameIdx] || '';
-    const club = cols[nameIdx + 1] || '';
-    const dob  = cols[nameIdx + 2] || '';
-
-    results.push({
-      rank,
-      name,
-      result,
-      wind,
-      club,
-      date: dob,
-      isFiona: name.includes('Matt') || dob === FIONA_DOB,
-    });
-  }
-  return results;
-}
-
-function buildFionaEntry(rows) {
-  const fRow = rows.find(r => r.isFiona);
-  if (!fRow) return null;
-  const first   = rows[0];
-  const gap     = first && first.result !== fRow.result
-    ? calcGap(fRow.result, first.result, fRow.result.includes('.'))
-    : null;
-  return {
-    rank:       fRow.rank,
-    result:     fRow.result,
-    wind:       fRow.wind,
-    date:       fRow.date,
-    gapToFirst: gap,
-  };
-}
-
-function calcGap(fionaResult, firstResult, isTime) {
-  const f = parseFloat(fionaResult);
-  const b = parseFloat(firstResult);
-  if (isNaN(f) || isNaN(b)) return null;
-  const diff = isTime ? (f - b) : (b - f);  // Zeit: Fiona langsamer = positiv; Weite: Fiona kürzer = positiv
-  return (diff >= 0 ? '+' : '') + diff.toFixed(2);
-}
-
-// ─── Playwright: eine Disziplin scrapen ──────────────────────────────────────
-
-async function scrapeDiscipline(page, disc, year) {
-  const yr     = String(year);
-  const label  = `${disc.label}  (${disc.season} ${yr} — "${disc.saLabel}")`;
-  console.log(`\n📋 ${label}`);
-
-  // Seite laden (fresh reload damit Filter zurückgesetzt)
-  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForTimeout(1500);
-
-  // ── Filter setzen ─────────────────────────────────────────────────────────
-  async function selectOption(labelText, value) {
-    // Sucht das <select>-Element dessen zugehöriges Label den Text enthält
-    // und setzt es auf den Wert der die gesuchte Option enthält
-    const selected = await page.evaluate(({ lbl, val }) => {
-      const labels = Array.from(document.querySelectorAll('label, span, td'));
-      for (const el of labels) {
-        if (!el.textContent.trim().includes(lbl)) continue;
-        // Suche naheliegendes Select
-        let sel = el.nextElementSibling;
-        if (!sel || sel.tagName !== 'SELECT') {
-          const parent = el.closest('tr,td,div');
-          if (parent) sel = parent.querySelector('select');
-        }
-        if (!sel) continue;
-        const opt = Array.from(sel.options).find(o => o.text.trim().includes(val));
-        if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles:true})); return true; }
-      }
-      return false;
-    }, { lbl: labelText, val: value });
-    if (selected) {
-      console.log(`  ✓ "${value}"`);
-    } else {
-      console.warn(`  ✗ "${value}" nicht gefunden (${labelText})`);
-    }
-    await page.waitForTimeout(400);
-  }
-
-  // Alternativ-Methode: Text-Match in Select direkt
-  async function selectDirect(value) {
-    const done = await page.evaluate((val) => {
-      const selects = document.querySelectorAll('select');
-      for (const sel of selects) {
-        const opt = Array.from(sel.options).find(o => o.text.trim() === val || o.text.trim().includes(val));
-        if (opt) { sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles:true})); return sel.id + '|' + opt.text.trim(); }
-      }
-      // Log all available options for debugging
-      const allOpts = Array.from(selects).map(s => s.id + ': ' + Array.from(s.options).map(o=>o.text.trim()).slice(0,5).join(', ')).join(' | ');
-      return false;
-    }, value);
-    if (done) console.log(`  ✓ "${value}" → ${done}`);
-    else      console.warn(`  ✗ "${value}" nicht gefunden`);
-    await page.waitForTimeout(400);
-  }
-
-  await selectDirect(disc.season);
-  await page.waitForTimeout(600);
-  await selectDirect('U18 Frauen');
-  await page.waitForTimeout(600);
-  await selectDirect(yr);
-  await page.waitForTimeout(600);
-
-  await selectDirect('Ein Resultat pro Athlet');
-  await page.waitForTimeout(400);
-  await selectDirect('30');
-  await page.waitForTimeout(400);
-  await selectDirect(disc.saLabel);
-  await page.waitForTimeout(400);
-
-  // Checkbox 'Nur Athlet/innen / Teams dieser Kategorie' — nativer Playwright-Click
-  try {
-    await page.click('[id="form_anonym:categoryExclusive"] .ui-chkbox-box', { timeout: 3000 });
-    console.log('  ✓ Checkbox categoryExclusive aktiviert');
-    await page.waitForTimeout(600);
-  } catch(e) {
-    console.warn('  ✗ Checkbox nicht gefunden');
-  }
-
-  // Anzeigen-Button klicken
-  const btn = await page.$('input[type=submit][value*=Anzeigen], button:has-text("Anzeigen")');
-  if (btn) { await btn.click(); console.log(`  ✓ "Anzeigen" geklickt`); }
-  else      { console.warn(`  ✗ Anzeigen-Button nicht gefunden`); }
-  await page.waitForTimeout(3000);
-
-  // ── iFrame finden & parsen ────────────────────────────────────────────────
-  const frames = page.frames();
-  let iframeFrame = null;
-  for (const f of frames) {
-    if (f.url().includes('bestlist.xhtml')) { iframeFrame = f; break; }
-  }
-  if (!iframeFrame) {
-    // Fallback: iframe-Element holen
-    const iframeEl = await page.$('iframe');
-    if (iframeEl) {
-      const iUrl = await iframeEl.getAttribute('src');
-      console.log(`  iFrame URL: ${iUrl?.substring(0,80)}…`);
-      iframeFrame = await iframeEl.contentFrame();
-    }
-  } else {
-    console.log(`  iFrame URL: ${iframeFrame.url().substring(0,80)}…`);
-  }
-
-  if (!iframeFrame) {
-    console.warn('  ✗ Kein iFrame gefunden');
-    return null;
-  }
-
-  await iframeFrame.waitForTimeout(4000);
-
-  // Tabelle parsen
-  const html = await iframeFrame.content();
-  const hasDate = html.includes('Datum') || html.includes('2009') || html.includes('2010');
-  console.log(`  Datum: ${hasDate} | HTML: ${html.length}`);
-
-  const scraped = await iframeFrame.evaluate(() => {
-    const trs = document.querySelectorAll('table tr');
-    const result = [];
-    const firstThree = [];
-    let i = 0;
-    for (const tr of trs) {
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 3) continue;
-        // Strip label prefixes (Swiss Athletics changed structure: 'Nr1' -> '1', 'ResultatX' -> 'X')
-      const cols = Array.from(tds).map(td => {
-        const raw = td.textContent.trim();
-        return raw.replace(/^(Nr|Resultat|Wind|Rang|Name|Verein|Nat\.|Punkte|Datum)/, '').trim();
-      });
-      if (i++ < 3) firstThree.push(cols.slice(0, 6));
-      const rankNum = parseInt(cols[0]);
-      if (rankNum > 0 && rankNum <= 100) result.push(cols);
-    }
-    return { result, firstThree };
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FionaBot/1.0)' }
   });
-  const rows = scraped.result;
-  if (scraped.firstThree.length > 0) console.log('  Debug rows:', JSON.stringify(scraped.firstThree));
-  else console.log('  ⚠️  Keine td-Zeilen gefunden');
 
-  console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0])}`);
+  if (!res.ok) { console.warn(`  ✗ HTTP ${res.status}`); return null; }
 
-  if (rows.length === 0) return null;
+  const html = await res.text();
 
-  const parsed = parseRows(rows, disc.isJump);
-  const top15  = parsed.slice(0, 15);
-  const fiona  = buildFionaEntry(parsed);
-
-  if (fiona) {
-    console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
-  } else {
-    console.log(`  — Fiona nicht in Top ${rows.length}`);
+  // Tabellen-Rows parsen
+  const rows = [];
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let trMatch;
+  while ((trMatch = trRegex.exec(html)) !== null) {
+    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    const cols = [];
+    let tdMatch;
+    while ((tdMatch = tdRegex.exec(trMatch[1])) !== null) {
+      // Strip HTML tags
+      const text = tdMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      cols.push(text);
+    }
+    if (cols.length >= 4 && /^\d+$/.test(cols[0])) {
+      rows.push(cols);
+    }
   }
 
-  const top1 = parsed[0];
-  if (top1) console.log(`  1.: ${top1.name} ${top1.result}`);
+  console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0]?.slice(0,6))}`);
+  if (rows.length === 0) return { discipline: disc.label, year: String(year), scraped: new Date().toISOString(), fiona: null, top15: [] };
 
-  return {
-    discipline: disc.label,
-    year: yr,
-    scraped: new Date().toISOString(),
-    fiona,
-    top15,
-  };
+  const top15 = rows.slice(0, 15).map(cols => ({
+    rank:    parseInt(cols[0]),
+    result:  cols[1],
+    wind:    cols[2]?.match(/^[+-]?\d+\.\d+$/) ? cols[2] : null,
+    name:    cols[4] || cols[3],
+    club:    cols[5] || cols[4],
+    date:    cols[7] || '',
+    isFiona: (cols[4]||'').includes('Matt') || (cols[7]||'') === FIONA_DOB,
+  }));
+
+  const fionaRow = rows.find(c => (c[4]||'').includes('Matt') || (c[7]||'') === FIONA_DOB);
+  const fiona = fionaRow ? {
+    rank: parseInt(fionaRow[0]),
+    result: fionaRow[1],
+    wind: fionaRow[2]?.match(/^[+-]?\d+\.\d+$/) ? fionaRow[2] : null,
+    date: fionaRow[7] || '',
+    gapToFirst: rows[0] ? (parseFloat(fionaRow[1]) - parseFloat(rows[0][1])).toFixed(2) : null,
+  } : null;
+
+  if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
+  else console.log(`  — Fiona nicht in Top ${rows.length}`);
+  console.log(`  1.: ${top15[0]?.name} ${top15[0]?.result}`);
+
+  return { discipline: disc.label, year: String(year), scraped: new Date().toISOString(), fiona, top15 };
 }
 
 // ─── Hauptprogramm ───────────────────────────────────────────────────────────
-
 (async () => {
-  // Prüfen ob 2025-Daten bereits eingefroren sind
+  // 2025 eingefroren?
   let skip2025 = false;
   if (UPLOAD) {
-    console.log('\n🔍 Prüfe ob 2025-Daten bereits eingefroren…');
-    try {
-      const existing = await kvGet('bestenliste_2025:fiona');
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        if (parsed && parsed.disciplines && parsed.frozen) {
-          skip2025 = true;
-          console.log('  ✅ 2025 bereits eingefroren — wird nicht neu gescraped');
-        } else {
-          console.log('  ℹ️  2025-Key vorhanden aber noch nicht frozen → wird aktualisiert');
-        }
-      } else {
-        console.log('  ℹ️  2025-Key noch nicht vorhanden → wird erstmalig gescraped');
-      }
-    } catch (e) {
-      console.warn('  ⚠️  KV-Prüfung fehlgeschlagen:', e.message);
+    const existing = await kvGet('bestenliste_2025:fiona').catch(() => null);
+    if (existing) {
+      try { if (JSON.parse(existing).frozen) { skip2025 = true; console.log('✅ 2025 eingefroren'); } }
+      catch(e) {}
     }
   }
 
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext();
-  const page    = await context.newPage();
-
-  // ── 2026 scrapen ────────────────────────────────────────────────────────
-  console.log('\n══════════════════════════════');
-  console.log('  SAISON 2026');
-  console.log('══════════════════════════════');
-
+  // 2026
+  console.log('\n══ SAISON 2026 ══');
   const disciplines2026 = {};
-  for (const disc of DISCIPLINES_2026) {
-    const result = await scrapeDiscipline(page, disc, 2026);
+  for (const disc of [...DISCIPLINES_2026, ...DISCIPLINES_INDOOR_2026]) {
+    const result = await scrapeDiscipline(disc, 2026);
     if (result) disciplines2026[disc.label] = result;
   }
-
-  const json2026 = {
-    updated:     new Date().toISOString(),
-    disciplines: disciplines2026,
-  };
-
+  const json2026 = { updated: new Date().toISOString(), disciplines: disciplines2026 };
   fs.writeFileSync('bestenliste.json', JSON.stringify(json2026, null, 2));
   console.log('\n✅ bestenliste.json');
+  if (UPLOAD) { await kvPut('bestenliste:fiona', json2026); console.log('✅ KV (2026)'); }
 
-  if (UPLOAD) {
-    await kvPut('bestenliste:fiona', json2026);
-    console.log('✅ KV fertig (2026)');
-  }
-
-  // ── 2025 scrapen (nur wenn nicht eingefroren) ────────────────────────────
+  // 2025
   if (!skip2025) {
-    console.log('\n══════════════════════════════');
-    console.log('  SAISON 2025');
-    console.log('══════════════════════════════');
-
+    console.log('\n══ SAISON 2025 ══');
     const disciplines2025 = {};
-    for (const disc of DISCIPLINES_2025) {
-      const result = await scrapeDiscipline(page, disc, 2025);
+    for (const disc of [...DISCIPLINES_2026, ...DISCIPLINES_INDOOR_2026]) {
+      const result = await scrapeDiscipline(disc, 2025);
       if (result) disciplines2025[disc.label] = result;
     }
-
-    const json2025 = {
-      updated:     new Date().toISOString(),
-      frozen:      true,     // ← Ab jetzt nicht mehr überschreiben
-      disciplines: disciplines2025,
-    };
-
+    const json2025 = { updated: new Date().toISOString(), frozen: true, disciplines: disciplines2025 };
     fs.writeFileSync('bestenliste_2025.json', JSON.stringify(json2025, null, 2));
     console.log('\n✅ bestenliste_2025.json');
-
-    if (UPLOAD) {
-      await kvPut('bestenliste_2025:fiona', json2025);
-      console.log('✅ KV fertig (2025 — eingefroren)');
-    }
+    if (UPLOAD) { await kvPut('bestenliste_2025:fiona', json2025); console.log('✅ KV (2025)'); }
   }
 
-  await browser.close();
   console.log('\n✅ Fertig');
 })();
