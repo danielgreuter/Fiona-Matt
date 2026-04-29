@@ -187,7 +187,7 @@ async function scrapeDiscipline(page, disc, year) {
 
   await selectDirect(disc.season);
   await page.waitForTimeout(600);
-  await selectDirect('U18 Frauen');
+  await selectDirect('U18 Frauen') || await selectDirect('Frauen U18') || await selectDirect('U18W');
   await page.waitForTimeout(600);
   await selectDirect(yr);
   await page.waitForTimeout(600);
@@ -242,7 +242,11 @@ async function scrapeDiscipline(page, disc, year) {
     for (const tr of trs) {
       const tds = tr.querySelectorAll('td');
       if (tds.length < 3) continue;
-      const cols = Array.from(tds).map(td => td.textContent.trim());
+        // Strip label prefixes (Swiss Athletics changed structure: 'Nr1' -> '1', 'ResultatX' -> 'X')
+      const cols = Array.from(tds).map(td => {
+        const raw = td.textContent.trim();
+        return raw.replace(/^(Nr|Resultat|Wind|Rang|Name|Verein|Nat\.|Punkte|Datum)/, '').trim();
+      });
       if (i++ < 3) firstThree.push(cols.slice(0, 6));
       const rankNum = parseInt(cols[0]);
       if (rankNum > 0 && rankNum <= 100) result.push(cols);
