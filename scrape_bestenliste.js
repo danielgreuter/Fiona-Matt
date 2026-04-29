@@ -249,10 +249,7 @@ async function scrapeDiscipline(page, disc, year) {
 
   console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(rows[0])}`);
 
-  if (rows.length === 0) {
-    console.warn(`  ⚠️  Keine Resultate — leeres Objekt wird geschrieben`);
-    return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona: null, top15: [], empty: true };
-  }
+  if (rows.length === 0) return null;
 
   const parsed = parseRows(rows, disc.isJump);
   const top15  = parsed.slice(0, 15);
@@ -313,8 +310,7 @@ async function scrapeDiscipline(page, disc, year) {
   const disciplines2026 = {};
   for (const disc of DISCIPLINES_2026) {
     const result = await scrapeDiscipline(page, disc, 2026);
-    // Immer schreiben — auch leere Objekte überschreiben alte KV-Daten
-    disciplines2026[disc.label] = result || { discipline: disc.label, year: '2026', scraped: new Date().toISOString(), fiona: null, top15: [], empty: true };
+    if (result) disciplines2026[disc.label] = result;
   }
 
   const json2026 = {
