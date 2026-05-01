@@ -109,7 +109,7 @@ async function scrapeDiscipline(page, disc, year) {
       const cols = Array.from(tds).map(td =>
         td.textContent.trim().replace(/^(Nr|Resultat|Wind|Rang|Name|Verein|Nat\.|Geb\. Dat\.|Wettkampf|Ort|Datum)/, '').trim()
       );
-      if (i++ < 3) first3.push(cols.slice(0, 7));
+      if (i++ < 3) first3.push(cols.slice(0, 12));  // extended for column debugging
       const rank = parseInt(cols[0]);
       if (rank > 0 && rank <= 100) result.push(cols);
     }
@@ -133,8 +133,9 @@ async function scrapeDiscipline(page, disc, year) {
       name:    cols[nameIdx] || '',
       club:    cols[nameIdx + 1] || '',
       nat:     cols[nameIdx + 2] || '',
-      location: cols[nameIdx + 5] || '',
-      date:    cols[nameIdx + 6] || '',
+      venue:     cols[nameIdx + 4] || '',    // Ort (Wettkampfstätte)
+      comp_date: cols[nameIdx + 5] || '',    // Datum (Wettkampfdatum)
+      born:      cols[nameIdx + 6] || '',
       isFiona: (cols[nameIdx] || '').includes('Matt'),
     };
   });
