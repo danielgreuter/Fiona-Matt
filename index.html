@@ -4095,323 +4095,139 @@ function renderSAResults() {
      RANKING BUG FIX v2
      Einfach VOR 
 <!-- ── EVENT DETAIL MODAL ── -->
-<div id="event-modal" style="display:none;position:fixed;inset:0;z-index:999;" onclick="closeEventModal(event)">
-  <!-- Backdrop -->
-  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></div>
-  <!-- Sheet -->
-  <div id="event-modal-sheet" style="
-    position:absolute;bottom:0;left:0;right:0;
-    background:var(--surface);
-    border-radius:22px 22px 0 0;
-    max-height:88vh;overflow-y:auto;
-    padding:0 0 max(24px,env(safe-area-inset-bottom)) 0;
-    transform:translateY(100%);
-    transition:transform 0.32s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 -8px 40px rgba(0,0,0,0.18);
+<div id="event-modal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:16px" onclick="closeEventModal(event)">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)"></div>
+  <div id="event-modal-card" style="
+    position:relative;width:100%;max-width:420px;max-height:88vh;
+    background:var(--surface);border-radius:24px;
+    overflow:hidden;overflow-y:auto;
+    box-shadow:0 24px 80px rgba(0,0,0,0.3);
+    transform:scale(0.92) translateY(16px);opacity:0;
+    transition:transform 0.3s cubic-bezier(.34,1.56,.64,1),opacity 0.25s ease;
   " onclick="event.stopPropagation()">
-    <!-- Handle -->
-    <div style="display:flex;justify-content:center;padding:12px 0 4px">
-      <div style="width:40px;height:4px;background:var(--border);border-radius:99px"></div>
-    </div>
-    <!-- Content -->
-    <div id="event-modal-content" style="padding:4px 20px 16px"></div>
+    <div id="event-modal-content"></div>
   </div>
 </div>
 
 <script>
 var eventsForModal = [];
 
-function _buildEventsForModal(arr) {
-  eventsForModal = arr || [];
+function _buildWappenForModal(canton, country) {
+  if (canton && typeof CANTON_WAPPEN !== 'undefined' && CANTON_WAPPEN[canton]) {
+    return '<img src="' + CANTON_WAPPEN[canton] + '" style="width:48px;height:56px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.2))" onerror="this.style.display=none">';
+  }
+  const flags = {MON:'🇲🇨',AUT:'🇦🇹',GER:'🇩🇪',ITA:'🇮🇹',LIE:'🇱🇮',FRA:'🇫🇷',SUI:'🇨🇭',SWI:'🇨🇭',GBR:'🇬🇧',ESP:'🇪🇸',MKD:'🇲🇰'};
+  return flags[country] ? '<span style="font-size:44px;line-height:1">' + flags[country] + '</span>' : '';
 }
 
 function openEventModal(el, arr, id) {
   if (arr) eventsForModal = arr;
-  const e = eventsForModal.find(function(x){ return x.id === id; });
+  var e = eventsForModal.find(function(x){ return x.id === id; });
   if (!e) return;
 
-  const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-  const parts = (e.date||'').split('.');
-  const d = parts[0]||'', m = parseInt(parts[1]||0), y = parts[2]||'';
-  const monthStr = m ? MONTHS[m-1] : '';
+  var MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  var MONTHS_S = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  var parts = (e.date||'').split('.');
+  var d = parts[0]||'', m = parseInt(parts[1]||0), y = parts[2]||'';
 
-  const today = new Date(); today.setHours(0,0,0,0);
-  const evDate = new Date(parseInt(y), m-1, parseInt(d));
-  const diffDays = Math.ceil((evDate - today) / 86400000);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var evDate = new Date(parseInt(y), m-1, parseInt(d));
+  var diffDays = Math.ceil((evDate - today) / 86400000);
 
-  let statusHtml = '';
-  if (!e.past) {
-    if (e.fionaStarting) {
-      const col = diffDays <= 7 ? 'var(--red)' : diffDays <= 14 ? 'var(--orange)' : 'var(--green)';
-      statusHtml = '<div style="display:flex;align-items:center;gap:8px;margin-top:4px">' +
-        '<span style="font-size:12px;color:var(--green);font-weight:700">✅ Angemeldet</span>' +
-        (diffDays > 0 ? '<span style="font-size:11px;color:'+col+';font-weight:700">⏱ noch ' + diffDays + ' Tage</span>' : '') +
-        (diffDays === 0 ? '<span style="font-size:11px;color:var(--red);font-weight:700">🏃 Heute!</span>' : '') +
-        '</div>';
-    } else {
-      statusHtml = '<div style="margin-top:4px"><span style="font-size:12px;color:var(--orange);font-weight:700">⏳ Anmeldung ausstehend</span></div>';
-    }
-  } else {
-    statusHtml = '<div style="margin-top:4px"><span style="font-size:12px;color:var(--text-dim);font-weight:600">✓ Vergangen</span></div>';
-  }
+  // Wappen/Flag
+  var wappenHtml = _buildWappenForModal(e.canton||'', e.country||'');
 
-  const discs = (e.disciplines||[]).map(function(d){
-    return '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--blue-light);color:var(--blue)">' + d + '</span>';
+  // Status bar color
+  var headerBg = e.fionaStarting ? 'linear-gradient(135deg,#1E3A8A,#2563EB)' :
+                 e.past ? 'linear-gradient(135deg,#374151,#6B7280)' :
+                 'linear-gradient(135deg,#92400E,#D97706)';
+
+  var statusLabel = e.fionaStarting ? '✅ Angemeldet' : e.past ? '✓ Vergangen' : '⏳ Anmeldung ausstehend';
+  var statusColor = e.fionaStarting ? '#6EE7B7' : e.past ? '#D1D5DB' : '#FDE68A';
+
+  var countdownHtml = '';
+  if (!e.past && e.fionaStarting && diffDays > 0)
+    countdownHtml = '<span style="font-size:12px;color:#FDE68A;font-weight:700;margin-left:8px">⏱ noch ' + diffDays + ' Tage</span>';
+  else if (!e.past && e.fionaStarting && diffDays === 0)
+    countdownHtml = '<span style="font-size:12px;color:#FCA5A5;font-weight:700;margin-left:8px">🏃 Heute!</span>';
+
+  var discsHtml = (e.disciplines||[]).map(function(disc){
+    return '<span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,0.2);color:#fff">' + disc + '</span>';
   }).join('');
 
-  const deadlineHtml = e.deadline ? 
-    '<div style="display:flex;align-items:center;gap:6px;margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">' +
-    '<span style="font-size:13px">📋</span>' +
-    '<div><div style="font-size:10px;color:var(--text-dim);font-weight:600">MELDESCHLUSS</div>' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text)">' + e.deadline + '</div></div></div>' : '';
+  var extraHtml = e.extraLines ?
+    '<div style="margin:0 16px 12px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)">' +
+    '<div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">📋 PROGRAMM</div>' +
+    '<div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.8">' + e.extraLines + '</div></div>' : '';
 
-  const extraHtml = e.extraLines ?
-    '<div style="margin-top:12px;padding:12px;background:var(--blue-light);border-radius:12px;border:1px solid var(--blue-mid)">' +
-    '<div style="font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.5px;margin-bottom:6px">PROGRAMM</div>' +
-    '<div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.7">' + e.extraLines + '</div></div>' : '';
+  var deadlineHtml = e.deadline ?
+    '<div style="margin:0 16px 12px;display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--orange-light);border-radius:12px">' +
+    '<span style="font-size:20px">📋</span>' +
+    '<div><div style="font-size:10px;font-weight:700;color:var(--orange);letter-spacing:0.5px">MELDESCHLUSS</div>' +
+    '<div style="font-size:15px;font-weight:800;color:var(--text)">' + e.deadline + '</div></div></div>' : '';
 
-  // Country flag or canton wappen
-  const flagHtml = e.country ? 
-    '<div style="font-size:32px;text-align:center;margin-bottom:4px">' + (
-      e.country==='MON'?'🇲🇨':e.country==='AUT'?'🇦🇹':e.country==='GER'?'🇩🇪':
-      e.country==='ITA'?'🇮🇹':e.country==='LIE'?'🇱🇮':e.country==='FRA'?'🇫🇷':
-      e.country==='SUI'||e.country==='SWI'?'🇨🇭':'🏳️'
-    ) + '</div>' : '';
+  var venueHtml = e.venue ?
+    '<div style="margin:0 16px 14px;display:flex;align-items:flex-start;gap:8px">' +
+    '<span style="font-size:16px;margin-top:1px">📍</span>' +
+    '<span style="font-size:13px;color:var(--text-muted);line-height:1.4">' + e.venue + '</span></div>' : '';
 
   document.getElementById('event-modal-content').innerHTML =
-    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">' +
-      '<div style="flex:1">' +
-        '<div style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase">' + e.category + '</div>' +
-        '<div style="font-size:20px;font-weight:900;color:var(--text);line-height:1.2;margin-top:4px">' + e.name + '</div>' +
+    // Header
+    '<div style="background:' + headerBg + ';padding:20px 16px 20px;position:relative">' +
+      // Close button
+      '<button onclick="closeEventModal({target:document.getElementById('event-modal')})" style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;line-height:1">×</button>' +
+      // Top row: title + wappen
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">' +
+        '<div style="flex:1">' +
+          '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">' + (e.category||'') + '</div>' +
+          '<div style="font-size:19px;font-weight:900;color:#fff;line-height:1.2">' + e.name + '</div>' +
+        '</div>' +
+        (wappenHtml ? '<div style="flex-shrink:0">' + wappenHtml + '</div>' : '') +
       '</div>' +
-      '<div style="text-align:center;flex-shrink:0">' +
-        flagHtml +
-        '<div style="font-size:28px;font-weight:900;color:var(--blue);line-height:1">' + d + '</div>' +
-        '<div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase">' + monthStr + ' ' + y + '</div>' +
+      // Date row
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+        '<div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:8px 14px;text-align:center">' +
+          '<div style="font-size:24px;font-weight:900;color:#fff;line-height:1">' + d + '</div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,0.75);font-weight:600">' + (MONTHS_S[m-1]||'') + ' ' + y + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:12px;font-weight:700;color:' + statusColor + '">' + statusLabel + countdownHtml + '</div>' +
+        '</div>' +
       '</div>' +
+      // Disciplines
+      (discsHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap">' + discsHtml + '</div>' : '') +
     '</div>' +
-    '<div style="display:flex;align-items:center;gap:6px;margin-top:10px;color:var(--text-muted);font-size:13px">' +
-      '<span>📍</span><span>' + (e.venue||'') + '</span>' +
-    '</div>' +
-    statusHtml +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">' + discs + '</div>' +
-    extraHtml +
-    deadlineHtml;
+    // Body
+    '<div style="padding:16px 0 4px">' +
+      venueHtml +
+      extraHtml +
+      deadlineHtml +
+    '</div>';
 
-  const modal = document.getElementById('event-modal');
-  const sheet = document.getElementById('event-modal-sheet');
-  modal.style.display = 'block';
+  var modal = document.getElementById('event-modal');
+  var card  = document.getElementById('event-modal-card');
+  modal.style.display = 'flex';
   requestAnimationFrame(function(){
     requestAnimationFrame(function(){
-      sheet.style.transform = 'translateY(0)';
+      card.style.transform = 'scale(1) translateY(0)';
+      card.style.opacity   = '1';
     });
   });
 }
 
 function closeEventModal(ev) {
-  if (ev && ev.target !== document.getElementById('event-modal')) return;
-  const sheet = document.getElementById('event-modal-sheet');
-  const modal = document.getElementById('event-modal');
-  sheet.style.transform = 'translateY(100%)';
-  setTimeout(function(){ modal.style.display = 'none'; }, 320);
+  var modal = document.getElementById('event-modal');
+  if (ev && ev.target !== modal) return;
+  var card = document.getElementById('event-modal-card');
+  card.style.transform = 'scale(0.92) translateY(16px)';
+  card.style.opacity   = '0';
+  setTimeout(function(){ modal.style.display = 'none'; }, 280);
 }
 
-// Close on back gesture / escape
-document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeEventModal({target:document.getElementById('event-modal')}); });
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeEventModal({target: document.getElementById('event-modal')});
+});
 </script>
-</body> einfügen — überschreibt die
-     fehlerhaften Funktionen weiter oben
-═══════════════════════════════════════════════ -->
-<script>
-var liveRankData25 = null;
 
-function _rankDataForYear(yr) {
-  return yr === '2026' ? liveRankData : (yr === '2025' ? liveRankData25 : null);
-}
-
-// Überschreibt die fehlerhafte loadBestenliste() weiter oben
-async function loadBestenliste() {
-  // 2026
-  try {
-    const res = await fetch(PROXY_URL + '?action=bestenliste');
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.disciplines) {
-        liveRankData = data;
-        renderRankingBars(data);
-        if (currentRankYear === '2026') { renderRankBanners(); renderRankList(); }
-      }
-    }
-  } catch(e) { console.log('bestenliste 2026:', e.message); }
-
-  // 2025 (separater KV-Key)
-  try {
-    const res25 = await fetch(PROXY_URL + '?action=bestenliste_2025');
-    if (res25.ok) {
-      const data25 = await res25.json();
-      if (data25 && data25.disciplines) {
-        liveRankData25 = data25;
-        if (currentRankYear === '2025') { renderRankBanners(); renderRankList(); }
-      }
-    }
-  } catch(e) { console.log('bestenliste 2025:', e.message); }
-}
-
-// Überschreibt die fehlerhafte renderRankBanners() weiter oben
-function renderRankBanners() {
-  const yr   = currentRankYear;
-  const data = _rankDataForYear(yr);
-
-  const labels  = {
-    '60m':       '60m Halle',
-    '100m':      '100m',
-    '200m':      '200m',
-    'Long Jump': 'Weitsprung'
-  };
-  const seasons = {
-    '60m':       yr === '2026' ? 'Indoor 2026' : 'Indoor 2025',
-    '100m':      'Outdoor ' + yr,
-    '200m':      'Outdoor ' + yr,
-    'Long Jump': 'Outdoor ' + yr,
-  };
-
-  ['60m', '100m', '200m', 'Long Jump'].forEach(function(disc) {
-    const resEl  = document.getElementById('rank-res-'  + disc);
-    const gapEl  = document.getElementById('rank-gap-'  + disc);
-    const rankEl = document.getElementById('rank-rank-' + disc);
-    if (!resEl || !gapEl || !rankEl) return;
-
-    const unit = disc === 'Long Jump' ? ' m' : 's';
-
-    // ── KERNFIX: Live-Daten NUR verwenden wenn Jahr exakt passt ──
-    let live = null;
-    if (data && data.disciplines) {
-      const byYrKey = data.disciplines[disc + '_' + yr]; // z.B. "60m_2026"
-      const plain   = data.disciplines[disc];             // z.B. "60m"
-      if (byYrKey && byYrKey.year === yr)  live = byYrKey;
-      else if (plain && plain.year === yr) live = plain;
-      // Wenn year ≠ yr: live bleibt null → kein cross-year Fallback!
-    }
-
-    if (live && live.fiona != null) {
-      // ✅ Fiona steht in der Rangliste
-      resEl.textContent  = live.fiona.result + unit;
-      gapEl.textContent  = live.fiona.gapToFirst
-        ? 'Δ' + live.fiona.gapToFirst + ' zu #1' : '';
-      rankEl.textContent = 'Rang ' + live.fiona.rank + ' · ' + seasons[disc];
-
-    } else if (live && live.fiona === null) {
-      // ✅ Rangliste OK, aber Fiona hat in diesem Jahr kein Resultat
-      resEl.textContent  = '—';
-      gapEl.textContent  = '';
-      rankEl.textContent = 'Kein ' + yr + '-Resultat · ' + labels[disc];
-
-    } else {
-      // ✅ Keine Live-Daten → statische Fallback-Daten
-      const rd = FIONA.rankingData[disc] && FIONA.rankingData[disc][yr];
-      if (rd) {
-        resEl.textContent  = rd.result + unit;
-        gapEl.textContent  = '';
-        rankEl.textContent = rd.rank
-          ? 'Rang ' + rd.rank + ' · ' + rd.season
-          : rd.season;
-      } else {
-        resEl.textContent  = '—';
-        gapEl.textContent  = '';
-        rankEl.textContent = 'Keine Daten für ' + yr;
-      }
-    }
-  });
-}
-
-// FIX v3: renderRankList — zeigt Live Top-15 auch wenn Fiona nicht gestartet ist
-function renderRankList() {
-  const container = document.getElementById('rank-list');
-  const titleEl   = document.getElementById('rank-list-title');
-  if (!container) return;
-
-  const disc   = currentRankDisc;
-  const yr     = currentRankYear;
-  const labels  = { '60m':'60m Halle', '100m':'100m', '200m':'200m', 'Long Jump':'Weitsprung' };
-  const seasons = {
-    '60m':       yr === '2026' ? 'Indoor 2026' : 'Indoor 2025',
-    '100m':      'Outdoor ' + yr,
-    '200m':      'Outdoor ' + yr,
-    'Long Jump': 'Outdoor ' + yr,
-  };
-  if (titleEl) titleEl.textContent = 'Top 15 · ' + labels[disc] + ' · ' + seasons[disc];
-
-  // Live-Daten mit Jahr-Check (wie renderRankBanners Fix v2)
-  const data = _rankDataForYear(yr);
-  let live = null;
-  if (data && data.disciplines) {
-    const byYrKey = data.disciplines[disc + '_' + yr];
-    const plain   = data.disciplines[disc];
-    if (byYrKey && byYrKey.year === yr)  live = byYrKey;
-    else if (plain && plain.year === yr) live = plain;
-  }
-
-  let top15      = [];
-  let sourceNote = 'lokal';
-  let scraped    = '';
-
-  if (live && live.top15 && live.top15.length > 0) {
-    // Live-Daten vorhanden — Top15 anzeigen unabhängig von Fiona
-    top15      = live.top15.slice(0, 15);
-    scraped    = live.scraped ? live.scraped.substring(0, 10) : '';
-    sourceNote = 'live';
-  } else if (live && live.empty) {
-    // Explizit leer gescraped — kein statischer Fallback, Saison noch offen
-    top15      = [];
-    scraped    = live.scraped ? live.scraped.substring(0, 10) : '';
-    sourceNote = 'leer';
-  } else {
-    // Kein Live-Eintrag → statischer Fallback nur für 2025
-    const staticMap  = FIONA.top10Static ? (FIONA.top10Static[disc] || {}) : {};
-    const staticYr   = staticMap[yr] || [];
-    top15      = Array.isArray(staticYr) ? staticYr.slice(0, 15) : [];
-    sourceNote = top15.length ? 'lokal' : 'keine';
-  }
-
-  // Fiona separat anhängen wenn nicht in Top-15
-  const fionaInList = top15.some(function(r) { return r.isFiona || r.name === 'Fiona Matt'; });
-  const fionaRd     = FIONA.rankingData[disc] && FIONA.rankingData[disc][yr];
-
-  let html = '';
-
-  if (top15.length === 0) {
-    const msg = sourceNote === 'leer'
-      ? 'Outdoor-Saison ' + yr + ' noch keine Resultate auf swiss-athletics.ch'
-      : 'Noch keine Bestenliste für ' + yr + ' verfügbar.';
-    html = '<div style="font-size:12px;color:var(--text-dim);padding:10px 0">' + msg + '</div>';
-  } else {
-    top15.forEach(function(r) {
-      var isFiona = r.isFiona || r.name === 'Fiona Matt';
-      var name = r.name || '';
-      html += rankRow(r.rank, name, r.club, r.result, disc, isFiona, r.wind, r.location, r.date);
-    });
-    if (!fionaInList && fionaRd && fionaRd.result) {
-      html += '<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0">· · ·</div>';
-      html += rankRow(fionaRd.rank || '—', 'Fiona Matt', 'TV Eschen-Mauren', fionaRd.result, disc, true);
-    }
-  }
-
-  // Quelle + Datum
-  var liveLabel = sourceNote === 'live'
-    ? '<span style="color:var(--green)">● Live' + (scraped ? ' · ' + scraped : '') + '</span>'
-    : sourceNote === 'lokal'
-      ? '<span style="color:var(--orange)">● Lokal</span>'
-      : '<span style="color:var(--text-dim)">● —</span>';
-
-  html += '<div style="font-size:9px;color:var(--text-dim);margin-top:10px;padding-top:6px;border-top:1px solid var(--border)">'
-        + liveLabel + ' · Swiss Athletics Bestenliste U18 SUI/LIE'
-        + ' <a href="https://www.swiss-athletics.ch/wettkaempfe/resultate/bestenliste/" target="_blank" style="color:var(--blue);margin-left:6px">swiss-athletics.ch ↗</a>'
-        + '</div>';
-
-  container.innerHTML = html;
-}
-
-console.log('[FIX v2+v3] renderRankBanners + renderRankList + loadBestenliste überschrieben ✓');
-</script>  
 </body>
 </html>
