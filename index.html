@@ -4260,7 +4260,10 @@ function renderRankList() {
   } else {
     top15.forEach(function(r) {
       var isFiona = r.isFiona || r.name === 'Fiona Matt';
-      html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona, r.wind, r.location, r.date);
+      // Überspringe Zeilen wo Name wie ein Rang-Wert aussieht (z.B. "1f1")
+      var name = r.name || '';
+      if (/^\d+[a-zA-Z]\d*$/.test(name)) return;
+      html += rankRow(r.rank, name, r.club, r.result, disc, isFiona, r.wind, r.location, r.date);
     });
     if (!fionaInList && fionaRd && fionaRd.result) {
       html += '<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0">· · ·</div>';
