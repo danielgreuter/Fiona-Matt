@@ -4203,6 +4203,15 @@ function openEventModal(el, arr, id) {
       venueHtml +
       extraHtml +
       deadlineHtml +
+      ((e.attachments && e.attachments.length) ? e.attachments.map(function(a){
+        return '<div style="margin:0 16px 12px">' +
+          '<a href="' + a.url + '" target="_blank" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);text-decoration:none">' +
+          '<span style="font-size:22px">📄</span>' +
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:0.5px">PDF ANHANG</div>' +
+          '<div style="font-size:13px;font-weight:700;color:var(--blue)">' + a.filename + '</div></div>' +
+          '<span style="margin-left:auto;font-size:16px;color:var(--blue)">↗</span>' +
+          '</a></div>';
+      }).join('') : '') +
     '</div>';
 
   var modal = document.getElementById('event-modal');
