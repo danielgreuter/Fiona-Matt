@@ -153,9 +153,9 @@ async function scrapeDiscipline(page, disc, year) {
       name:      cols[nameIdx] || '',
       club:      cols[nameIdx + 1] || '',
       nat:       cols[nameIdx + 2] || '',
-      venue:     cols[nameIdx + 4] || '',
-      comp_date: cols[nameIdx + 5] || '',
-      born:      cols[nameIdx + 6] || '',
+      born:      cols[nameIdx + 3] || '',   // "08.04.2009"
+      venue:     cols[nameIdx + 5] || '',   // "Magglingen /Macolin"
+      comp_date: cols[nameIdx + 6] || '',   // "21.02.2026"
       isFiona:   (cols[nameIdx] || '').includes('Matt'),
     };
   });
