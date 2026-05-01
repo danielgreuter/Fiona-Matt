@@ -2111,7 +2111,13 @@ function renderRankList() {
   // Render top 15
   top15Slice.forEach(r => {
     const isFiona = r.isFiona || r.name === 'Fiona Matt';
-    html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona, r.wind, r.location, r.date, r.born);
+    // born: new scraper field (e.g. "08.04.2009") → extract year "2009"
+    // fallback: old KV data stored birth date in r.date
+    const rawBorn  = r.born || (r.date && /^\d{2}\.\d{2}\.\d{4}$/.test(r.date) ? r.date : null);
+    const bornYear = rawBorn ? rawBorn.slice(-4) : null;
+    const venue    = r.venue    || '';
+    const compDate = r.comp_date || '';
+    html += rankRow(r.rank, r.name, r.club, r.result, disc, isFiona, r.wind, venue, compDate, bornYear);
   });
 
   // If Fiona not in top15, add separator + Fiona row
