@@ -3505,8 +3505,8 @@ function renderCalendarWithKV() {
           ${soon?`<span class="disc-pill" style="background:var(--orange-light);color:var(--orange)">⚡ in ${diffDays}d</span>`:''}
         </div>
         ${bemerkung?`<div style="font-size:10px;color:${bemerkungColor};margin-top:3px;font-weight:600">${bemerkung}${eventCountdown}</div>`:''}
-        ${(e.fionaComment && !e.fionaStarting)?`<div style="font-size:10px;color:var(--orange);margin-top:2px;font-weight:600">💬 ${e.fionaComment}</div>`:''}
-        ${(e.extraLines && !e.fionaStarting)?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;white-space:pre-line">${e.extraLines}</div>`:''}
+        ${e.fionaComment?`<div style="font-size:10px;color:var(--orange);margin-top:2px;font-weight:600">💬 ${e.fionaComment}</div>`:''}
+        ${e.extraLines?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;white-space:pre-line">${e.extraLines}</div>`:''}
         ${e.fionaStarting ? '' : deadlineHtml}
       </div>
       ${wappenHtml?`<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">${wappenHtml}</div>`:''}
