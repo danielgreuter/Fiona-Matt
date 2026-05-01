@@ -4216,9 +4216,8 @@ function openEventModal(el, arr, id) {
 }
 
 function closeEventModal(ev) {
+  var card  = document.getElementById('event-modal-card');
   var modal = document.getElementById('event-modal');
-  if (ev && ev.target !== modal) return;
-  var card = document.getElementById('event-modal-card');
   card.style.transform = 'scale(0.92) translateY(16px)';
   card.style.opacity   = '0';
   setTimeout(function(){ modal.style.display = 'none'; }, 280);
