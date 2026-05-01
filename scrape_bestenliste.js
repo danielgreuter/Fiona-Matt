@@ -130,9 +130,6 @@ async function scrapeDiscipline(page, disc, year) {
       wind:    windLike ? cols[2] : null,
       name:    cols[nameIdx] || '',
       club:    cols[nameIdx + 1] || '',
-      nat:     cols[nameIdx + 2] || '',
-      location: cols[nameIdx + 5] || '',
-      date:    cols[nameIdx + 6] || '',
       isFiona: (cols[nameIdx] || '').includes('Matt'),
     };
   });
