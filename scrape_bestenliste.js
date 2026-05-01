@@ -122,14 +122,19 @@ async function scrapeDiscipline(page, disc, year) {
   if (rows.length === 0) return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona: null, top15: [] };
 
   const top15 = rows.slice(0, 15).map(cols => {
-    const windLike = /^[+-]?\d+\.\d$/.test(cols[2]);
-    const nameIdx  = windLike ? 4 : 3;
+    const windLike = /^[+-]?\d+\.\d+$/.test(cols[2]);
+    const rawIdx   = windLike ? 4 : 3;
+    // NH* Spalte uberspringen (Weitsprung hat extra NH*-Spalte zwischen Rang und Name)
+    const nameIdx  = (cols[rawIdx] === 'NH*' || cols[rawIdx] === '') ? rawIdx + 1 : rawIdx;
     return {
       rank:    parseInt(cols[0]),
       result:  cols[1],
       wind:    windLike ? cols[2] : null,
       name:    cols[nameIdx] || '',
       club:    cols[nameIdx + 1] || '',
+      nat:     cols[nameIdx + 2] || '',
+      location: cols[nameIdx + 5] || '',
+      date:    cols[nameIdx + 6] || '',
       isFiona: (cols[nameIdx] || '').includes('Matt'),
     };
   });
