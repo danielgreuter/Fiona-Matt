@@ -1,4 +1,4 @@
-// scrape_bestenliste.js — v3, Playwright mit page.selectOption()
+// scrape_bestenliste.js — v4, Playwright mit PrimeFaces-kompatibler selectPF()
 
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -29,21 +29,49 @@ async function kvPut(key, value) {
   if (!res.ok) throw new Error(`KV PUT ${key}: ${res.status}`);
 }
 
+/**
+ * PrimeFaces SelectOneMenu — öffnet das Dropdown via sichtbaren Wrapper
+ * und klickt das Item per data-label (data-value ist bei swiss-athletics undefined).
+ * @param {import('playwright').Page} page
+ * @param {string} componentId  z.B. 'form_anonym:bestlistDiscipline'
+ * @param {string} labelText    Exakter Label-Text des Items (inkl. Leerzeichen, z.B. '60 m')
+ * @param {boolean} optional    Wenn true: Fehler werden nur geloggt, kein throw
+ */
+async function selectPF(page, componentId, labelText, optional = false) {
+  const eid = componentId.replace(/:/g, '\\:');
+  try {
+    // Wrapper anklicken → öffnet das Panel
+    await page.click(`#${eid}`, { timeout: 10000 });
+
+    // Panel abwarten
+    const panel = page.locator(`#${eid}_panel`);
+    await panel.waitFor({ state: 'visible', timeout: 10000 });
+
+    // Item per data-label suchen und klicken
+    const item = panel.locator(`.ui-selectonemenu-item[data-label="${labelText}"]`).first();
+    await item.waitFor({ state: 'visible', timeout: 10000 });
+    await item.click();
+
+    // Panel schliessen abwarten (= Ajax wurde ausgelöst)
+    await panel.waitFor({ state: 'hidden', timeout: 10000 });
+
+    // Ajax-Response abwarten
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  } catch (err) {
+    if (optional) {
+      console.log(`  ⚠ selectPF optional skip: ${componentId} = "${labelText}" — ${err.message.split('\n')[0]}`);
+    } else {
+      throw err;
+    }
+  }
+}
+
 const DISCIPLINES = [
   { label: '60m',       saLabel: '60 m',  season: 'Indoor',  isJump: false },
   { label: '100m',      saLabel: '100 m', season: 'Outdoor', isJump: false },
   { label: '200m',      saLabel: '200 m', season: 'Outdoor', isJump: false },
   { label: 'Long Jump', saLabel: 'Weit',  season: 'Outdoor', isJump: true  },
 ];
-
-const SEL = {
-  year:     '#form_anonym\\:bestlistYear_input',
-  season:   '#form_anonym\\:bestlistSeason_input',
-  category: '#form_anonym\\:bestlistCategory_input',
-  disc:     '#form_anonym\\:bestlistDiscipline_input',
-  type:     '#form_anonym\\:bestlistType_input',
-  tops:     '#form_anonym\\:bestlistTops_input',
-};
 
 async function scrapeDiscipline(page, disc, year) {
   const yr = String(year);
@@ -52,33 +80,26 @@ async function scrapeDiscipline(page, disc, year) {
   await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
   await page.waitForTimeout(1000);
 
-  await page.selectOption(SEL.season, { label: disc.season });
+  await selectPF(page, 'form_anonym:bestlistSeason', disc.season);
   console.log(`  ✓ Saison: ${disc.season}`);
-  await page.waitForTimeout(800);
 
-  await page.selectOption(SEL.category, { label: 'U18 Frauen' });
+  await selectPF(page, 'form_anonym:bestlistCategory', 'U18 Frauen');
   console.log(`  ✓ Kategorie: U18 Frauen`);
-  await page.waitForTimeout(800);
 
-  await page.selectOption(SEL.year, { label: yr });
+  await selectPF(page, 'form_anonym:bestlistYear', yr);
   console.log(`  ✓ Jahr: ${yr}`);
-  await page.waitForTimeout(800);
 
-  await page.selectOption(SEL.type, { label: 'Ein Resultat pro Athlet' }).catch(() => {});
-  await page.waitForTimeout(600);
+  await selectPF(page, 'form_anonym:bestlistType', 'Ein Resultat pro Athlet', true);
 
-  await page.selectOption(SEL.tops, { label: '30' }).catch(() => {});
-  await page.waitForTimeout(600);
+  await selectPF(page, 'form_anonym:bestlistTops', '30', true);
 
-  await page.selectOption(SEL.disc, { label: disc.saLabel });
+  await selectPF(page, 'form_anonym:bestlistDiscipline', disc.saLabel);
   console.log(`  ✓ Disziplin: ${disc.saLabel}`);
-  await page.waitForTimeout(800);
 
-  // Kategorie verify & re-set if needed
-  const catSelected = await page.locator(`${SEL.category} option:checked`).innerText().catch(() => '');
-  if (!catSelected.includes('U18 Frauen')) {
-    await page.selectOption(SEL.category, { label: 'U18 Frauen' });
-    await page.waitForTimeout(800);
+  // Kategorie verify & re-set if needed (PrimeFaces kann nach Disziplin-Wahl zurückspringen)
+  const catLabel = await page.locator('#form_anonym\\:bestlistCategory_label').innerText().catch(() => '');
+  if (!catLabel.includes('U18 Frauen')) {
+    await selectPF(page, 'form_anonym:bestlistCategory', 'U18 Frauen');
     console.log(`  ✓ Kategorie nochmals gesetzt`);
   }
 
@@ -109,7 +130,7 @@ async function scrapeDiscipline(page, disc, year) {
       const cols = Array.from(tds).map(td =>
         td.textContent.trim().replace(/^(Nr|Resultat|Wind|Rang|Name|Verein|Nat\.|Geb\. Dat\.|Wettkampf|Ort|Datum)/, '').trim()
       );
-      if (i++ < 3) first3.push(cols.slice(0, 12));  // extended for column debugging
+      if (i++ < 3) first3.push(cols.slice(0, 12));
       const rank = parseInt(cols[0]);
       if (rank > 0 && rank <= 100) result.push(cols);
     }
@@ -124,19 +145,18 @@ async function scrapeDiscipline(page, disc, year) {
   const top15 = rows.slice(0, 15).map(cols => {
     const windLike = /^[+-]?\d+\.\d+$/.test(cols[2]);
     const rawIdx   = windLike ? 4 : 3;
-    // NH* Spalte uberspringen (Weitsprung hat extra NH*-Spalte zwischen Rang und Name)
     const nameIdx  = (cols[rawIdx] === 'NH*' || cols[rawIdx] === '') ? rawIdx + 1 : rawIdx;
     return {
-      rank:    parseInt(cols[0]),
-      result:  cols[1],
-      wind:    windLike ? cols[2] : null,
-      name:    cols[nameIdx] || '',
-      club:    cols[nameIdx + 1] || '',
-      nat:     cols[nameIdx + 2] || '',
-      venue:     cols[nameIdx + 4] || '',    // Ort (Wettkampfstätte)
-      comp_date: cols[nameIdx + 5] || '',    // Datum (Wettkampfdatum)
+      rank:      parseInt(cols[0]),
+      result:    cols[1],
+      wind:      windLike ? cols[2] : null,
+      name:      cols[nameIdx] || '',
+      club:      cols[nameIdx + 1] || '',
+      nat:       cols[nameIdx + 2] || '',
+      venue:     cols[nameIdx + 4] || '',
+      comp_date: cols[nameIdx + 5] || '',
       born:      cols[nameIdx + 6] || '',
-      isFiona: (cols[nameIdx] || '').includes('Matt'),
+      isFiona:   (cols[nameIdx] || '').includes('Matt'),
     };
   });
 
