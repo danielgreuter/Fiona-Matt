@@ -4115,13 +4115,13 @@ function toIso(d) {
     String(d.getDate()).padStart(2,'0');
 }
 
-// Nach jedem Render: hero-top Mindesthöhe = Kartenhöhe → kein Überlapp auf Mobile
+// 1/3 der Kartenhöhe als Mindestabstand → Foto etwa auf Höhe Zeile 3–4
 function syncHeroHeight() {
   requestAnimationFrame(function() {
     var el = document.getElementById('hero-next-comp');
     var heroTop = document.querySelector('.hero-top');
     if (el && heroTop) {
-      heroTop.style.minHeight = (el.offsetHeight + 10) + 'px';
+      heroTop.style.minHeight = Math.round(el.offsetHeight * 0.33) + 'px';
     }
   });
 }
@@ -4133,7 +4133,6 @@ async function updateHeroNextComp() {
 
     const today = new Date(); today.setHours(0,0,0,0);
 
-    // Kalenderdaten
     let events = (typeof calendarEvents !== 'undefined' && calendarEvents.length > 0)
       ? calendarEvents : null;
     if (!events) {
@@ -4162,9 +4161,9 @@ async function updateHeroNextComp() {
     const fullName  = (next.name || '').trim();
     const venue     = (next.venue || '').trim();
 
-    // Absolut positioniert oben-rechts im hero-inner (position:relative)
+    // Karte ganz oben rechts (top:2px), so wenig Abstand wie möglich nach oben
     el.style.cssText +=
-      ';position:absolute;top:8px;right:0' +
+      ';position:absolute;top:2px;right:0' +
       ';border-radius:10px;flex-direction:column;align-items:stretch' +
       ';gap:0;padding:7px 11px;min-width:195px;max-width:230px';
 
@@ -4184,7 +4183,7 @@ async function updateHeroNextComp() {
         (wxStrip
           ? '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.2)">' + wxStrip + '</div>'
           : '');
-      syncHeroHeight(); // ← nach jedem Render Höhe anpassen
+      syncHeroHeight();
     }
 
     render('');
@@ -4203,7 +4202,6 @@ async function updateHeroNextComp() {
     const loc = geoData && geoData.results && geoData.results[0];
     if (!loc) return;
 
-    // t-3 bis Wettkampftag, frühestens heute
     const t3 = new Date(evDate); t3.setDate(evDate.getDate() - 3);
     const startDate = t3 >= today ? t3 : today;
 
@@ -4211,8 +4209,7 @@ async function updateHeroNextComp() {
       'https://api.open-meteo.com/v1/forecast' +
       '?latitude=' + loc.latitude + '&longitude=' + loc.longitude +
       '&daily=temperature_2m_max,temperature_2m_min,weathercode' +
-      '&models=icon_seamless' +
-      '&timezone=auto' +
+      '&models=icon_seamless&timezone=auto' +
       '&start_date=' + toIso(startDate) + '&end_date=' + toIso(evDate)
     );
     const wx = await wxRes.json();
@@ -4229,16 +4226,13 @@ async function updateHeroNextComp() {
       const d         = new Date(dateStr + 'T12:00:00');
       const isRaceDay = dateStr === evIso;
       const dayLabel  = isRaceDay ? '🏃' : DAYS_DE[d.getDay()];
-      const emoji     = wmoToEmoji(codes[i]);
       const hi        = tmaxArr[i] != null ? Math.round(tmaxArr[i]) : '–';
       const lo        = tminArr[i] != null ? Math.round(tminArr[i]) : '–';
       return (
         '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;' +
-        (isRaceDay
-          ? 'background:rgba(255,255,255,0.2);border-radius:5px;padding:2px 3px'
-          : 'padding:2px 3px') + '">' +
+        (isRaceDay ? 'background:rgba(255,255,255,0.2);border-radius:5px;padding:2px 3px' : 'padding:2px 3px') + '">' +
           '<span style="font-size:9px;font-weight:' + (isRaceDay ? '800' : '600') + '">' + dayLabel + '</span>' +
-          '<span style="font-size:11px;line-height:1.1">' + emoji + '</span>' +
+          '<span style="font-size:11px;line-height:1.1">' + wmoToEmoji(codes[i]) + '</span>' +
           '<span style="font-size:9px;font-weight:700">' + hi + '°</span>' +
           '<span style="font-size:8px;opacity:0.7">' + lo + '°</span>' +
         '</div>'
