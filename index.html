@@ -4109,11 +4109,21 @@ function wmoToEmoji(code) {
   if (code <= 82)  return '🌦️';
   return '⛈️';
 }
-
 function toIso(d) {
   return d.getFullYear() + '-' +
     String(d.getMonth()+1).padStart(2,'0') + '-' +
     String(d.getDate()).padStart(2,'0');
+}
+
+// Nach jedem Render: hero-top Mindesthöhe = Kartenhöhe → kein Überlapp auf Mobile
+function syncHeroHeight() {
+  requestAnimationFrame(function() {
+    var el = document.getElementById('hero-next-comp');
+    var heroTop = document.querySelector('.hero-top');
+    if (el && heroTop) {
+      heroTop.style.minHeight = (el.offsetHeight + 10) + 'px';
+    }
+  });
 }
 
 async function updateHeroNextComp() {
@@ -4123,7 +4133,7 @@ async function updateHeroNextComp() {
 
     const today = new Date(); today.setHours(0,0,0,0);
 
-    // Kalenderdaten: bereits geladen oder direkt fetchen
+    // Kalenderdaten
     let events = (typeof calendarEvents !== 'undefined' && calendarEvents.length > 0)
       ? calendarEvents : null;
     if (!events) {
@@ -4134,7 +4144,6 @@ async function updateHeroNextComp() {
       } catch(fe) { return; }
     }
 
-    // Nächster angemeldeter Wettkampf
     const next = events.find(function(e) {
       if (!e.fionaStarting) return false;
       const p = e.date.split('.').map(Number);
@@ -4153,8 +4162,7 @@ async function updateHeroNextComp() {
     const fullName  = (next.name || '').trim();
     const venue     = (next.venue || '').trim();
 
-    // Absolut positionieren → kein Einfluss auf den Rest des Hero-Banners
-    // hero-inner hat bereits position:relative
+    // Absolut positioniert oben-rechts im hero-inner (position:relative)
     el.style.cssText +=
       ';position:absolute;top:8px;right:0' +
       ';border-radius:10px;flex-direction:column;align-items:stretch' +
@@ -4162,7 +4170,6 @@ async function updateHeroNextComp() {
 
     function render(wxStrip) {
       el.innerHTML =
-        // Zeile 1
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">' +
           '<div style="display:flex;align-items:center;gap:5px">' +
             '<div class="live-dot"></div>' +
@@ -4170,16 +4177,14 @@ async function updateHeroNextComp() {
           '</div>' +
           '<span style="font-size:10px;font-weight:600;opacity:0.85">' + daysStr + '</span>' +
         '</div>' +
-        // Zeile 2
         '<div style="font-size:10px;font-weight:700;opacity:0.95;line-height:1.4">' +
           dateShort + '&nbsp;&nbsp;' + fullName +
         '</div>' +
-        // Zeile 3
         (venue ? '<div style="font-size:10px;opacity:0.8;margin-top:2px;line-height:1.3">📍 ' + venue + '</div>' : '') +
-        // Zeile 4
         (wxStrip
           ? '<div style="margin-top:4px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.2)">' + wxStrip + '</div>'
           : '');
+      syncHeroHeight(); // ← nach jedem Render Höhe anpassen
     }
 
     render('');
@@ -4198,11 +4203,9 @@ async function updateHeroNextComp() {
     const loc = geoData && geoData.results && geoData.results[0];
     if (!loc) return;
 
-    // Fenster: t-3 bis Wettkampftag (4 Tage), aber nicht vor heute
+    // t-3 bis Wettkampftag, frühestens heute
     const t3 = new Date(evDate); t3.setDate(evDate.getDate() - 3);
     const startDate = t3 >= today ? t3 : today;
-    const startIso  = toIso(startDate);
-    const endIso    = toIso(evDate);
 
     const wxRes = await fetch(
       'https://api.open-meteo.com/v1/forecast' +
@@ -4210,7 +4213,7 @@ async function updateHeroNextComp() {
       '&daily=temperature_2m_max,temperature_2m_min,weathercode' +
       '&models=icon_seamless' +
       '&timezone=auto' +
-      '&start_date=' + startIso + '&end_date=' + endIso
+      '&start_date=' + toIso(startDate) + '&end_date=' + toIso(evDate)
     );
     const wx = await wxRes.json();
 
@@ -4225,14 +4228,16 @@ async function updateHeroNextComp() {
     const cols  = dates.map(function(dateStr, i) {
       const d         = new Date(dateStr + 'T12:00:00');
       const isRaceDay = dateStr === evIso;
-      const dayName   = isRaceDay ? '🏃' : DAYS_DE[d.getDay()];
+      const dayLabel  = isRaceDay ? '🏃' : DAYS_DE[d.getDay()];
       const emoji     = wmoToEmoji(codes[i]);
       const hi        = tmaxArr[i] != null ? Math.round(tmaxArr[i]) : '–';
       const lo        = tminArr[i] != null ? Math.round(tminArr[i]) : '–';
       return (
         '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;' +
-        (isRaceDay ? 'background:rgba(255,255,255,0.2);border-radius:5px;padding:2px 3px' : 'padding:2px 3px') + '">' +
-          '<span style="font-size:9px;font-weight:' + (isRaceDay ? '800' : '600') + '">' + dayName + '</span>' +
+        (isRaceDay
+          ? 'background:rgba(255,255,255,0.2);border-radius:5px;padding:2px 3px'
+          : 'padding:2px 3px') + '">' +
+          '<span style="font-size:9px;font-weight:' + (isRaceDay ? '800' : '600') + '">' + dayLabel + '</span>' +
           '<span style="font-size:11px;line-height:1.1">' + emoji + '</span>' +
           '<span style="font-size:9px;font-weight:700">' + hi + '°</span>' +
           '<span style="font-size:8px;opacity:0.7">' + lo + '°</span>' +
