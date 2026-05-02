@@ -4101,12 +4101,12 @@ function renderSAResults() {
 // ── HERO: Nächster Wettkampf + Wetter ──────────────────────────────────────
 function wmoToEmoji(code) {
   if (code == null) return '';
-  if (code === 0) return '☀️';
-  if (code <= 3)  return '🌤️';
-  if (code <= 48) return '🌫️';
-  if (code <= 67) return '🌧️';
-  if (code <= 77) return '🌨️';
-  if (code <= 82) return '🌦️';
+  if (code === 0)  return '☀️';
+  if (code <= 3)   return '🌤️';
+  if (code <= 48)  return '🌫️';
+  if (code <= 67)  return '🌧️';
+  if (code <= 77)  return '🌨️';
+  if (code <= 82)  return '🌦️';
   return '⛈️';
 }
 
@@ -4117,35 +4117,67 @@ async function updateHeroNextComp() {
 
     const today = new Date(); today.setHours(0,0,0,0);
 
-    // Nächsten angemeldeten Wettkampf suchen
-    const next = (calendarEvents || []).find(function(e) {
+    // Kalenderdaten: bereits geladen oder direkt fetchen
+    let events = (typeof calendarEvents !== 'undefined' && calendarEvents.length > 0)
+      ? calendarEvents : null;
+    if (!events) {
+      try {
+        const res = await fetch(PROXY_URL + '?action=calendar');
+        const data = await res.json();
+        events = Array.isArray(data) ? data.filter(function(e){ return e.isWettkampf; }) : [];
+      } catch(fe) { return; }
+    }
+
+    // Nächster angemeldeter Wettkampf
+    const next = events.find(function(e) {
       if (!e.fionaStarting) return false;
       const p = e.date.split('.').map(Number);
       return new Date(p[2], p[1]-1, p[0]) >= today;
     });
-    if (!next) return; // kein Treffer → "Saison 2026" bleibt
+    if (!next) return;
 
     const p = next.date.split('.').map(Number);
-    const evDate = new Date(p[2], p[1]-1, p[0]);
+    const evDate  = new Date(p[2], p[1]-1, p[0]);
     const diffDays = Math.ceil((evDate - today) / 86400000);
     const isoDate  = p[2] + '-' + String(p[1]).padStart(2,'0') + '-' + String(p[0]).padStart(2,'0');
 
-    // Kurznamen: WRC-Klammer + Sonderzeichen entfernen
-    const shortName = (next.name || '').replace(/\s*\(WRC\)/i,'').replace(/\s*\(.*?\)$/,'').trim();
-    const displayName = shortName.length > 20 ? shortName.substring(0,18) + '…' : shortName;
+    // Datum: 9.5.26 (keine führenden Nullen, 2-stelliges Jahr)
+    const yy = String(p[2]).slice(-2);
+    const dateShort = p[0] + '.' + p[1] + '.' + yy;
 
-    const countStr = diffDays === 0 ? 'Heute!' : diffDays === 1 ? 'Morgen' : 'in ' + diffDays + 'T';
+    // Countdown: T-7
+    const countdown = diffDays === 0 ? 'Heute' : diffDays === 1 ? 'T-1' : 'T-' + diffDays;
 
-    // Sofort anzeigen (ohne Wetter)
-    el.innerHTML = '<div class="live-dot"></div><span>' + countStr + ' · ' + displayName + '</span>';
-
-    // Stadt aus Venue extrahieren: letztes Komma-Segment, PLZ entfernen
+    // Stadt aus Venue (letztes Komma-Segment, PLZ entfernen)
     const venueParts = (next.venue || '').split(',').map(function(s){ return s.trim(); });
     const rawCity = venueParts[venueParts.length - 1] || '';
     const city = rawCity.replace(/^\d{4,5}\s*/, '').trim();
-    if (!city) return;
 
-    // Open-Meteo Geocoding
+    // Vollständiger Eventname (ohne "(WRC)"-Klammer für Zeile 2)
+    const fullName = (next.name || '').replace(/\s*\(WRC\)/i, '').trim();
+    const displayName = fullName.length > 28 ? fullName.substring(0, 26) + '…' : fullName;
+
+    // Pill → 2-Zeilen-Box
+    el.style.cssText += ';border-radius:10px;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 10px';
+
+    function render(wxStr) {
+      el.innerHTML =
+        '<div style="display:flex;align-items:center;gap:5px">' +
+          '<div class="live-dot"></div>' +
+          '<span style="font-size:11px;font-weight:700;letter-spacing:0.3px">' +
+            dateShort + (city ? ' · ' + city : '') + ' · ' + countdown +
+          '</span>' +
+        '</div>' +
+        '<div style="font-size:10px;opacity:0.88;padding-left:11px;letter-spacing:0.2px">' +
+          displayName + (wxStr ? ' · ' + wxStr : '') +
+        '</div>';
+    }
+
+    // Sofort ohne Wetter zeigen
+    render('');
+
+    // Wetter nachladen
+    if (!city) return;
     const geoRes = await fetch(
       'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(city) +
       '&count=1&language=de&format=json'
@@ -4154,24 +4186,25 @@ async function updateHeroNextComp() {
     const loc = geoData && geoData.results && geoData.results[0];
     if (!loc) return;
 
-    // Open-Meteo Wetter für den Wettkampftag
     const wxRes = await fetch(
       'https://api.open-meteo.com/v1/forecast' +
       '?latitude=' + loc.latitude + '&longitude=' + loc.longitude +
-      '&daily=temperature_2m_max,weathercode&timezone=auto' +
+      '&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto' +
       '&start_date=' + isoDate + '&end_date=' + isoDate
     );
-    const wxData = await wxRes.json();
-    const code = wxData && wxData.daily && wxData.daily.weathercode && wxData.daily.weathercode[0];
-    const tmax = wxData && wxData.daily && wxData.daily.temperature_2m_max && wxData.daily.temperature_2m_max[0];
+    const wx = await wxRes.json();
+    const code = wx?.daily?.weathercode?.[0];
+    const tmax = wx?.daily?.temperature_2m_max?.[0];
+    const tmin = wx?.daily?.temperature_2m_min?.[0];
     if (tmax == null) return;
 
-    const wxStr = wmoToEmoji(code) + ' ' + Math.round(tmax) + '°';
-    el.innerHTML = '<div class="live-dot"></div><span>' + countStr + ' · ' + displayName + ' · ' + wxStr + '</span>';
-  } catch(err) {
-    // Silently fail — "Saison 2026" bleibt als Fallback
-  }
+    render(wmoToEmoji(code) + ' ' + Math.round(tmin) + '–' + Math.round(tmax) + '°');
+
+  } catch(err) { /* Fallback "Saison 2026" bleibt */ }
 }
+
+// Beim Seitenstart auf jedem Tab ausführen
+window.addEventListener('load', function() { setTimeout(updateHeroNextComp, 800); });
 // ──────────────────────────────────────────────────────────────────────────
 
 </script>
