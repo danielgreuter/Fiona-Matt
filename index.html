@@ -4165,6 +4165,11 @@ function openEventModal(el, arr, id) {
     return '<span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,0.2);color:#fff">' + disc + '</span>';
   }).join('');
 
+  var fionaCommentHtml = e.fionaComment ?
+    '<div style="margin:0 16px 12px;padding:12px 14px;background:var(--orange-light);border-radius:12px;border:1px solid var(--orange-mid)">' +
+    '<div style="font-size:10px;font-weight:800;color:var(--orange);letter-spacing:1px;margin-bottom:6px">💬 NOTIZ</div>' +
+    '<div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.6">' + e.fionaComment + '</div></div>' : '';
+
   var extraHtml = e.extraLines ?
     '<div style="margin:0 16px 12px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)">' +
     '<div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">📋 PROGRAMM</div>' +
@@ -4208,6 +4213,7 @@ function openEventModal(el, arr, id) {
     // Body
     '<div style="padding:16px 0 4px">' +
       venueHtml +
+      fionaCommentHtml +
       extraHtml +
       deadlineHtml +
       ((e.attachments && e.attachments.length) ? e.attachments.map(function(a){
