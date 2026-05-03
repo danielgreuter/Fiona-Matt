@@ -4243,23 +4243,32 @@ function openTrainingModal(id) {
   var isPast = evDate < today;
   var isToday = evDate.getTime() === today.getTime();
   var headerBg = isToday ? 'linear-gradient(135deg,#065F46,#059669)' : isPast ? 'linear-gradient(135deg,#374151,#6B7280)' : 'linear-gradient(135deg,#1E3A8A,#2563EB)';
-  var statusLabel = isToday ? '🏃 Heute' : isPast ? '✓ Vergangen' : '📅 Geplant';
+  var statusLabel = isToday ? '\uD83C\uDFC3 Heute' : isPast ? '\u2713 Vergangen' : '\uD83D\uDCC5 Geplant';
   var statusColor = isToday ? '#6EE7B7' : isPast ? '#D1D5DB' : '#BAE6FD';
-  var commentHtml = e.comment ? '<div style="margin:0 16px 14px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)"><div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">💬 NOTIZ</div><div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.7">' + e.comment.replace(/\n/g,'<br>') + '</div></div>' : '';
-  var extraHtml = e.extraLines ? '<div style="margin:0 16px 14px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)"><div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">📋 DETAILS</div><div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.8">' + e.extraLines + '</div></div>' : '';
-  var venueHtml = e.venue ? '<div style="margin:0 16px 14px;display:flex;align-items:flex-start;gap:8px"><span style="font-size:16px;margin-top:1px">📍</span><span style="font-size:13px;color:var(--text-muted);line-height:1.4">' + e.venue + '</span></div>' : '';
+
+  // comment = fionaComment || extraLines — zeige nur einmal:
+  // Wenn fionaComment und extraLines beide gesetzt und verschieden → beide
+  // Sonst nur comment (das bereits das Richtige enthält)
+  var showComment = e.comment || '';
+  var showExtra = (e.extraLines && e.extraLines !== e.comment) ? e.extraLines : '';
+
+  var commentHtml = showComment ? '<div style="margin:0 16px 14px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)"><div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">\uD83D\uDCAC NOTIZ</div><div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.7">' + showComment.replace(/\n/g,'<br>') + '</div></div>' : '';
+  var extraHtml = showExtra ? '<div style="margin:0 16px 14px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)"><div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">\uD83D\uDCCB DETAILS</div><div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.8">' + showExtra + '</div></div>' : '';
+  var venueHtml = e.venue ? '<div style="margin:0 16px 14px;display:flex;align-items:flex-start;gap:8px"><span style="font-size:16px;margin-top:1px">\uD83D\uDCCD</span><span style="font-size:13px;color:var(--text-muted);line-height:1.4">' + e.venue + '</span></div>' : '';
+
   document.getElementById('event-modal-content').innerHTML =
     '<div style="background:' + headerBg + ';padding:20px 16px 20px;position:relative">' +
     '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">' +
     '<div style="flex:1"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Training</div>' +
     '<div style="font-size:19px;font-weight:900;color:#fff;line-height:1.2">' + e.name + '</div></div>' +
-    '<div style="flex-shrink:0;font-size:36px;line-height:1">💪</div></div>' +
+    '<div style="flex-shrink:0;font-size:36px;line-height:1">\uD83D\uDCAA</div></div>' +
     '<div style="display:flex;align-items:center;gap:12px">' +
     '<div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:8px 14px;text-align:center">' +
     '<div style="font-size:24px;font-weight:900;color:#fff;line-height:1">' + d + '</div>' +
     '<div style="font-size:11px;color:rgba(255,255,255,0.75);font-weight:600">' + (MONTHS_S[m-1]||'') + ' ' + y + '</div></div>' +
     '<div style="font-size:12px;font-weight:700;color:' + statusColor + '">' + statusLabel + '</div></div></div>' +
     '<div style="padding:16px 0 4px">' + venueHtml + commentHtml + extraHtml + '</div>';
+
   var modal = document.getElementById('event-modal');
   var card  = document.getElementById('event-modal-card');
   modal.style.display = 'flex';
