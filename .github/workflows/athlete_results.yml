@@ -25,11 +25,13 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
           CF_KV_NS_ID:   ${{ secrets.CF_KV_NS_ID }}
-        run: node scrape_athlete_results_v14.js --upload
+        run: node scrape_athlete_results_v15.js --upload
 
-      - name: Ergebnis als Artefakt speichern
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: athlete-results
-          path: athlete_results.json
+- name: Ergebnis als Artefakt speichern
+  uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: athlete-results
+    path: |
+      athlete_results.json
+      debug_*.png
