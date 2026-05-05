@@ -4077,34 +4077,46 @@ function renderSAResults() {
       const col = DISC_COLORS[r.discipline] || 'var(--text-dim)';
       const label = DISC_LABELS[r.discipline] || r.discipline;
       const unit = r.discipline === 'Long Jump' ? ' m' : '';
-      const windStr = r.wind ? ` <span style="font-size:9px;color:var(--text-dim)">W${r.wind}</span>` : '';
       const indoorStr = r.indoor ? ' <span style="font-size:9px;color:var(--blue)">(i)</span>' : '';
       const waStr = r.windAssisted ? ' <span style="font-size:9px;color:var(--orange)">n.l.</span>' : '';
 
-      // Round label: VL=Vorlauf, HF=Halbfinale, F=Finale, SA live uses round field
-      const roundMap = {
-        'VL':'Vorlauf', 'VL1':'Vorlauf 1', 'VL2':'Vorlauf 2', 'VL3':'Vorlauf 3',
-        'HF':'Halbfinale', 'HF1':'Halbfinale 1', 'HF2':'Halbfinale 2',
-        'F':'Finale', 'FA':'A-Finale', 'FB':'B-Finale', 'FC':'C-Finale', 'FD':'D-Finale',
-        'final':'Finale', 'semi':'Halbfinale', 'heat':'Vorlauf', 'preliminary':'Vorlauf',
-      };
-      const roundRaw = r.round || r.roundName || '';
-      const roundLabel = roundMap[roundRaw] || roundMap[roundRaw.toLowerCase()] || roundRaw;
+      // Wind: fixed-width below result time — never shifts layout
+      const wVal = r.wind;
+      const windHtml = (wVal != null)
+        ? `<div style="font-size:9px;font-weight:600;color:${Math.abs(wVal)>2.0?'var(--red)':'var(--text-dim)'}">w ${wVal>0?'+':''}${Number(wVal).toFixed(1)}</div>`
+        : `<div style="font-size:9px;color:transparent">w 0.0</div>`; // placeholder keeps width stable
 
-      const placeStr = r.place
-        ? (roundLabel
-            ? `<span style="font-size:10px;font-weight:700;color:var(--text-dim)">${r.place}. ${roundLabel}</span>`
-            : `<span style="font-size:10px;color:var(--text-dim)">Rang ${r.place}</span>`)
-        : '';
+      // Rank: parse full alabus rank string e.g. "3f", "7h1", "8qf1", "6r2", "2f1"
+      const placeRaw = r.place != null ? String(r.place) : '';
+      let placeHtml = '';
+      if (placeRaw) {
+        const pm = placeRaw.match(/^(\d+)([a-z]*)(\d*)$/i);
+        if (pm) {
+          const pNum = parseInt(pm[1]);
+          const pRound = pm[2].toLowerCase();
+          const pRoundNum = pm[3] || '';
+          const pRoundLabels = { f:'Final', sf:'Halbfinal', qf:'Viertelfinal', h:'Heat', r:'Runde' };
+          const pRoundLabel = pRoundLabels[pRound] || (pRound ? pRound.toUpperCase() : '');
+          const pRoundStr = pRoundLabel ? ` · ${pRoundLabel}${pRoundNum?' '+pRoundNum:''}` : '';
+          const pColor = pNum===1 ? 'var(--gold)' : pNum===2 ? 'var(--text-muted)' : 'var(--text-dim)';
+          const pEmoji = pNum===1 ? '🥇 ' : pNum===2 ? '🥈 ' : '';
+          placeHtml = `<span style="font-size:10px;font-weight:700;color:${pColor}">${pEmoji}Rang ${pNum}${pRoundStr}</span>`;
+        } else {
+          placeHtml = `<span style="font-size:10px;color:var(--text-dim)">${placeRaw}</span>`;
+        }
+      }
 
       html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
         <div style="font-size:10px;color:${col};min-width:48px;font-weight:600">${label}</div>
-        <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);min-width:52px">${r.result}${unit}${windStr}${waStr}${indoorStr}</div>
+        <div style="min-width:58px;text-align:right">
+          <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)">${r.result}${unit}${waStr}${indoorStr}</div>
+          ${windHtml}
+        </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.competition||''}</div>
           <div style="font-size:10px;color:var(--text-dim)">${r.venue||''} · ${r.date||''}</div>
         </div>
-        <div style="flex-shrink:0;text-align:right">${placeStr}</div>
+        <div style="flex-shrink:0;text-align:right">${placeHtml}</div>
       </div>`;
     });
 
