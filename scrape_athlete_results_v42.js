@@ -64,7 +64,7 @@ async function uploadKV(data) {
 
 function extractDate(c)   { const m = c.match(/(\d{2}\.\d{2}\.\d{4})/); return m?.[1] ?? null; }
 function extractResult(c) { const m = c.match(/(\d+)[,.](\d{2,3})(?!\d)/); return m?.[0] ?? null; }
-function extractWind(c)   { const m = c.replace('Wind','').match(/([+\-]\d+\.\d)/); return m?.[1] ?? null; }
+function extractWind(c)   { const m = c.replace('Wind','').match(/([+\-]?\d+\.\d)/); return m ? parseFloat(m[1]) : null; }
 
 function parseRowCells(cells, disc, indoor, year) {
   const dateStr = cells.map(extractDate).find(Boolean);
