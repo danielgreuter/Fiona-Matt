@@ -164,78 +164,79 @@ body {
 .fl-red   { flex: 1; background: #CE1126; }
 .fl-crown-wrap { position: relative; }
 /* Liechtenstein crown as SVG inline */
-.hero-live {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(5,150,105,0.85);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: 0.5px;
-}
-.live-dot {
-  width: 6px; height: 6px;
-  background: #6EE7B7;
-  border-radius: 50%;
-  animation: pulse-dot 1.5s infinite;
-}
-@keyframes pulse-dot {
-  0%,100% { opacity:1; transform: scale(1); }
-  50% { opacity:0.5; transform: scale(0.7); }
-}
-
 /* ── NEXT EVENT CARD (hero top-right) ── */
 .next-event-card {
-  background: rgba(5,150,105,0.20);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(110,231,183,0.35);
-  border-radius: 10px;
-  padding: 7px 11px;
-  max-width: 170px;
+  background: rgba(5,150,105,0.85);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 12px;
+  padding: 8px 12px;
+  min-width: 194px;
+  max-width: 210px;
   cursor: default;
+}
+.nec-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
 }
 .nec-label {
   font-size: 9px;
   font-weight: 700;
-  color: rgba(110,231,183,0.9);
+  color: rgba(255,255,255,0.75);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 3px;
+  letter-spacing: 0.6px;
+}
+.nec-countdown {
+  font-size: 9px;
+  font-weight: 700;
+  color: #6EE7B7;
+  letter-spacing: 0.3px;
+  text-align: right;
 }
 .nec-name {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: #fff;
   line-height: 1.3;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 155px;
 }
-.nec-row {
+.nec-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 9.5px;
-  color: rgba(255,255,255,0.80);
-  margin-top: 1px;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
 }
-.nec-weather {
+.nec-forecast {
   display: flex;
-  align-items: center;
   gap: 3px;
-  font-size: 9.5px;
-  color: rgba(255,255,255,0.80);
-  margin-top: 2px;
-  border-top: 1px solid rgba(255,255,255,0.12);
-  padding-top: 3px;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,0.2);
 }
+.nec-day {
+  flex: 1;
+  text-align: center;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+  padding: 3px 1px;
+}
+.nec-day-event {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.35);
+}
+.nec-day-name { font-size: 8.5px; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1.2; }
+.nec-day-date { font-size: 7.5px; color: rgba(255,255,255,0.65); line-height: 1.2; }
+.nec-day-icon { font-size: 13px; line-height: 1.5; }
+.nec-day-temp { font-size: 8.5px; font-weight: 600; color: #fff; }
+
 
 /* Photo placeholder */
 .hero-identity { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
@@ -828,17 +829,15 @@ body {
       <div class="hero-top">
         <!-- FL Flag + country badge -->
         <div class="hero-badge"><img src="data:image/webp;base64,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" style="height:16px;width:auto;border-radius:2px;margin-right:2px"> Liechtenstein</div>
-        <div class="hero-live"><div class="live-dot"></div>Saison 2026</div>
-        <!-- ── NÄCHSTER WETTKAMPF ── -->
-        <div class="next-event-card" id="next-event-card">
-          <div class="nec-label">Nächster Wettkampf</div>
-          <div class="nec-name" id="nec-name">–</div>
-          <div class="nec-row">📅 <span id="nec-date">–</span></div>
-          <div class="nec-row">📍 <span id="nec-venue">–</span></div>
-          <div class="nec-weather" id="nec-weather" style="display:none">
-            <span id="nec-weather-icon">🌤</span>
-            <span id="nec-weather-text">–</span>
+        <!-- ── NÄCHSTER ANGEMELDETER WETTKAMPF ── -->
+        <div class="next-event-card" id="next-event-card" style="display:none">
+          <div class="nec-top">
+            <span class="nec-label">Nächster Wettkampf</span>
+            <span class="nec-countdown" id="nec-countdown">–</span>
           </div>
+          <div class="nec-name" id="nec-name">–</div>
+          <div class="nec-meta">📅 <span id="nec-date">–</span> &nbsp;·&nbsp; 📍 <span id="nec-venue">–</span></div>
+          <div class="nec-forecast" id="nec-forecast" style="display:none"></div>
         </div>
       </div>
 
@@ -1320,6 +1319,7 @@ const FIONA = {
     { name:"VLV Hallenmeisterschaften (WRC)", date:"25.01.2026", venue:"Dornbirn (AUT)", disciplines:["60m"], result:"7.74 (1h1)", fionaStarted:true, past:true },
     { name:"6. Stadtwerk-Hallenmeeting (WRC)", date:"18.01.2026", venue:"St. Gallen (SUI)", disciplines:["60m"], result:"7.80 (2r1)", fionaStarted:true, past:true },
     // ── Bevorstehend — Fiona angemeldet ──
+    { name:"Old Boys - Frühlingsmeeting (WRC)", date:"09.05.2026", venue:"Stadion Schützenmatte, Basel", weatherCity:"Basel", disciplines:["100m","200m"], fionaStarting:true, past:false },
     // ── Bevorstehend — Allgemeiner Kalender U18 100m ──
 
     { name:"Dreikampf Thal", date:"25.04.2026", venue:"Thal (SUI)", disciplines:["100m","Hoch","Weit"], fionaStarting:false, past:false, note:"U18: 100m oder 1000m", deadline:"k.A." },
@@ -4150,81 +4150,88 @@ function renderSAResults() {
   list.innerHTML = html;
 }
 
-// ── NEXT EVENT CARD ──────────────────────────────────────────────
+// ── NEXT EVENT CARD (nächster angemeldeter Wettkampf) ────────────
+function _wmoIcon(code) {
+  const c = +code;
+  if (c === 0)           return '☀️';
+  if (c <= 3)            return '⛅';
+  if (c <= 48)           return '🌫';
+  if (c <= 55)           return '🌦';
+  if (c <= 67)           return '🌧';
+  if (c <= 77)           return '❄️';
+  if (c <= 82)           return '🌦';
+  if (c <= 99)           return '⛈';
+  return '🌤';
+}
+
+function renderForecast(daily, evDate) {
+  const fc = document.getElementById('nec-forecast');
+  if (!fc) return;
+  const DE_DAY = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const pad2 = n => String(n).padStart(2,'0');
+  const evStr = `${evDate.getFullYear()}-${pad2(evDate.getMonth()+1)}-${pad2(evDate.getDate())}`;
+  const evIdx = daily.time.indexOf(evStr);
+  if (evIdx < 0) { fc.style.display='none'; return; }
+  const startIdx = Math.max(0, evIdx - 3);
+  const days = [];
+  for (let i = startIdx; i <= evIdx && days.length < 4; i++) {
+    const d = new Date(daily.time[i] + 'T12:00:00');
+    const isEv = (i === evIdx);
+    days.push({
+      name: DE_DAY[d.getDay()],
+      date: `${d.getDate()}.${d.getMonth()+1}.`,
+      icon: isEv ? '🏃' : _wmoIcon(daily.weathercode[i]),
+      max:  Math.round(daily.temperature_2m_max[i]),
+      isEv,
+    });
+  }
+  fc.innerHTML = days.map(d =>
+    `<div class="nec-day${d.isEv ? ' nec-day-event' : ''}">
+      <div class="nec-day-name">${d.name}</div>
+      <div class="nec-day-date">${d.date}</div>
+      <div class="nec-day-icon">${d.icon}</div>
+      <div class="nec-day-temp">${d.max}°</div>
+    </div>`
+  ).join('');
+  fc.style.display = 'flex';
+}
+
 function updateNextEventCard() {
   const card = document.getElementById('next-event-card');
   if (!card) return;
-
-  // Alle künftigen Events, sortiert nach Datum
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const parseDMY = (s) => {
-    const p = s.split('.');
-    return new Date(+p[2], +p[1]-1, +p[0]);
-  };
-
-  const future = (FIONA.upcoming || []).filter(e => {
-    if (e.past) return false;
-    try { return parseDMY(e.date) >= today; } catch(x) { return false; }
-  }).sort((a,b) => parseDMY(a.date) - parseDMY(b.date));
-
-  if (!future.length) {
-    card.style.display = 'none';
-    return;
-  }
-
-  const ev = future[0];
-
-  // Tage bis zum Event
+  const parseDMY = s => { const p=s.split('.'); return new Date(+p[2],+p[1]-1,+p[0]); };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const regs = (FIONA.upcoming||[]).filter(e => {
+    if (e.past||!e.fionaStarting) return false;
+    try { return parseDMY(e.date)>=today; } catch(x) { return false; }
+  }).sort((a,b)=>parseDMY(a.date)-parseDMY(b.date));
+  if (!regs.length) { card.style.display='none'; return; }
+  card.style.display='block';
+  const ev = regs[0];
   const evDate = parseDMY(ev.date);
-  const diffDays = Math.round((evDate - today) / 86400000);
-  const daysStr = diffDays === 0 ? '🔴 Heute!' :
-                  diffDays === 1 ? 'Morgen!' :
-                  `in ${diffDays} Tagen`;
-
-  // Venue: nur Stadt ohne Klammer
-  const venueCity = (ev.venue || '').split('(')[0].trim().split(',')[0].trim();
-
+  const diff = Math.round((evDate-today)/86400000);
+  const countdown = diff===0?'Heute! 🔴':diff===1?'Morgen!':`in ${diff} Tagen`;
+  const dd=String(evDate.getDate()).padStart(2,'0'),
+        mm=String(evDate.getMonth()+1).padStart(2,'0'),
+        yy=String(evDate.getFullYear()).slice(-2);
+  document.getElementById('nec-countdown').textContent = countdown;
   document.getElementById('nec-name').textContent = ev.name;
-  document.getElementById('nec-date').textContent = `${ev.date} · ${daysStr}`;
-  document.getElementById('nec-venue').textContent = venueCity || ev.venue;
-
-  // Wetter via wttr.in (JSON)
-  if (venueCity) {
-    const city = encodeURIComponent(venueCity);
-    fetch(`https://wttr.in/${city}?format=j1&lang=de`)
-      .then(r => r.ok ? r.json() : null)
-      .catch(() => null)
-      .then(data => {
-        if (!data) return;
-        try {
-          // Datum des Events oder nächster verfügbarer Tag
-          const wx = data.weather && data.weather[0];
-          if (!wx) return;
-          const desc = data.current_condition && data.current_condition[0];
-          const tempMax = wx.maxtempC;
-          const tempMin = wx.mintempC;
-          const cond = (desc && desc.lang_de && desc.lang_de[0] && desc.lang_de[0].value) ||
-                       (desc && desc.weatherDesc && desc.weatherDesc[0] && desc.weatherDesc[0].value) || '–';
-          const icons = { Sun:' ☀️', Cloud:'⛅', Rain:'🌧', Thunder:'⛈', Snow:'❄️', Fog:'🌫', Wind:'💨' };
-          let icon = '🌤';
-          for (const [k,v] of Object.entries(icons)) {
-            if (cond.toLowerCase().includes(k.toLowerCase()) || desc?.weatherCode?.includes(k)) { icon = v; break; }
-          }
-          const wcode = (desc && +desc.weatherCode) || 0;
-          if (wcode >= 200 && wcode < 300) icon = '⛈';
-          else if (wcode >= 300 && wcode < 600) icon = '🌧';
-          else if (wcode >= 600 && wcode < 700) icon = '❄️';
-          else if (wcode >= 700 && wcode < 800) icon = '🌫';
-          else if (wcode === 800) icon = '☀️';
-          else if (wcode > 800) icon = '⛅';
-
-          document.getElementById('nec-weather-icon').textContent = icon;
-          document.getElementById('nec-weather-text').textContent = `${cond} ${tempMax}°/${tempMin}°C`;
-          document.getElementById('nec-weather').style.display = 'flex';
-        } catch(e) {}
-      });
-  }
+  document.getElementById('nec-date').textContent = `${dd}.${mm}.${yy}`;
+  const vParts=(ev.venue||'').split(',');
+  const stadium=vParts[0]?vParts[0].trim():'';
+  const vcity=vParts[1]?vParts[1].trim().split('(')[0].trim():'';
+  document.getElementById('nec-venue').textContent = stadium+(vcity?', '+vcity:'');
+  const wCity = ev.weatherCity||vcity||(ev.venue||'').split('(')[0].trim();
+  if (!wCity) return;
+  fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(wCity)}&count=1&language=de&format=json`)
+    .then(r=>r.ok?r.json():null).catch(()=>null)
+    .then(geo => {
+      const loc=geo&&geo.results&&geo.results[0];
+      if (!loc) return null;
+      return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude.toFixed(4)}&longitude=${loc.longitude.toFixed(4)}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=10&models=icon_seamless`);
+    })
+    .then(r=>r&&r.ok?r.json():null).catch(()=>null)
+    .then(wx=>{ if(wx&&wx.daily) renderForecast(wx.daily,evDate); });
 }
 
 // ── SPLASH SCREEN ──
