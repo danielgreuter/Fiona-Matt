@@ -188,6 +188,55 @@ body {
   50% { opacity:0.5; transform: scale(0.7); }
 }
 
+/* ── NEXT EVENT CARD (hero top-right) ── */
+.next-event-card {
+  background: rgba(5,150,105,0.20);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(110,231,183,0.35);
+  border-radius: 10px;
+  padding: 7px 11px;
+  max-width: 170px;
+  cursor: default;
+}
+.nec-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(110,231,183,0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 3px;
+}
+.nec-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 155px;
+}
+.nec-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9.5px;
+  color: rgba(255,255,255,0.80);
+  margin-top: 1px;
+}
+.nec-weather {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  color: rgba(255,255,255,0.80);
+  margin-top: 2px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 3px;
+}
+
 /* Photo placeholder */
 .hero-identity { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
 .photo-placeholder {
@@ -386,13 +435,6 @@ body {
 .note-pb   { background: var(--green-light);  color: var(--green); }
 .note-gold { background: var(--gold-light);   color: var(--gold); }
 .note-wind { background: #F0F9FF; color: #0369A1; }
-.result-wind {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-dim);
-  letter-spacing: 0.2px;
-}
-.result-wind.wind-over { color: var(--red); }
 .result-place {
   font-size: 11px;
   font-weight: 700;
@@ -787,6 +829,17 @@ body {
         <!-- FL Flag + country badge -->
         <div class="hero-badge"><img src="data:image/webp;base64,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" style="height:16px;width:auto;border-radius:2px;margin-right:2px"> Liechtenstein</div>
         <div class="hero-live"><div class="live-dot"></div>Saison 2026</div>
+        <!-- ── NÄCHSTER WETTKAMPF ── -->
+        <div class="next-event-card" id="next-event-card">
+          <div class="nec-label">Nächster Wettkampf</div>
+          <div class="nec-name" id="nec-name">–</div>
+          <div class="nec-row">📅 <span id="nec-date">–</span></div>
+          <div class="nec-row">📍 <span id="nec-venue">–</span></div>
+          <div class="nec-weather" id="nec-weather" style="display:none">
+            <span id="nec-weather-icon">🌤</span>
+            <span id="nec-weather-text">–</span>
+          </div>
+        </div>
       </div>
 
       <div class="hero-identity">
@@ -1386,31 +1439,14 @@ function discDotClass(d) {
   return { "60m":"dot-60m","100m":"dot-100m","200m":"dot-200m","Long Jump":"dot-lj","4×100m":"dot-4x100m" }[d] || "dot-60m";
 }
 function placeLabel(p) {
-  if (p == null) return '';
-  // Parse full rank string e.g. "3f", "7h1", "8qf1", "6r2" or plain number
-  const str = String(p);
-  const m = str.match(/^(\d+)([a-z]*)(\d*)$/i);
-  if (!m) return `<span class="result-place">${str}</span>`;
-  const num = parseInt(m[1]);
-  const round = m[2].toLowerCase();
-  const roundNum = m[3] || '';
-  const roundLabels = { f:'Final', sf:'Halbfinal', qf:'Viertelfinal', h:'Heat', r:'Runde' };
-  const roundLabel = roundLabels[round] || (round ? round.toUpperCase() : '');
-  const roundStr = roundLabel ? ` · ${roundLabel}${roundNum ? ' '+roundNum : ''}` : '';
-  if (num === 1 && !round) return '<span class="result-place p1">🥇 1.</span>';
-  if (num === 2 && !round) return '<span class="result-place p2">🥈 2.</span>';
-  if (num === 1) return `<span class="result-place p1">🥇 Rang 1${roundStr}</span>`;
-  if (num === 2) return `<span class="result-place p2">🥈 Rang 2${roundStr}</span>`;
-  return `<span class="result-place">Rang ${num}${roundStr}</span>`;
+  if (p === 1) return '<span class="result-place p1">🥇 1.</span>';
+  if (p === 2) return '<span class="result-place p2">🥈 2.</span>';
+  return `<span class="result-place">${p}.</span>`;
 }
 function windStr(w) {
-  return ""; // Wind wird in result-right angezeigt, nicht in result-meta
-}
-function windBadge(w) {
   if (w == null) return "";
   const s = w > 0 ? `+${w.toFixed(1)}` : w.toFixed(1);
-  const over = w > 2.0;
-  return `<span class="result-wind${over ? ' wind-over' : ''}">w ${s}</span>`;
+  return ` · <span style="color:${w > 2.0 ? 'var(--red)' : 'var(--text-dim)'}">w${s}</span>`;
 }
 function parseDate(str) {
   const [d,m,y] = str.split('.').map(Number);
@@ -1606,12 +1642,11 @@ function renderResults() {
       <div class="result-disc-dot ${discDotClass(r.discipline)}"></div>
       <div class="result-main">
         <div class="result-competition">${r.competition}</div>
-        <div class="result-meta">${r.venue}</div>
+        <div class="result-meta">${r.venue}${windStr(r.wind)}</div>
         ${dateStr}
       </div>
       <div class="result-right">
         <div class="result-time" style="${r.result === 'DQ' || r.result === '—' ? 'color:var(--text-dim)' : ''}">${r.result}</div>
-        ${windBadge(r.wind)}
         ${noteHtml}
         ${placeStr}
       </div>
@@ -2398,6 +2433,7 @@ document.addEventListener('DOMContentLoaded', function() {
   try { renderCalendar(); } catch(e) { console.error('renderCalendar:', e); }
   try { renderTimeline(); } catch(e) { console.error('renderTimeline:', e); }
   try { updateEMCountdown(); } catch(e) { console.error('updateEMCountdown:', e); }
+  try { updateNextEventCard(); } catch(e) { console.error('updateNextEventCard:', e); }
   setTimeout(() => {
     try { renderScoreChart(currentDisc); } catch(e) { console.error('scoreChart:', e); }
     try { renderSeasonCompare(currentDisc); } catch(e) { console.error('seasonCompare:', e); }
@@ -4077,46 +4113,34 @@ function renderSAResults() {
       const col = DISC_COLORS[r.discipline] || 'var(--text-dim)';
       const label = DISC_LABELS[r.discipline] || r.discipline;
       const unit = r.discipline === 'Long Jump' ? ' m' : '';
+      const windStr = r.wind ? ` <span style="font-size:9px;color:var(--text-dim)">W${r.wind}</span>` : '';
       const indoorStr = r.indoor ? ' <span style="font-size:9px;color:var(--blue)">(i)</span>' : '';
       const waStr = r.windAssisted ? ' <span style="font-size:9px;color:var(--orange)">n.l.</span>' : '';
 
-      // Wind: fixed-width below result time — never shifts layout
-      const wVal = r.wind;
-      const windHtml = (wVal != null)
-        ? `<div style="font-size:9px;font-weight:600;color:${Math.abs(wVal)>2.0?'var(--red)':'var(--text-dim)'}">w ${wVal>0?'+':''}${Number(wVal).toFixed(1)}</div>`
-        : `<div style="font-size:9px;color:transparent">w 0.0</div>`; // placeholder keeps width stable
+      // Round label: VL=Vorlauf, HF=Halbfinale, F=Finale, SA live uses round field
+      const roundMap = {
+        'VL':'Vorlauf', 'VL1':'Vorlauf 1', 'VL2':'Vorlauf 2', 'VL3':'Vorlauf 3',
+        'HF':'Halbfinale', 'HF1':'Halbfinale 1', 'HF2':'Halbfinale 2',
+        'F':'Finale', 'FA':'A-Finale', 'FB':'B-Finale', 'FC':'C-Finale', 'FD':'D-Finale',
+        'final':'Finale', 'semi':'Halbfinale', 'heat':'Vorlauf', 'preliminary':'Vorlauf',
+      };
+      const roundRaw = r.round || r.roundName || '';
+      const roundLabel = roundMap[roundRaw] || roundMap[roundRaw.toLowerCase()] || roundRaw;
 
-      // Rank: parse full alabus rank string e.g. "3f", "7h1", "8qf1", "6r2", "2f1"
-      const placeRaw = r.place != null ? String(r.place) : '';
-      let placeHtml = '';
-      if (placeRaw) {
-        const pm = placeRaw.match(/^(\d+)([a-z]*)(\d*)$/i);
-        if (pm) {
-          const pNum = parseInt(pm[1]);
-          const pRound = pm[2].toLowerCase();
-          const pRoundNum = pm[3] || '';
-          const pRoundLabels = { f:'Final', sf:'Halbfinal', qf:'Viertelfinal', h:'Heat', r:'Runde' };
-          const pRoundLabel = pRoundLabels[pRound] || (pRound ? pRound.toUpperCase() : '');
-          const pRoundStr = pRoundLabel ? ` · ${pRoundLabel}${pRoundNum?' '+pRoundNum:''}` : '';
-          const pColor = pNum===1 ? 'var(--gold)' : pNum===2 ? 'var(--text-muted)' : 'var(--text-dim)';
-          const pEmoji = pNum===1 ? '🥇 ' : pNum===2 ? '🥈 ' : '';
-          placeHtml = `<span style="font-size:10px;font-weight:700;color:${pColor}">${pEmoji}Rang ${pNum}${pRoundStr}</span>`;
-        } else {
-          placeHtml = `<span style="font-size:10px;color:var(--text-dim)">${placeRaw}</span>`;
-        }
-      }
+      const placeStr = r.place
+        ? (roundLabel
+            ? `<span style="font-size:10px;font-weight:700;color:var(--text-dim)">${r.place}. ${roundLabel}</span>`
+            : `<span style="font-size:10px;color:var(--text-dim)">Rang ${r.place}</span>`)
+        : '';
 
       html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
         <div style="font-size:10px;color:${col};min-width:48px;font-weight:600">${label}</div>
-        <div style="min-width:58px;text-align:right">
-          <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)">${r.result}${unit}${waStr}${indoorStr}</div>
-          ${windHtml}
-        </div>
+        <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);min-width:52px">${r.result}${unit}${windStr}${waStr}${indoorStr}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.competition||''}</div>
           <div style="font-size:10px;color:var(--text-dim)">${r.venue||''} · ${r.date||''}</div>
         </div>
-        <div style="flex-shrink:0;text-align:right">${placeHtml}</div>
+        <div style="flex-shrink:0;text-align:right">${placeStr}</div>
       </div>`;
     });
 
@@ -4124,6 +4148,83 @@ function renderSAResults() {
   });
 
   list.innerHTML = html;
+}
+
+// ── NEXT EVENT CARD ──────────────────────────────────────────────
+function updateNextEventCard() {
+  const card = document.getElementById('next-event-card');
+  if (!card) return;
+
+  // Alle künftigen Events, sortiert nach Datum
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const parseDMY = (s) => {
+    const p = s.split('.');
+    return new Date(+p[2], +p[1]-1, +p[0]);
+  };
+
+  const future = (FIONA.upcoming || []).filter(e => {
+    if (e.past) return false;
+    try { return parseDMY(e.date) >= today; } catch(x) { return false; }
+  }).sort((a,b) => parseDMY(a.date) - parseDMY(b.date));
+
+  if (!future.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  const ev = future[0];
+
+  // Tage bis zum Event
+  const evDate = parseDMY(ev.date);
+  const diffDays = Math.round((evDate - today) / 86400000);
+  const daysStr = diffDays === 0 ? '🔴 Heute!' :
+                  diffDays === 1 ? 'Morgen!' :
+                  `in ${diffDays} Tagen`;
+
+  // Venue: nur Stadt ohne Klammer
+  const venueCity = (ev.venue || '').split('(')[0].trim().split(',')[0].trim();
+
+  document.getElementById('nec-name').textContent = ev.name;
+  document.getElementById('nec-date').textContent = `${ev.date} · ${daysStr}`;
+  document.getElementById('nec-venue').textContent = venueCity || ev.venue;
+
+  // Wetter via wttr.in (JSON)
+  if (venueCity) {
+    const city = encodeURIComponent(venueCity);
+    fetch(`https://wttr.in/${city}?format=j1&lang=de`)
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null)
+      .then(data => {
+        if (!data) return;
+        try {
+          // Datum des Events oder nächster verfügbarer Tag
+          const wx = data.weather && data.weather[0];
+          if (!wx) return;
+          const desc = data.current_condition && data.current_condition[0];
+          const tempMax = wx.maxtempC;
+          const tempMin = wx.mintempC;
+          const cond = (desc && desc.lang_de && desc.lang_de[0] && desc.lang_de[0].value) ||
+                       (desc && desc.weatherDesc && desc.weatherDesc[0] && desc.weatherDesc[0].value) || '–';
+          const icons = { Sun:' ☀️', Cloud:'⛅', Rain:'🌧', Thunder:'⛈', Snow:'❄️', Fog:'🌫', Wind:'💨' };
+          let icon = '🌤';
+          for (const [k,v] of Object.entries(icons)) {
+            if (cond.toLowerCase().includes(k.toLowerCase()) || desc?.weatherCode?.includes(k)) { icon = v; break; }
+          }
+          const wcode = (desc && +desc.weatherCode) || 0;
+          if (wcode >= 200 && wcode < 300) icon = '⛈';
+          else if (wcode >= 300 && wcode < 600) icon = '🌧';
+          else if (wcode >= 600 && wcode < 700) icon = '❄️';
+          else if (wcode >= 700 && wcode < 800) icon = '🌫';
+          else if (wcode === 800) icon = '☀️';
+          else if (wcode > 800) icon = '⛅';
+
+          document.getElementById('nec-weather-icon').textContent = icon;
+          document.getElementById('nec-weather-text').textContent = `${cond} ${tempMax}°/${tempMin}°C`;
+          document.getElementById('nec-weather').style.display = 'flex';
+        } catch(e) {}
+      });
+  }
 }
 
 // ── SPLASH SCREEN ──
