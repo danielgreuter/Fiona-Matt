@@ -4227,7 +4227,25 @@ function _wmoIcon(code) {
   return '🌤';
 }
 
-function renderForecast(daily, evDate) {
+function renderForecast(data, evDate) {
+  // Support both old (daily.weathercode) and new (hourly.weathercode) format
+  const daily = data;
+  // Extract weathercode at 14:00 for each day from hourly data
+  const hourlyWx = (data.hourly && data.hourly.weathercode && data.hourly.time)
+    ? data.hourly : null;
+  function getWxCode(dayIdx) {
+    if (hourlyWx) {
+      // Find index for this day at 14:00
+      const dayDate = daily.time[dayIdx];
+      const target = dayDate + 'T14:00';
+      const idx = hourlyWx.time.findIndex(t => t === target);
+      if (idx >= 0) return hourlyWx.weathercode[idx];
+      // Fallback: midday of that day
+      const baseIdx = dayIdx * 24 + 14;
+      if (baseIdx < hourlyWx.weathercode.length) return hourlyWx.weathercode[baseIdx];
+    }
+    return daily.weathercode ? daily.weathercode[dayIdx] : 2;
+  }
   const fc = document.getElementById('nec-forecast');
   if (!fc) return;
   const DE_DAY = ['So','Mo','Di','Mi','Do','Fr','Sa'];
@@ -4246,7 +4264,7 @@ function renderForecast(daily, evDate) {
     days.push({
       name: DE_DAY[d.getDay()],
       date: `${d.getDate()}.${d.getMonth()+1}.`,
-      icon: _wmoIcon(daily.weathercode[i]),
+      icon: _wmoIcon(getWxCode(i)),
       runner: isEv,
       max:  Math.round(daily.temperature_2m_max[i]),
       isEv,
@@ -4321,17 +4339,17 @@ function updateNextEventCard() {
   const wCity = ev.weatherCity || vcity || '';
   if (!wCity) return;
 
-  const WX_PARAMS = `daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=10`;
+  const WX_PARAMS = `hourly=weathercode&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=10`;
   function fetchWeather(lat, lon) {
     // MeteoSwiss endpoint (CH/FL/AT/DE-South, 1-2km)
     return fetch(`https://api.open-meteo.com/v1/meteoswiss?latitude=${lat}&longitude=${lon}&${WX_PARAMS}`)
       .then(r => r.ok ? r.json() : null).catch(() => null)
       .then(wx => {
-        if (wx && wx.daily) { renderForecast(wx.daily, evDate); return; }
+        if (wx && wx.daily) { renderForecast(wx, evDate); return; }
         // Fallback for locations outside MeteoSwiss domain (z.B. Rieti)
         return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&${WX_PARAMS}&models=icon_seamless`)
           .then(r => r.ok ? r.json() : null).catch(() => null)
-          .then(wx2 => { if (wx2 && wx2.daily) renderForecast(wx2.daily, evDate); });
+          .then(wx2 => { if (wx2 && wx2.daily) renderForecast(wx2, evDate); });
       });
   }
 
