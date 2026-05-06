@@ -4228,8 +4228,8 @@ function _wmoIcon(code) {
 }
 
 function renderForecast(data, evDate) {
-  // Support both old (daily.weathercode) and new (hourly.weathercode) format
-  const daily = data;
+  // data = full API response; daily = data.daily for temps/dates
+  const daily = data.daily || data;  // fallback if called with daily directly
   // Extract weathercode at 14:00 for each day from hourly data
   const hourlyWx = (data.hourly && data.hourly.weathercode && data.hourly.time)
     ? data.hourly : null;
