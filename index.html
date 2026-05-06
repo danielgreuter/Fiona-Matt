@@ -4321,11 +4321,18 @@ function updateNextEventCard() {
   const wCity = ev.weatherCity || vcity || '';
   if (!wCity) return;
 
+  const WX_PARAMS = `daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=10`;
   function fetchWeather(lat, lon) {
-    return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=10&models=meteoswiss`)
-      .then(r => r.ok ? r.json() : null)
-      .catch(() => null)
-      .then(wx => { if (wx && wx.daily) renderForecast(wx.daily, evDate); });
+    // MeteoSwiss endpoint (CH/FL/AT/DE-South, 1-2km)
+    return fetch(`https://api.open-meteo.com/v1/meteoswiss?latitude=${lat}&longitude=${lon}&${WX_PARAMS}`)
+      .then(r => r.ok ? r.json() : null).catch(() => null)
+      .then(wx => {
+        if (wx && wx.daily) { renderForecast(wx.daily, evDate); return; }
+        // Fallback for locations outside MeteoSwiss domain (z.B. Rieti)
+        return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&${WX_PARAMS}&models=icon_seamless`)
+          .then(r => r.ok ? r.json() : null).catch(() => null)
+          .then(wx2 => { if (wx2 && wx2.daily) renderForecast(wx2.daily, evDate); });
+      });
   }
 
   const known = KNOWN_COORDS[wCity];
