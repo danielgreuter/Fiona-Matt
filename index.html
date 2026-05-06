@@ -248,7 +248,7 @@ body {
 
 
 /* Photo placeholder */
-.hero-identity { display: flex; align-items: flex-end; gap: 16px; margin-top: 96px; }
+.hero-identity { display: flex; align-items: flex-end; gap: 16px; margin-top: 8px; }
 .photo-placeholder {
   width: 138px; height: 138px;
   border-radius: 21px;
@@ -270,19 +270,21 @@ body {
 .photo-placeholder:active { transform: scale(0.97); }
 .hero-name-block {}
 .hero-name {
-  font-size: 30px;
+  font-size: clamp(18px, 5vw, 30px);
   font-weight: 900;
   color: #fff;
   letter-spacing: -0.8px;
   line-height: 1;
   margin-bottom: 4px;
+  white-space: nowrap;
 }
 .hero-name span { color: rgba(255,255,255,0.7); font-weight: 300; }
 .hero-sub {
-  font-size: 12px;
+  font-size: clamp(10px, 2.8vw, 12px);
   color: rgba(255,255,255,0.65);
   font-weight: 500;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 /* ── NAV TABS ── */
