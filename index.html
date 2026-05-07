@@ -4200,7 +4200,12 @@ function renderSAResults() {
       const roundMap = {
         'VL':'Vorlauf', 'VL1':'Vorlauf 1', 'VL2':'Vorlauf 2', 'VL3':'Vorlauf 3',
         'HF':'Halbfinale', 'HF1':'Halbfinale 1', 'HF2':'Halbfinale 2',
-        'F':'Finale', 'FA':'A-Finale', 'FB':'B-Finale', 'FC':'C-Finale', 'FD':'D-Finale',
+        'F':'Finale', 'F1':'Finale 1', 'F2':'Finale 2',
+        'FA':'A-Finale', 'FB':'B-Finale', 'FC':'C-Finale', 'FD':'D-Finale',
+        // lowercase variants from alabus scraper
+        'f':'Finale', 'f1':'Finale', 'f2':'Finale',
+        'vl':'Vorlauf', 'vl1':'Vorlauf 1', 'vl2':'Vorlauf 2',
+        'hf':'Halbfinale', 'hf1':'Halbfinale 1', 'hf2':'Halbfinale 2',
         'final':'Finale', 'semi':'Halbfinale', 'heat':'Vorlauf', 'preliminary':'Vorlauf',
       };
       const roundRaw = r.round || r.roundName || '';
@@ -4212,12 +4217,16 @@ function renderSAResults() {
             : `<span style="font-size:10px;color:var(--text-dim)">Rang ${r.place}</span>`)
         : '';
 
-      html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:10px;color:${col};min-width:48px;font-weight:600">${label}</div>
-        <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);min-width:52px">${r.result}${unit}${windStr}${waStr}${indoorStr}</div>
+      html += `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:10px;color:${col};min-width:48px;font-weight:600;padding-top:2px">${label}</div>
+        <div style="min-width:52px;flex-shrink:0">
+          <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)">${r.result}${unit}${waStr}${indoorStr}</div>
+          ${r.wind ? `<div style="font-size:9px;color:var(--text-dim);margin-top:1px">W${r.wind}</div>` : ''}
+        </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.competition||''}</div>
-          <div style="font-size:10px;color:var(--text-dim)">${r.venue||''} · ${r.date||''}</div>
+          <div style="font-size:10px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.venue||''}</div>
+          <div style="font-size:10px;color:var(--text-dim)">${r.date||''}</div>
         </div>
         <div style="flex-shrink:0;text-align:right">${placeStr}</div>
       </div>`;
