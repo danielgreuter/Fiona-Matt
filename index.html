@@ -3899,8 +3899,8 @@ async function loadTrainingCalendar(force) {
         dedupeMap[key] = e;
       } else {
         // Behalte den Eintrag mit mehr Inhalt (Kommentar bevorzugen)
-        const existLen = (existing.description || existing.details || '').length;
-        const newLen   = (e.description || e.details || '').length;
+        const existLen = (existing.comment || existing.description || existing.details || '').length;
+        const newLen   = (e.comment || e.description || e.details || '').length;
         if (newLen > existLen) dedupeMap[key] = e;
       }
     }
