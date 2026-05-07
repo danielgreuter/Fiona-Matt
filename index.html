@@ -3887,8 +3887,24 @@ async function loadTrainingCalendar(force) {
     const all = await res.json() || [];
 
     // Alle Einträge OHNE WK:-Präfix → Training
-    _trainingData = all.filter(e => e.isWettkampf === false ||
+    let rawTraining = all.filter(e => e.isWettkampf === false ||
       (e.isWettkampf === undefined && !/^WK[:\s]/i.test(e.name || '')));
+
+    // Deduplication: gleicher Name + gleicher Tag → behalte Eintrag mit längerem Kommentar
+    const dedupeMap = {};
+    for (const e of rawTraining) {
+      const key = (e.name || '').trim() + '|' + (e.date || '');
+      const existing = dedupeMap[key];
+      if (!existing) {
+        dedupeMap[key] = e;
+      } else {
+        // Behalte den Eintrag mit mehr Inhalt (Kommentar bevorzugen)
+        const existLen = (existing.description || existing.details || '').length;
+        const newLen   = (e.description || e.details || '').length;
+        if (newLen > existLen) dedupeMap[key] = e;
+      }
+    }
+    _trainingData = Object.values(dedupeMap);
     _trainingLoaded = true;
 
     if (status) {
