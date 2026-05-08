@@ -4263,7 +4263,10 @@ function renderForecast(data, evDate) {
   let evIdx = daily.time ? daily.time.indexOf(evStr) : -1;
   if (evIdx < 0) evIdx = Math.min((daily.time||[]).length - 1, 6);
 
-  // Helper: get hourly value at specific hour on a date string
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((evDate - today) / 86400000);
+
+  // Helper: hourly value at specific hour
   function getHourly(field, dateStr, hour) {
     if (!hourlyWx || !hourlyWx[field]) return null;
     const target = `${dateStr}T${pad2(hour)}:00`;
@@ -4271,97 +4274,132 @@ function renderForecast(data, evDate) {
     return idx >= 0 ? hourlyWx[field][idx] : null;
   }
 
-  const today = new Date(); today.setHours(0,0,0,0);
-  const isToday = evDate.getTime() === today.getTime();
-
-  if (isToday && hourlyWx) {
-    // ── WETTKAMPFTAG: Detailansicht ──────────────────────────
-    // Sonnenstunden: sunshine_duration in Sekunden/h → Summe über den Tag
-    let sunSeconds = 0;
-    if (hourlyWx.sunshine_duration) {
-      const dayStart = hourlyWx.time.findIndex(t => t.startsWith(evStr));
-      if (dayStart >= 0) {
-        for (let h = 0; h < 24 && dayStart+h < hourlyWx.sunshine_duration.length; h++) {
-          sunSeconds += hourlyWx.sunshine_duration[dayStart+h] || 0;
-        }
-      }
-    }
-    const sunHours = Math.round(sunSeconds / 3600 * 10) / 10;
-
-    // Slots: Morgen 8h, Mittag 12h, Wettkampf 14h (🏃), Abend 18h
-    const slots = [
-      { label:'Morgen',   hour:8,  runner:false },
-      { label:'Mittag',   hour:12, runner:false },
-      { label:'WK',       hour:14, runner:true  },
-      { label:'Abend',    hour:18, runner:false },
-    ];
-    const slotHtml = slots.map(s => {
-      const wx   = getHourly('weathercode', evStr, s.hour);
-      const temp = getHourly('temperature_2m', evStr, s.hour);
-      const icon = wx != null ? _wmoIcon(wx) : '—';
-      const tempStr = temp != null ? `${Math.round(temp)}°` : '—';
-      return `<div class="nec-day${s.runner ? ' nec-day-event' : ''}">
-        <div class="nec-day-name">${s.label}</div>
-        <div class="nec-day-date">${pad2(s.hour)}:00</div>
-        <div class="nec-day-icon">${icon}</div>
-        ${s.runner ? '<div class="nec-day-runner">🏃</div>' : ''}
-        <div class="nec-day-temp">${tempStr}</div>
-      </div>`;
-    }).join('');
-
-    // Sonnenstunden-Badge
-    const sunBadge = sunHours > 0
-      ? `<div style="font-size:8px;color:rgba(255,255,255,0.85);margin-left:6px;display:flex;align-items:center;gap:2px;white-space:nowrap">☀️ ${sunHours}h Sonne</div>`
-      : '';
-
-    fc.innerHTML = `<div style="display:flex;align-items:center;width:100%">
-      <div style="display:flex;gap:4px;flex:1">${slotHtml}</div>
-      ${sunBadge}
-    </div>`;
-    fc.style.display = 'flex';
-    fc.style.alignItems = 'center';
-    return;
-  }
-
-  // ── NORMALE ANSICHT: 4-Tage bis Wettkampf ───────────────────
+  // Helper: WMO code at 14:00 for a daily index
   function getWxCode(dayIdx) {
-    if (hourlyWx) {
-      const dayDate = daily.time[dayIdx];
-      const target = dayDate + 'T14:00';
+    if (hourlyWx && daily.time) {
+      const target = daily.time[dayIdx] + 'T14:00';
       const idx = hourlyWx.time.findIndex(t => t === target);
       if (idx >= 0) return hourlyWx.weathercode[idx];
-      const baseIdx = dayIdx * 24 + 14;
-      if (baseIdx < hourlyWx.weathercode.length) return hourlyWx.weathercode[baseIdx];
+      const bi = dayIdx * 24 + 14;
+      if (bi < hourlyWx.weathercode.length) return hourlyWx.weathercode[bi];
     }
     return daily.weathercode ? daily.weathercode[dayIdx] : 2;
   }
-  const startIdx = Math.max(0, evIdx - 3);
-  const days = [];
-  for (let i = startIdx; i <= Math.min(evIdx, (daily.time||[]).length-1) && days.length < 4; i++) {
-    const d = new Date(daily.time[i] + 'T12:00:00');
-    const isEv = (daily.time[i] === evStr);
-    days.push({
-      name: DE_DAY[d.getDay()],
-      date: `${d.getDate()}.${d.getMonth()+1}.`,
-      icon: _wmoIcon(getWxCode(i)),
-      runner: isEv,
-      max: Math.round(daily.temperature_2m_max[i]),
-      isEv,
-    });
-  }
-  if (!days.length) return;
 
-  fc.innerHTML = days.map(d =>
-    `<div class="nec-day${d.isEv ? ' nec-day-event' : ''}">
-      <div class="nec-day-name">${d.name}</div>
-      <div class="nec-day-date">${d.date}</div>
-      <div class="nec-day-icon">${d.icon}</div>
-      ${d.runner ? '<div class="nec-day-runner">🏃</div>' : ''}
-      <div class="nec-day-temp">${d.max}°</div>
-    </div>`
-  ).join('');
+  // Helper: sunshine hours for a day
+  function sunHoursFor(dateStr) {
+    if (!hourlyWx || !hourlyWx.sunshine_duration) return 0;
+    const dayStart = hourlyWx.time.findIndex(t => t.startsWith(dateStr));
+    if (dayStart < 0) return 0;
+    let sec = 0;
+    for (let h = 0; h < 24 && dayStart+h < hourlyWx.sunshine_duration.length; h++)
+      sec += hourlyWx.sunshine_duration[dayStart+h] || 0;
+    return Math.round(sec / 3600 * 10) / 10;
+  }
+
+  // Helper: build a standard day tile
+  function dayTile(dateStr, opts = {}) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const i = daily.time ? daily.time.indexOf(dateStr) : -1;
+    const maxT = i >= 0 ? Math.round(daily.temperature_2m_max[i]) : '—';
+    const minT = i >= 0 ? Math.round(daily.temperature_2m_min[i]) : null;
+    const icon = i >= 0 ? _wmoIcon(getWxCode(i)) : '—';
+    const tempStr = (opts.showMin && minT != null) ? `${minT}°–${maxT}°` : `${maxT}°`;
+    return `<div class="nec-day${opts.isEv ? ' nec-day-event' : ''}">
+      <div class="nec-day-name">${DE_DAY[d.getDay()]}</div>
+      <div class="nec-day-date">${d.getDate()}.${d.getMonth()+1}.</div>
+      <div class="nec-day-icon">${icon}</div>
+      ${opts.runner ? '<div class="nec-day-runner">🏃</div>' : ''}
+      <div class="nec-day-temp">${tempStr}</div>
+    </div>`;
+  }
+
+  // Helper: build an hour slot for competition day
+  function hourSlot(label, hour, runner) {
+    const wx   = getHourly('weathercode',   evStr, hour);
+    const temp = getHourly('temperature_2m', evStr, hour);
+    return `<div class="nec-day${runner ? ' nec-day-event' : ''}">
+      <div class="nec-day-name">${label}</div>
+      <div class="nec-day-date">${pad2(hour)}:00</div>
+      <div class="nec-day-icon">${wx != null ? _wmoIcon(wx) : '—'}</div>
+      ${runner ? '<div class="nec-day-runner">🏃</div>' : ''}
+      <div class="nec-day-temp">${temp != null ? Math.round(temp)+'°' : '—'}</div>
+    </div>`;
+  }
+
+  // Build forecast days list (days before event)
+  function prevDayTiles(count) {
+    const tiles = [];
+    for (let i = Math.max(0, evIdx - count); i < evIdx && (daily.time||[])[i]; i++)
+      tiles.push(dayTile(daily.time[i]));
+    return tiles.join('');
+  }
+
+  let html = '';
+  let sunBadge = '';
+
+  if (diff === 0 && hourlyWx) {
+    // ── HEUTE: 4 Stunden-Slots + Sonnenstunden ─────────────────
+    const sun = sunHoursFor(evStr);
+    html = hourSlot('Morgen',8,false) + hourSlot('Mittag',12,false)
+         + hourSlot('WK',14,true)     + hourSlot('Abend',18,false);
+    if (sun > 0) sunBadge = `<div style="font-size:8px;color:rgba(255,255,255,0.85);margin-left:4px;flex-shrink:0;text-align:center">☀️<br>${sun}h</div>`;
+
+  } else if (diff === 1 && hourlyWx) {
+    // ── MORGEN: 1 Vortag + 3 Stunden-Slots (Mittag/WK/Abend) ──
+    const prevStr = (daily.time||[])[Math.max(0, evIdx-1)];
+    const prev = prevStr ? dayTile(prevStr) : '';
+    const sun = sunHoursFor(evStr);
+    html = prev + hourSlot('Mittag',12,false) + hourSlot('WK',14,true) + hourSlot('Abend',18,false);
+    if (sun > 0) sunBadge = `<div style="font-size:8px;color:rgba(255,255,255,0.85);margin-left:4px;flex-shrink:0;text-align:center">☀️<br>${sun}h</div>`;
+
+  } else if (diff === 2 && hourlyWx) {
+    // ── 2 TAGE: 1 Vortag + 2 Stunden-Slots + Min/Max Wettkampf──
+    const prevStr = (daily.time||[])[Math.max(0, evIdx-1)];
+    const prev = prevStr ? dayTile(prevStr) : '';
+    // Wettkampftag als erweitertes Tile: Min/Max + 2 Stunden (12h, 14h)
+    const evI = daily.time ? daily.time.indexOf(evStr) : -1;
+    const maxT = evI >= 0 ? Math.round(daily.temperature_2m_max[evI]) : '—';
+    const minT = evI >= 0 ? Math.round(daily.temperature_2m_min[evI]) : '—';
+    const sun = sunHoursFor(evStr);
+    html = prev + hourSlot('Mittag',12,false) + hourSlot('WK 14h',14,true)
+         + `<div class="nec-day nec-day-event" style="min-width:40px">
+              <div class="nec-day-name">Min/Max</div>
+              <div class="nec-day-date">Gesamt</div>
+              <div class="nec-day-icon" style="font-size:9px">${minT}°–${maxT}°</div>
+              ${sun > 0 ? `<div class="nec-day-runner" style="font-size:7px">☀️${sun}h</div>` : ''}
+              <div class="nec-day-temp">WK Tag</div>
+            </div>`;
+
+  } else if (diff === 3 && hourlyWx) {
+    // ── 3 TAGE: 2 normale Tage + erweitertes WK-Tile ────────────
+    const tiles = prevDayTiles(2);
+    const evI = daily.time ? daily.time.indexOf(evStr) : -1;
+    const maxT = evI >= 0 ? Math.round(daily.temperature_2m_max[evI]) : '—';
+    const minT = evI >= 0 ? Math.round(daily.temperature_2m_min[evI]) : '—';
+    const sun = sunHoursFor(evStr);
+    const wkIcon = evI >= 0 ? _wmoIcon(getWxCode(evI)) : '—';
+    const d = new Date(evStr + 'T12:00:00');
+    html = tiles + `<div class="nec-day nec-day-event" style="min-width:44px">
+      <div class="nec-day-name">${DE_DAY[d.getDay()]} 🏃</div>
+      <div class="nec-day-date">${d.getDate()}.${d.getMonth()+1}.</div>
+      <div class="nec-day-icon">${wkIcon}</div>
+      <div class="nec-day-temp">${minT}°–${maxT}°</div>
+      ${sun > 0 ? `<div class="nec-day-runner" style="font-size:7px">☀️${sun}h</div>` : ''}
+    </div>`;
+
+  } else {
+    // ── 4+ TAGE: Standard 4-Tage-Ansicht ─────────────────────────
+    const startIdx = Math.max(0, evIdx - 3);
+    for (let i = startIdx; i <= Math.min(evIdx, (daily.time||[]).length-1); i++) {
+      const isEv = daily.time[i] === evStr;
+      html += dayTile(daily.time[i], { isEv, runner: isEv });
+    }
+  }
+
+  fc.innerHTML = `<div style="display:flex;align-items:stretch;gap:3px;flex:1">${html}</div>${sunBadge}`;
   fc.style.display = 'flex';
-  fc.style.alignItems = '';
+  fc.style.alignItems = 'center';
 }
 
 function updateNextEventCard() {
