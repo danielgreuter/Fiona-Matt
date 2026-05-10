@@ -4156,8 +4156,13 @@ function renderSAResults() {
   const DISC_LABELS = {'60m':'60m','100m':'100m','200m':'200m','80m':'80m','Long Jump':'Weitsprung'};
   const DISC_COLORS = {'60m':'var(--purple)','100m':'var(--blue)','200m':'var(--cyan)','80m':'var(--green)','Long Jump':'var(--emerald)'};
 
-  // Filter results
-  let results = saResultsData.results || [];
+  // Filter results — nur Fiona Matt
+  let results = (saResultsData.results || []).filter(r => {
+    const name = (r.athlete || r.name || r.athleteName || r.lastName || '').toLowerCase();
+    // Wenn kein Namensfeld vorhanden (lokale Fallback-Daten haben keines) → behalten
+    if (!name) return true;
+    return name.includes('matt') || name.includes('fiona');
+  });
   if (saCurrentDisc !== 'all') {
     results = results.filter(r => r.discipline === saCurrentDisc);
   }
@@ -4350,8 +4355,13 @@ function renderForecast(data, evDate) {
     const prevStr = (daily.time||[])[Math.max(0, evIdx-1)];
     const prev = prevStr ? dayTile(prevStr) : '';
     const sun = sunHoursFor(evStr);
-    html = prev + hourSlot('Mittag',12,false) + hourSlot('WK',14,true) + hourSlot('Abend',18,false);
-    if (sun > 0) sunBadge = `<div style="font-size:8px;color:rgba(255,255,255,0.85);margin-left:4px;flex-shrink:0;text-align:center">☀️<br>${sun}h</div>`;
+    const wkSlots1 = hourSlot('Mittag',12,false) + hourSlot('WK',14,true) + hourSlot('Abend',18,false);
+    const sunStr1 = sun > 0 ? `<div style="font-size:7px;color:rgba(255,255,255,0.7);text-align:center;margin-top:1px">☀️ ${sun}h</div>` : '';
+    html = prev + `<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+      <div style="font-size:7px;font-weight:700;color:#1e3a5f;text-align:center;background:rgba(255,255,255,0.18);border-radius:4px;padding:1px 3px;letter-spacing:0.3px">WETTKAMPFTAG</div>
+      <div style="display:flex;gap:3px">${wkSlots1}</div>
+      ${sunStr1}
+    </div>`;
 
   } else if (diff === 2 && hourlyWx) {
     // ── 2 TAGE: 1 Vortag + 2 Stunden-Slots + Min/Max Wettkampf──
@@ -4362,14 +4372,18 @@ function renderForecast(data, evDate) {
     const maxT = evI >= 0 ? Math.round(daily.temperature_2m_max[evI]) : '—';
     const minT = evI >= 0 ? Math.round(daily.temperature_2m_min[evI]) : '—';
     const sun = sunHoursFor(evStr);
-    html = prev + hourSlot('Mittag',12,false) + hourSlot('WK 14h',14,true)
-         + `<div class="nec-day nec-day-event" style="min-width:40px">
-              <div class="nec-day-name">Min/Max</div>
-              <div class="nec-day-date">Gesamt</div>
-              <div class="nec-day-icon" style="font-size:9px">${minT}°–${maxT}°</div>
-              ${sun > 0 ? `<div class="nec-day-runner" style="font-size:7px">☀️${sun}h</div>` : ''}
-              <div class="nec-day-temp">WK Tag</div>
-            </div>`;
+    const wkSlots2 = hourSlot('Mittag',12,false) + hourSlot('WK',14,true)
+      + `<div class="nec-day nec-day-event" style="min-width:38px">
+           <div class="nec-day-name">Tag</div>
+           <div class="nec-day-date">Gesamt</div>
+           <div class="nec-day-icon" style="font-size:8px">${minT}°–${maxT}°</div>
+           <div class="nec-day-temp">${sun > 0 ? '☀️'+sun+'h' : ''}</div>
+         </div>`;
+    const d2 = new Date(evStr+'T12:00:00');
+    html = prev + `<div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+      <div style="font-size:7px;font-weight:700;color:#1e3a5f;text-align:center;background:rgba(255,255,255,0.18);border-radius:4px;padding:1px 3px;letter-spacing:0.3px">WETTKAMPFTAG · ${d2.getDate()}.${d2.getMonth()+1}.</div>
+      <div style="display:flex;gap:3px">${wkSlots2}</div>
+    </div>`;
 
   } else if (diff === 3 && hourlyWx) {
     // ── 3 TAGE: 2 normale Tage + erweitertes WK-Tile ────────────
