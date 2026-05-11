@@ -2060,7 +2060,11 @@ function renderPBGrid(waResults) {
     if (!cfg || shown.has(cfg.key)) return;
     shown.add(cfg.key);
     const records = Array.isArray(r.records) ? r.records.join(', ') : (r.records || '');
-    const note = records || (r.notLegal ? 'n.l.' : '');
+    // Fallback: if WA has no records, check FIONA.personalBests note for this discipline
+    const discKey = cfg.key;
+    const staticPB = (FIONA.personalBests || []).find(p => p.discipline === discKey);
+    const staticNote = (staticPB && parseFloat(r.mark) <= (staticPB.numResult || 99)) ? (staticPB.note || '') : '';
+    const note = records || staticNote || (r.notLegal ? 'n.l.' : '');
     const isFirst = shown.size === 1;
     const dateStr = r.date || '';
     const venueParts = (r.venue || '').replace(/\s*\([A-Z]{3}\)\s*(\(i\))?$/, '').trim();
@@ -2418,16 +2422,20 @@ function updateWAScoreChart(results) {
     const liveScores = new Set(live.map(r => r.score));
     const extra = staticRows.filter(s => !liveScores.has(s.score));
     const merged = [...extra, ...live];
-    // Sort by date string ascending (static labels like "Mai '25" sort lexically but live dates are ISO)
-    // Use index position for static, ISO date for live
-    merged.sort((a, b) => {
-      const aIsISO = /\d{4}/.test(a.date) && a.date.length > 6;
-      const bIsISO = /\d{4}/.test(b.date) && b.date.length > 6;
-      if (aIsISO && bIsISO) return a.date.localeCompare(b.date);
-      if (aIsISO) return 1;  // live data after static
-      if (bIsISO) return -1;
-      return a.date.localeCompare(b.date);
-    });
+    // Parse any date label to sortable number YYYYMM
+    const MONTHS = {Jan:1,Feb:2,'Mär':3,Mar:3,Apr:4,Mai:5,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Okt:10,Oct:10,Nov:11,Dez:12,Dec:12};
+    function toSortKey(d) {
+      // ISO date like "2026-05-09"
+      if (/^\d{4}-\d{2}/.test(d)) return parseInt(d.replace(/-/g,'').slice(0,8));
+      // WA date like "09 MAY 2026"
+      const wa = d.match(/(\d{1,2})\s+([A-Z]{3})\s+(\d{4})/);
+      if (wa) { const m = MONTHS[wa[2][0]+wa[2].slice(1).toLowerCase()] || 0; return parseInt(wa[3])*10000 + m*100 + parseInt(wa[1]); }
+      // Label like "Mai '26", "Jun '25b"
+      const lb = d.match(/([A-Za-zä]+)\s*'(\d{2})/);
+      if (lb) { const m = MONTHS[lb[1]] || 0; return (2000+parseInt(lb[2]))*10000 + m*100; }
+      return 0;
+    }
+    merged.sort((a, b) => toSortKey(a.date) - toSortKey(b.date));
     byDisc[disc] = merged;
   });
 
