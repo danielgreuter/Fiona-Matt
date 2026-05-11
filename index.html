@@ -1389,9 +1389,10 @@ const FIONA = {
     { name:"VLV Hallenmeisterschaften (WRC)", date:"25.01.2026", venue:"Dornbirn (AUT)", disciplines:["60m"], result:"7.74 (1h1)", fionaStarted:true, past:true },
     { name:"6. Stadtwerk-Hallenmeeting (WRC)", date:"18.01.2026", venue:"St. Gallen (SUI)", disciplines:["60m"], result:"7.80 (2r1)", fionaStarted:true, past:true },
     // ── Bevorstehend — Fiona angemeldet ──
-    { name:"Old Boys - Frühlingsmeeting (WRC)", date:"09.05.2026", venue:"Stadion Schützenmatte, Basel", weatherCity:"Basel", disciplines:["100m","200m"], fionaStarting:true, past:false },
+    { name:"Old Boys - Frühlingsmeeting (WRC)", date:"09.05.2026", venue:"Stadion Schützenmatte, Basel", weatherCity:"Basel", disciplines:["100m","200m"], fionaStarting:true, past:true },
     // ── Bevorstehend — Allgemeiner Kalender U18 100m ──
 
+    { name:"WK: Nationales Auffahrts-Meeting 2026 (WRC)", date:"14.05.2026", venue:"Stadion Schützenmatte, Basel", weatherCity:"Basel", disciplines:["100m","200m"], fionaStarting:true, past:false },
     { name:"Dreikampf Thal", date:"25.04.2026", venue:"Thal (SUI)", disciplines:["100m","Hoch","Weit"], fionaStarting:false, past:false, note:"U18: 100m oder 1000m", deadline:"k.A." },
     { name:"Wahldreikampf Guntershausen", date:"25.04.2026", venue:"Guntershausen (SUI)", disciplines:["100m","200m"], fionaStarting:false, past:false, deadline:"25.03.2026" },
     { name:"46. Eröffnungsmeeting Cham", date:"25.04.2026", venue:"Cham (SUI)", disciplines:["100m","200m"], fionaStarting:false, past:false, deadline:"22.04.2026" },
@@ -1751,8 +1752,9 @@ function renderCalendar() {
     (e.disciplines && e.disciplines.some(d => U18_DISCS.some(u => d.includes(u))));
 
   const past = FIONA.upcoming.filter(e => e.past && e.fionaStarted);
-  const fionaFuture = FIONA.upcoming.filter(e => !e.past && e.fionaStarting);
-  const generalFuture = FIONA.upcoming.filter(e => !e.past && !e.fionaStarting && isU18Relevant(e));
+  const today0 = new Date(); today0.setHours(0,0,0,0);
+  const fionaFuture = FIONA.upcoming.filter(e => e.fionaStarting && (() => { try { return parseDMY(e.date) >= today0; } catch(x) { return false; } })());
+  const generalFuture = FIONA.upcoming.filter(e => !e.fionaStarting && isU18Relevant(e) && (() => { try { return parseDMY(e.date) >= today0; } catch(x) { return false; } })());
 
   function renderEvent(e) {
     const parts = e.date.split('.').map(Number);
@@ -4513,8 +4515,8 @@ function updateNextEventCard() {
   const parseDMY = s => { const p=s.split('.'); return new Date(+p[2],+p[1]-1,+p[0]); };
   const today = new Date(); today.setHours(0,0,0,0);
   const regs = (FIONA.upcoming||[]).filter(e => {
-    if (e.past||!e.fionaStarting) return false;
-    try { return parseDMY(e.date)>=today; } catch(x) { return false; }
+    if (!e.fionaStarting) return false;  // nur Wettkämpfe mit Fiona:ja
+    try { return parseDMY(e.date) >= today; } catch(x) { return false; }  // Datum automatisch
   }).sort((a,b)=>parseDMY(a.date)-parseDMY(b.date));
   if (!regs.length) { card.style.display='none'; return; }
   card.style.display='block';
