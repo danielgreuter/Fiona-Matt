@@ -2582,7 +2582,8 @@ renderRankBanners();
 selectRankDisc('60m');
 renderRankList();
 loadBestenliste();  // async — updates bars wenn KV-Daten vorhanden
-loadLiveResults();  // async — WA Resultate
+loadLiveResults();  // async — WA Resultate (Resultate-Tab Liste)
+loadWAResults();    // async — WA PBs + Score Chart aktualisieren
 loadSAResults().then(()=>{const disc=currentDisc||'100m';renderDevChart(disc);renderWAScoreChartDynamic(disc);}).catch(()=>{});
 // Charts rendered in DOMContentLoaded
 initPushUI();
