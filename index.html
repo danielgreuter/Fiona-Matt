@@ -997,9 +997,14 @@ body {
 
       <!-- PB Grid -->
       <div class="card">
-        <div style="display:flex;align-items:center;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div class="card-title" style="margin:0">Persönliche Bestleistungen</div>
-          <div id="pb-status" style="font-size:10px;color:var(--text-dim)"></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="pb-status" style="font-size:10px;color:var(--text-dim)"></div>
+            <button id="pb-refresh-btn" onclick="fetchWAPBs()" style="font-size:10px;padding:3px 9px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;display:flex;align-items:center;gap:4px">
+              <span id="pb-refresh-icon">↻</span> WA
+            </button>
+          </div>
         </div>
         <div class="pb-grid" id="pb-grid-dynamic"></div>
       </div>
@@ -2094,10 +2099,67 @@ function renderStaticPBs() {
       <div class="pb-disc">${labels[pb.discipline]||pb.discipline}</div>
       <div class="pb-time">${pb.result}${unit}</div>
       <div class="pb-note">${pb.note||''}</div>
-      <div class="pb-date">${pb.date||''}</div>
+      <div class="pb-date">${pb.date||''}${pb.waScore ? ` · <span style="color:var(--gold)">${pb.waScore} Pkt</span>` : ''}</div>
     </div>`;
   });
   grid.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// WORLD ATHLETICS PB FETCH
+// ══════════════════════════════════════════════════
+async function fetchWAPBs() {
+  const btn  = document.getElementById('pb-refresh-btn');
+  const icon = document.getElementById('pb-refresh-icon');
+  const status = document.getElementById('pb-status');
+  if (btn) btn.disabled = true;
+  if (icon) icon.textContent = '⏳';
+  if (status) status.textContent = 'Lädt...';
+  try {
+    const res = await fetch(PROXY_URL + '?action=wa-pbs&_t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data || !data.pbs || !data.pbs.length) throw new Error('Keine Daten');
+
+    // Map WA discipline names to app discipline keys
+    const discMap = {
+      '60 Metres': '60m', '60m': '60m',
+      '100 Metres': '100m', '100m': '100m',
+      '200 Metres': '200m', '200m': '200m',
+      'Long Jump': 'Long Jump',
+    };
+
+    data.pbs.forEach(waPb => {
+      const disc = discMap[waPb.discipline] || waPb.discipline;
+      const existing = FIONA.personalBests.find(p => p.discipline === disc);
+      if (existing) {
+        existing.result   = waPb.result;
+        existing.numResult = parseFloat(waPb.result);
+        existing.date     = waPb.date || existing.date;
+        existing.note     = (waPb.records || []).join(' · ') || existing.note;
+        existing.waScore  = waPb.score || null;
+      } else {
+        FIONA.personalBests.push({
+          discipline: disc,
+          result: waPb.result,
+          numResult: parseFloat(waPb.result),
+          date: waPb.date || '',
+          note: (waPb.records || []).join(' · '),
+          waScore: waPb.score || null,
+          indoor: waPb.indoor || false,
+        });
+      }
+    });
+
+    renderStaticPBs();
+    if (status) status.textContent = 'WA ✓ ' + new Date().toLocaleTimeString('de-CH', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    if (status) status.textContent = '⚠ ' + e.message;
+    console.error('fetchWAPBs:', e);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.textContent = '↻';
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -2509,6 +2571,8 @@ function initDynamicData(waResults, waPBs) {
   window.waPBs = waPBs;
   renderPBGrid(waPBs);
   renderRankingBars();
+  // Update WA Score chart with live scores
+  if (waResults && waResults.length) updateWAScoreChart(waResults);
 }
 
 // Initial render with fallback data
@@ -2878,9 +2942,11 @@ async function loadWAResults() {
   // Step 2: fetch WA in background for new results
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
-    const res = await fetch(PROXY_URL + '?action=results');
+    const _forceWA = !sessionStorage.getItem('wa-loaded') ? '&force=1' : '';
+    const res = await fetch(PROXY_URL + '?action=results' + _forceWA);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const raw = await res.json();
+    sessionStorage.setItem('wa-loaded', '1');
     // Worker returns either an array or {results:[...], pbs:[...]}
     const waResults = Array.isArray(raw) ? raw : (raw.results || []);
     const waPBs    = Array.isArray(raw) ? null : (raw.pbs || null);
@@ -2890,6 +2956,10 @@ async function loadWAResults() {
       const latestWA = waResults[0];
       const waDate = parseWADateToLocal(latestWA.date);
       const localDate = parseLocalDate(latestLocal?.date || '');
+
+      // Always update PBs and score chart from WA (regardless of date comparison)
+      if (waPBs) initDynamicData(waResults, waPBs);
+      else initDynamicData(waResults, buildPBMap(waResults));
 
       if (waDate > localDate) {
         const combined = [...waResults];
@@ -2902,8 +2972,6 @@ async function loadWAResults() {
         renderWAResults(combined);
         if (status) { status.textContent = '✓ World Athletics · ' + waResults.length + ' Resultate'; status.style.color = 'var(--green)'; }
         checkForNewResults(waResults);
-        if (waPBs) initDynamicData(waResults, waPBs);
-        else initDynamicData(waResults, buildPBMap(waResults));
       } else {
         if (status) { status.textContent = '✓ Aktuell · ' + localResults.length + ' Resultate'; status.style.color = 'var(--green)'; }
       }
