@@ -1219,7 +1219,7 @@ const FIONA = {
 
   recentResults: [
     // ── 2026 Indoor 60m (Screenshot 3, chronologisch) ──
-    { date:"09.05.2026", discipline:"100m", result:"12.03", numResult:12.03, competition:"Old Boys - Frühlingsmeeting (WRC)", venue:"Stadion Schützenmatte, Basel (SUI)", place:null, note:"", wind:null, season:"2026" },
+    { date:"09.05.2026", discipline:"100m", result:"12.03", numResult:12.03, competition:"Old Boys - Frühlingsmeeting (WRC)", venue:"Stadion Schützenmatte, Basel (SUI)", place:3, note:"Zeitlauf", wind:1.0, season:"2026" },
     { date:"21.02.2026", discipline:"60m", result:"7.60", numResult:7.60, competition:"SM Halle Nachwuchs (WRC)", venue:"Magglingen/Macolin (SUI)", place:3, note:"NR", wind:null, season:"2026" },
     { date:"21.02.2026", discipline:"60m", result:"7.69", numResult:7.69, competition:"SM Halle Nachwuchs (WRC)", venue:"Magglingen/Macolin (SUI)", place:1, note:"",   wind:null, season:"2026" },
     { date:"14.02.2026", discipline:"60m", result:"7.65", numResult:7.65, competition:"Q-Meeting (WRC)", venue:"Magglingen (SUI)", place:2, note:"", wind:null, season:"2026" },
@@ -3072,7 +3072,7 @@ function renderWAResults(results) {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:11px;font-weight:700;color:var(--text)">${r.discipline}</div>
-        <div style="font-size:10px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${venueShort}${r.wind && r.wind!=='null' ? ' · w'+r.wind : ''}</div>
+        <div style="font-size:10px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${venueShort}${r.wind && r.wind!=='null' ? ` · w${parseFloat(r.wind)>0?'+':''}${parseFloat(r.wind).toFixed(1)}` : ''}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:15px;font-weight:800;color:${isPB ? 'var(--red)' : isNL ? 'var(--text-dim)' : 'var(--text)'}">${cleanResult}</div>
@@ -4306,6 +4306,10 @@ function renderSAResults() {
         'vl':'Vorlauf', 'vl1':'Vorlauf 1', 'vl2':'Vorlauf 2',
         'hf':'Halbfinale', 'hf1':'Halbfinale 1', 'hf2':'Halbfinale 2',
         'final':'Finale', 'semi':'Halbfinale', 'heat':'Vorlauf', 'preliminary':'Vorlauf',
+        // alabus r=Round, h=Heat codes
+        'r1':'Vorlauf 1','r2':'Vorlauf 2','r3':'Vorlauf 3','r4':'Vorlauf 4','r5':'Vorlauf 5',
+        'h1':'Vorlauf 1','h2':'Vorlauf 2','h3':'Vorlauf 3','h4':'Vorlauf 4','h5':'Vorlauf 5',
+        'h6':'Vorlauf 6','h7':'Vorlauf 7','h8':'Vorlauf 8','h9':'Vorlauf 9',
       };
       const roundRaw = r.round || r.roundName || '';
       const roundLabel = roundMap[roundRaw] || roundMap[roundRaw.toLowerCase()] || roundRaw;
@@ -4320,7 +4324,7 @@ function renderSAResults() {
         <div style="font-size:10px;color:${col};min-width:48px;font-weight:600;padding-top:2px">${label}</div>
         <div style="min-width:52px;flex-shrink:0">
           <div style="font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)">${r.result}${unit}${waStr}${indoorStr}</div>
-          ${r.wind ? `<div style="font-size:9px;color:var(--text-dim);margin-top:1px">W${r.wind}</div>` : ''}
+          ${r.wind != null && r.wind !== '' ? `<div style="font-size:9px;color:${parseFloat(r.wind)>2?'var(--red)':'var(--text-dim)'};margin-top:1px">w${parseFloat(r.wind)>0?'+':''}${parseFloat(r.wind).toFixed(1)}</div>` : ''}
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.competition||''}</div>
