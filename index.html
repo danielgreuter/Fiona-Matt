@@ -4311,13 +4311,20 @@ function renderSAResults() {
         'h1':'Vorlauf 1','h2':'Vorlauf 2','h3':'Vorlauf 3','h4':'Vorlauf 4','h5':'Vorlauf 5',
         'h6':'Vorlauf 6','h7':'Vorlauf 7','h8':'Vorlauf 8','h9':'Vorlauf 9',
       };
-      const roundRaw = r.round || r.roundName || '';
-      const roundLabel = roundMap[roundRaw] || roundMap[roundRaw.toLowerCase()] || roundRaw;
+      // Parse place: scraper may return combined string like "3r1", "3f", "3h5"
+      let placeNum = r.place;
+      let roundRaw = r.round || r.roundName || '';
+      if (typeof placeNum === 'string') {
+        const m = placeNum.match(/^(\d+)([a-zA-Z]\w*)$/);
+        if (m) { placeNum = parseInt(m[1]); roundRaw = roundRaw || m[2]; }
+        else placeNum = parseInt(placeNum) || null;
+      }
+      const roundLabel = roundRaw ? (roundMap[roundRaw] || roundMap[roundRaw.toLowerCase()] || roundRaw) : '';
 
-      const placeStr = r.place
+      const placeStr = placeNum
         ? (roundLabel
-            ? `<span style="font-size:10px;font-weight:700;color:var(--text-dim)">${r.place}. ${roundLabel}</span>`
-            : `<span style="font-size:10px;color:var(--text-dim)">Rang ${r.place}</span>`)
+            ? `<span style="font-size:10px;font-weight:700;color:var(--text-dim)">${placeNum}. ${roundLabel}</span>`
+            : `<span style="font-size:10px;color:var(--text-dim)">Rang ${placeNum}</span>`)
         : '';
 
       html += `<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
