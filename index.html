@@ -1211,7 +1211,7 @@ const FIONA = {
   club: "TV Eschen-Mauren",
 
   personalBests: [
-    { discipline:"100m",      result:"12.24", numResult:12.24, date:"13 Sep 2025", note:"NU20R · NU18R", indoor:false },
+    { discipline:"100m",      result:"12.03", numResult:12.03, date:"09 Mai 2026", note:"NU20R · NU18R", indoor:false },
     { discipline:"60m",       result:"7.60",  numResult:7.60,  date:"21 Feb 2026", note:"LIE NR",        indoor:true  },
     { discipline:"Long Jump", result:"5.47",  numResult:5.47,  date:"23 Aug 2025", note:"",               indoor:false },
     { discipline:"200m",      result:"26.41", numResult:26.41, date:"2025",        note:"",               indoor:false },
@@ -1219,6 +1219,7 @@ const FIONA = {
 
   recentResults: [
     // ── 2026 Indoor 60m (Screenshot 3, chronologisch) ──
+    { date:"09.05.2026", discipline:"100m", result:"12.03", numResult:12.03, competition:"Old Boys - Frühlingsmeeting (WRC)", venue:"Stadion Schützenmatte, Basel (SUI)", place:null, note:"", wind:null, season:"2026" },
     { date:"21.02.2026", discipline:"60m", result:"7.60", numResult:7.60, competition:"SM Halle Nachwuchs (WRC)", venue:"Magglingen/Macolin (SUI)", place:3, note:"NR", wind:null, season:"2026" },
     { date:"21.02.2026", discipline:"60m", result:"7.69", numResult:7.69, competition:"SM Halle Nachwuchs (WRC)", venue:"Magglingen/Macolin (SUI)", place:1, note:"",   wind:null, season:"2026" },
     { date:"14.02.2026", discipline:"60m", result:"7.65", numResult:7.65, competition:"Q-Meeting (WRC)", venue:"Magglingen (SUI)", place:2, note:"", wind:null, season:"2026" },
@@ -1320,6 +1321,7 @@ const FIONA = {
       { label:"Jul '25", val:942  },
       { label:"Aug '25", val:942  },
       { label:"Sep '25", val:944  },
+      { label:"Mai '26", val:986  },
     ],
     "200m": [
       { label:"Mai '25",  val:722 },
@@ -2041,7 +2043,6 @@ function renderPBGrid(waResults) {
     '60 Metres':  { label:'60m Halle', unit:'s', cls:'disc-60', key:'60m', indoor:true },
     '200 Metres': { label:'200m', unit:'s', cls:'disc-200', key:'200m', indoor:false },
     'Long Jump':  { label:'Weitsprung', unit:'m', cls:'disc-lj', key:'Long Jump', indoor:false },
-    '4x100 Metres Relay': { label:'4x100m', unit:'s', cls:'disc-relay', key:'relay', indoor:false },
   };
 
   const pbs = window.waPBs || [];
@@ -2071,16 +2072,7 @@ function renderPBGrid(waResults) {
     </div>`;
   });
 
-  // Also show relay if available in results
-  const relayRes = (window.waResults || []).find(r => r.discipline.includes('4x100'));
-  if (relayRes && !shown.has('relay')) {
-    html += `<div class="pb-item disc-relay" onclick="">
-      <div class="pb-disc">4x100m</div>
-      <div class="pb-time">${relayRes.result}</div>
-      <div class="pb-note"></div>
-      <div class="pb-date">${relayRes.date || ''}</div>
-    </div>`;
-  }
+  // 4x100 Relay wird nicht angezeigt (nicht relevant)
 
   grid.innerHTML = html || '<div style="font-size:12px;color:var(--text-dim)">Keine Daten</div>';
   if (status) { status.textContent = '✓ World Athletics'; status.style.color = 'var(--green)'; }
@@ -2401,7 +2393,7 @@ function renderRankingBars(liveData) {
 // DYNAMIC WA SCORE CHART
 // ══════════════════════════════════════════════════
 function updateWAScoreChart(results) {
-  // Group by discipline, get best score per date
+  // Group by discipline, collect scored results
   const byDisc = {};
   results.forEach(r => {
     if (!r.score || r.discipline.includes('Relay')) return;
@@ -2414,10 +2406,32 @@ function updateWAScoreChart(results) {
     byDisc[disc].push({ date: r.date, score: r.score, result: r.result });
   });
 
-  // Store for chart rendering
-  window.waScoreByDisc = byDisc;
+  // Merge with static waScoreHistory (older datapoints not on WA live)
+  // and sort ascending by date so chart goes left=old → right=new
+  const staticHist = (FIONA.seasons && FIONA.seasons.waScoreHistory) || {};
+  ['60m','100m','200m','Long Jump'].forEach(disc => {
+    const live = byDisc[disc] || [];
+    const liveLabels = new Set(live.map(r => r.score));
+    // Convert static history to same format
+    const staticRows = (staticHist[disc] || []).map(r => ({ date: r.label, score: r.val, result: '' }));
+    // Merge: live overrides static where score matches, otherwise add static
+    const liveScores = new Set(live.map(r => r.score));
+    const extra = staticRows.filter(s => !liveScores.has(s.score));
+    const merged = [...extra, ...live];
+    // Sort by date string ascending (static labels like "Mai '25" sort lexically but live dates are ISO)
+    // Use index position for static, ISO date for live
+    merged.sort((a, b) => {
+      const aIsISO = /\d{4}/.test(a.date) && a.date.length > 6;
+      const bIsISO = /\d{4}/.test(b.date) && b.date.length > 6;
+      if (aIsISO && bIsISO) return a.date.localeCompare(b.date);
+      if (aIsISO) return 1;  // live data after static
+      if (bIsISO) return -1;
+      return a.date.localeCompare(b.date);
+    });
+    byDisc[disc] = merged;
+  });
 
-  // Re-render chart with live data
+  window.waScoreByDisc = byDisc;
   const chartEl = document.getElementById('score-chart-svg');
   if (chartEl) renderWAScoreChartDynamic(window.currentWAScoreDisc || '60m');
 }
