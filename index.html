@@ -1393,7 +1393,8 @@ const FIONA = {
     { name:"Old Boys - Frühlingsmeeting (WRC)", date:"09.05.2026", venue:"Stadion Schützenmatte, Basel", weatherCity:"Basel", disciplines:["100m","200m"], fionaStarting:true, past:true },
     // ── Bevorstehend — Allgemeiner Kalender U18 100m ──
 
-    { name:"WK: Nationales Auffahrts-Meeting 2026 (WRC)", date:"14.05.2026", venue:"Leichtathletik-Stadion Hard, Bern-Zürichstrasse 32, 4900 Langenthal", weatherCity:"Langenthal", disciplines:["100m","200m"], fionaStarting:true, past:false },
+    { name:"WK: Nationales Auffahrts-Meeting 2026 (WRC)", date:"14.05.2026", venue:"Leichtathletik-Stadion Hard, Bern-Zürichstrasse 32, 4900 Langenthal", weatherCity:"Langenthal", disciplines:["100m","200m"], fionaStarting:false, past:false },
+    { name:"WK: 50. Pfingstmeeting (WRC)", date:"23.05.2026", venue:"Stadion Zofingen, Zofingen", weatherCity:"Zofingen", disciplines:["100m","200m"], fionaStarting:true, past:false },
     { name:"Dreikampf Thal", date:"25.04.2026", venue:"Thal (SUI)", disciplines:["100m","Hoch","Weit"], fionaStarting:false, past:false, note:"U18: 100m oder 1000m", deadline:"k.A." },
     { name:"Wahldreikampf Guntershausen", date:"25.04.2026", venue:"Guntershausen (SUI)", disciplines:["100m","200m"], fionaStarting:false, past:false, deadline:"25.03.2026" },
     { name:"46. Eröffnungsmeeting Cham", date:"25.04.2026", venue:"Cham (SUI)", disciplines:["100m","200m"], fionaStarting:false, past:false, deadline:"22.04.2026" },
@@ -2584,6 +2585,7 @@ document.addEventListener('DOMContentLoaded', function() {
   try { renderTimeline(); } catch(e) { console.error('renderTimeline:', e); }
   try { updateEMCountdown(); } catch(e) { console.error('updateEMCountdown:', e); }
   try { updateNextEventCard(); } catch(e) { console.error('updateNextEventCard:', e); }
+  fetchUpcomingEvents().then(live => { if (live !== null) updateNextEventCard(live); }).catch(()=>{});
   setTimeout(() => {
     try { renderScoreChart(currentDisc); } catch(e) { console.error('scoreChart:', e); }
     try { renderSeasonCompare(currentDisc); } catch(e) { console.error('seasonCompare:', e); }
@@ -4546,15 +4548,33 @@ function enrichNextEventVenueFromCalendar() {
   }
 }
 
-function updateNextEventCard() {
+async function fetchUpcomingEvents() {
+  try {
+    const res = await fetch(PROXY_URL + '?action=upcoming&_t=' + Date.now(), {cache:'no-store'});
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.events || null;
+  } catch(e) { return null; }
+}
+
+function updateNextEventCard(liveEvents) {
   const card = document.getElementById('next-event-card');
   if (!card) return;
   const parseDMY = s => { const p=s.split('.'); return new Date(+p[2],+p[1]-1,+p[0]); };
   const today = new Date(); today.setHours(0,0,0,0);
-  const regs = (FIONA.upcoming||[]).filter(e => {
-    if (!e.fionaStarting) return false;  // nur Wettkämpfe mit Fiona:ja
-    try { return parseDMY(e.date) >= today; } catch(x) { return false; }  // Datum automatisch
-  }).sort((a,b)=>parseDMY(a.date)-parseDMY(b.date));
+
+  let regs;
+  if (liveEvents) {
+    // Live-Daten aus Kalender: bereits gefiltert (isWettkampf+fionaStarting+!past)
+    regs = liveEvents.filter(e => { try { return parseDMY(e.date)>=today; } catch(x){return false;} });
+  } else {
+    // Fallback: hardcodierte FIONA.upcoming
+    regs = (FIONA.upcoming||[]).filter(e => {
+      if (!e.fionaStarting) return false;
+      try { return parseDMY(e.date)>=today; } catch(x){return false;}
+    });
+  }
+  regs.sort((a,b)=>parseDMY(a.date)-parseDMY(b.date));
   if (!regs.length) { card.style.display='none'; return; }
   card.style.display='block';
   const ev = regs[0];
