@@ -1,0 +1,157 @@
+name: Resultate Zoom Rewrite
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rewrite:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zoom neu schreiben
+        run: |
+          python3 - << 'PYEOF'
+          import re
+
+          with open('index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+
+          # ── Alten Zoom-Code komplett entfernen ──────────────────────────
+          # Entfernt alles von "// ── RESULT ZOOM" bis zum Trennstrich-Ende
+          html = re.sub(
+              r'// ── RESULT ZOOM ─+.*?// ─{5,}',
+              '',
+              html, count=1, flags=re.DOTALL
+          )
+          print('✓ Alter Zoom-Code entfernt')
+
+          # ── Cursor:pointer für result-item (CSS) ────────────────────────
+          if 'cursor: pointer; /* rz */' not in html:
+              # Füge separate Regel am Ende des Zoom-CSS-Blocks hinzu
+              html = html.replace(
+                  '.rz-sd-place { font-size:11px; color:var(--text-dim); font-weight:600; }',
+                  '.rz-sd-place { font-size:11px; color:var(--text-dim); font-weight:600; }\n.result-item { cursor: pointer; /* rz */ }'
+              )
+              print('✓ cursor:pointer hinzugefügt')
+
+          # ── Neuer, einfacher Zoom-Code ──────────────────────────────────
+          NEW_JS = r"""
+// ── RESULT ZOOM ─────────────────────────────────────────────────────────────
+var _rzData = null;
+var _rzWorker = 'https://fiona-proxy.daniel-greuter.workers.dev';
+
+function _rzLoad(cb) {
+  if (_rzData) { cb(_rzData); return; }
+  fetch(_rzWorker + '?action=sa-results')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(d&&d.results){ _rzData=d; cb(d); } })
+    .catch(function(e){ console.error('RZ fetch error',e); });
+}
+
+document.addEventListener('click', function(e) {
+  var item = e.target && e.target.closest && e.target.closest('.result-item');
+  if (!item) return;
+  var tEl = item.querySelector('.result-time');
+  var cEl = item.querySelector('.result-competition');
+  if (!tEl) return;
+  var t = tEl.textContent.trim();
+  var c = cEl ? cEl.textContent.trim() : '';
+  _rzLoad(function(d) {
+    var idx = -1;
+    d.results.forEach(function(r,i) {
+      if (idx>=0) return;
+      var cc = r.competition.replace(/\s*\(WRC[^)]*\)\s*/i,'').trim();
+      if (r.result===t && (c===''||r.competition.indexOf(c)>=0||c.indexOf(cc)>=0)) idx=i;
+    });
+    if (idx>=0) rzOpen(idx);
+  });
+});
+
+function rzDiscClass(d) {
+  d=(d||'').toLowerCase().replace(/\s/g,'');
+  if(d==='100m') return 'rz-disc-100m';
+  if(d==='60m')  return 'rz-disc-60m';
+  if(d==='200m') return 'rz-disc-200m';
+  if(d.indexOf('jump')>=0||d.indexOf('weit')>=0) return 'rz-disc-lj';
+  if(d==='80m')  return 'rz-disc-80m';
+  return 'rz-disc-other';
+}
+
+function rzDecodePlatz(p) {
+  if(!p) return '';
+  var m=String(p).match(/^(\d+)(qf|sf|[rfh])?(\d+)?$/i);
+  if(!m) return 'Rang '+p;
+  var rank=m[1],round=(m[2]||'').toLowerCase(),num=m[3]||'';
+  var R={r:'Lauf',h:'Vorlauf',f:'Final',qf:'Viertelfinale',sf:'Halbfinale'};
+  var s='Rang '+rank;
+  if(round&&R[round]) s+=' \u00B7 '+R[round]+(num?' '+num:'');
+  return s;
+}
+
+function rzOpen(idx) {
+  var d=_rzData; if(!d||!d.results) return;
+  var r=d.results[idx]; if(!r) return;
+  var hdr=document.getElementById('rz-header');
+  var indoor=r.indoor?'\uD83C\uDFDF Halle':'\u2600\uFE0F Outdoor';
+  hdr.innerHTML='<span class="rz-disc-pill '+rzDiscClass(r.discipline)+'">'+r.discipline+'</span>'
+    +'<span class="rz-tag">'+indoor+'</span>'
+    +'<span class="rz-tag">'+r.year+'</span>';
+  document.getElementById('rz-time').textContent=r.result||'\u2013';
+  var wEl=document.getElementById('rz-wind');
+  if(r.wind!==null&&r.wind!==undefined&&!r.indoor){
+    wEl.textContent='Wind: '+(r.wind>=0?'+':'')+r.wind+' m/s';
+    wEl.style.display='';
+  } else { wEl.style.display='none'; }
+  var pb=d.pbs&&d.pbs[r.discipline];
+  document.getElementById('rz-pb').style.display=(pb&&pb.result===r.result&&pb.date===r.date)?'':'none';
+  var cc=r.competition.replace(/\s*\(WRC[^)]*\)\s*/i,'').trim();
+  var isWRC=/WRC/i.test(r.competition);
+  document.getElementById('rz-details').innerHTML=
+    '<div class="rz-row"><span class="rz-row-icon">\uD83C\uDF96</span><span class="rz-row-text">'+rzDecodePlatz(r.place)+'</span></div>'
+    +'<div class="rz-row"><span class="rz-row-icon">\uD83C\uDFC6</span><span class="rz-row-text">'+cc+(isWRC?'<span class="rz-wrc">WRC</span>':'')+'</span></div>'
+    +'<div class="rz-row"><span class="rz-row-icon">\uD83D\uDCCD</span><span class="rz-row-text">'+(r.venue||'\u2013')+'</span></div>'
+    +'<div class="rz-row"><span class="rz-row-icon">\uD83D\uDCC5</span><span class="rz-row-text">'+(r.date||'\u2013')+'</span></div>';
+  var sameDay=d.results.filter(function(x,i){return i!==idx&&x.competition===r.competition&&x.date===r.date;});
+  var sdEl=document.getElementById('rz-sameday');
+  var sdList=document.getElementById('rz-sd-list');
+  if(sameDay.length>0){
+    sdList.innerHTML=sameDay.map(function(x){
+      var ws=(x.wind!==null&&!x.indoor)?' <span style="color:var(--text-dim);font-size:11px">'+(x.wind>=0?'+':'')+x.wind+'</span>':'';
+      return '<div class="rz-sd-item" onclick="rzOpen('+d.results.indexOf(x)+')">'
+        +'<span class="rz-sd-disc">'+x.discipline+'</span>'
+        +'<span class="rz-sd-time">'+x.result+ws+'</span>'
+        +'<span class="rz-sd-place">'+(x.place||'')+'</span></div>';
+    }).join('');
+    sdEl.style.display='';
+  } else { sdEl.style.display='none'; }
+  document.getElementById('rz-overlay').classList.add('open');
+}
+
+function rzClose() { document.getElementById('rz-overlay').classList.remove('open'); }
+// ─────────────────────────────────────────────────────────────────────────────
+"""
+
+          # Einfügen vor letztem </script>
+          last_script = html.rfind('</script>')
+          if last_script >= 0:
+              html = html[:last_script] + NEW_JS + html[last_script:]
+              print('✓ Neuer Zoom-Code eingefügt')
+          else:
+              print('FEHLER: Kein </script> gefunden')
+
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(html)
+          print('✅ Fertig')
+          PYEOF
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --staged --quiet || git commit -m "fix: Resultate Zoom komplett neu (on-demand fetch)"
+          git push
+          echo "Committed: $(git log --oneline -1)"
