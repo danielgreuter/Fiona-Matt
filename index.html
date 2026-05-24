@@ -5010,7 +5010,7 @@ document.addEventListener('click',function(e){
   var node=e.target;
   for(var i=0;i<10&&node&&node!==document.body;i++){
     var txt=(node.textContent||'').trim();
-    var tm=txt.match(/\b(\d{1,2}\.\d{2})\b/);
+    var tm=txt.match(/\b(\d{1,2}\.\d{2})\b(?!\.\d)/);
     var dm=txt.match(/\b(\d{2}\.\d{2}\.\d{4})\b/);
     if(tm&&dm&&txt.length>15&&txt.length<600){
       var tv=tm[1],dv=dm[1];
