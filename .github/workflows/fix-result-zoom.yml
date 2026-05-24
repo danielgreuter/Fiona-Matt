@@ -1,0 +1,147 @@
+name: Resultate Zoom Fix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fix anwenden
+        run: |
+          python3 - << 'PYEOF'
+          import re
+
+          with open('index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+
+          # 1. cursor:pointer zu result-item CSS hinzufügen
+          html = html.replace(
+              '.result-item {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 12px 0;\n  border-bottom: 1px solid var(--border);\n}',
+              '.result-item {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 12px 0;\n  border-bottom: 1px solid var(--border);\n  cursor: pointer;\n}'
+          )
+
+          # 2. Altes JS ersetzen (MutationObserver + Click-Handler) durch vereinfachte Version
+          OLD_JS = """// ── RESULT ZOOM ─────────────────────────────────────────────────────────────
+          window._rzData = null;
+
+          // Fetch-Interceptor: sa-results Daten abfangen
+          (function() {
+            const _origFetch = window.fetch;
+            window.fetch = function() {
+              const url = arguments[0] || '';
+              return _origFetch.apply(this, arguments).then(function(resp) {
+                if (typeof url === 'string' && url.includes('sa-results')) {
+                  resp.clone().json().then(function(d) {
+                    if (d && d.results) window._rzData = d;
+                  }).catch(function(){});
+                }
+                return resp;
+              });
+            };
+          })();
+
+          // MutationObserver: result-items bekommen cursor:pointer + data-ri
+          (function() {
+            function tagItems(root) {
+              var items = root.querySelectorAll ? root.querySelectorAll('.result-item') : [];
+              if (root.classList && root.classList.contains('result-item')) items = [root];
+              [].forEach.call(items, function(item) {
+                if (item.dataset.ri !== undefined) return;
+                if (!window._rzData) return;
+                var timeEl = item.querySelector('.result-time');
+                var compEl = item.querySelector('.result-competition');
+                if (!timeEl || !compEl) return;
+                var t = timeEl.textContent.trim();
+                var c = compEl.textContent.trim();
+                var idx = -1;
+                window._rzData.results.forEach(function(r, i) {
+                  if (idx >= 0) return;
+                  var compClean = r.competition.replace(/\\s*\\(WRC[^)]*\\)/i,'').trim();
+                  if (r.result === t && (r.competition.includes(c) || c.includes(compClean))) idx = i;
+                });
+                if (idx >= 0) { item.dataset.ri = idx; item.style.cursor = 'pointer'; }
+              });
+            }
+            var obs = new MutationObserver(function(muts) {
+              muts.forEach(function(m) {
+                m.addedNodes.forEach(function(n) { if(n.nodeType===1) tagItems(n); });
+              });
+            });
+            obs.observe(document.body, { childList: true, subtree: true });
+          })();
+
+          // Click-Delegation
+          document.addEventListener('click', function(e) {
+            if (!window._rzData) return;
+            var item = e.target.closest('.result-item[data-ri]');
+            if (!item) return;
+            rzOpen(parseInt(item.dataset.ri));
+          });"""
+
+          NEW_JS = """// ── RESULT ZOOM ─────────────────────────────────────────────────────────────
+          window._rzData = null;
+
+          // Fetch-Interceptor
+          (function() {
+            var _orig = window.fetch;
+            window.fetch = function() {
+              var url = arguments[0] || '';
+              return _orig.apply(this, arguments).then(function(resp) {
+                if (typeof url === 'string' && url.indexOf('sa-results') >= 0) {
+                  resp.clone().json().then(function(d) {
+                    if (d && d.results) window._rzData = d;
+                  }).catch(function(){});
+                }
+                return resp;
+              });
+            };
+          })();
+
+          // Click-Handler: Suche im DOM, kein data-ri nötig
+          document.addEventListener('click', function(e) {
+            var item = e.target.closest && e.target.closest('.result-item');
+            if (!item) return;
+            if (!window._rzData) return;
+            var tEl = item.querySelector('.result-time');
+            var cEl = item.querySelector('.result-competition');
+            if (!tEl) return;
+            var t = tEl.textContent.trim();
+            var c = cEl ? cEl.textContent.trim() : '';
+            var idx = -1;
+            window._rzData.results.forEach(function(r, i) {
+              if (idx >= 0) return;
+              var cc = r.competition.replace(/\\s*\\(WRC[^)]*\\)\\s*/i, '').trim();
+              if (r.result === t && (c === '' || r.competition.indexOf(c) >= 0 || c.indexOf(cc) >= 0)) idx = i;
+            });
+            if (idx >= 0) rzOpen(idx);
+          });"""
+
+          if OLD_JS.strip()[:40] in html:
+              html = html.replace(OLD_JS, NEW_JS)
+              print('✓ JS ersetzt')
+          else:
+              # Fallback: replace by markers
+              html = re.sub(
+                  r'// ── RESULT ZOOM ─+.*?// Click-Delegation\ndocument\.addEventListener\(\'click\'.*?\}\);',
+                  NEW_JS,
+                  html, count=1, flags=re.DOTALL
+              )
+              print('✓ JS ersetzt (regex)')
+
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(html)
+          print('✅ Fertig')
+          PYEOF
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --staged --quiet || git commit -m "fix: Resultate Zoom Click-Handler vereinfacht"
+          git push
