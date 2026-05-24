@@ -964,6 +964,7 @@ body {
 .rz-sd-disc { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 38px; }
 .rz-sd-time { font-family:'DM Mono',monospace; font-size:14px; font-weight:500; color:var(--text); flex:1; }
 .rz-sd-place { font-size:11px; color:var(--text-dim); font-weight:600; }
+.result-item { cursor: pointer; /* rz */ }
 
 </style>
 </head>
@@ -4994,119 +4995,93 @@ function openPhotoZoom() {
   document.getElementById('photo-overlay').classList.add('open');
 }
 
-// ── RESULT ZOOM ─────────────────────────────────────────────────────
-window._rzData = null;
-(function() {
-  var _orig = window.fetch;
-  window.fetch = function() {
-    var url = arguments[0] || '';
-    return _orig.apply(this, arguments).then(function(resp) {
-      if (typeof url === 'string' && url.indexOf('sa-results') >= 0) {
-        resp.clone().json().then(function(d) {
-          if (d && d.results) window._rzData = d;
-        }).catch(function(){});
-      }
-      return resp;
+
+// ── RESULT ZOOM ─────────────────────────────────────────────────────────────────────────
+var _rzData=null;
+var _rzWorker='https://fiona-proxy.daniel-greuter.workers.dev';
+function _rzLoad(cb){
+  if(_rzData){cb(_rzData);return;}
+  fetch(_rzWorker+'?action=sa-results')
+    .then(function(r){return r.json();})
+    .then(function(d){if(d&&d.results){_rzData=d;cb(d);}})
+    .catch(function(e){console.error('RZ',e);});
+}
+document.addEventListener('click',function(e){
+  var item=e.target&&e.target.closest&&e.target.closest('.result-item');
+  if(!item)return;
+  var tEl=item.querySelector('.result-time');
+  var cEl=item.querySelector('.result-competition');
+  if(!tEl)return;
+  var t=tEl.textContent.trim();
+  var c=cEl?cEl.textContent.trim():'';
+  _rzLoad(function(d){
+    var idx=-1;
+    d.results.forEach(function(r,i){
+      if(idx>=0)return;
+      var cc=r.competition.replace(/\s*\(WRC[^)]*\)\s*/i,'').trim();
+      if(r.result===t&&(c===''||r.competition.indexOf(c)>=0||c.indexOf(cc)>=0))idx=i;
     });
-  };
-})();
-(function() {
-  function tagItems(root) {
-    var items = (root.classList && root.classList.contains('result-item')) ? [root]
-      : (root.querySelectorAll ? [].slice.call(root.querySelectorAll('.result-item')) : []);
-    items.forEach(function(item) {
-      if (item.dataset.ri !== undefined || !window._rzData) return;
-      var tEl = item.querySelector('.result-time');
-      var cEl = item.querySelector('.result-competition');
-      if (!tEl || !cEl) return;
-      var t = tEl.textContent.trim(), c = cEl.textContent.trim(), idx = -1;
-      window._rzData.results.forEach(function(r, i) {
-        if (idx >= 0) return;
-        var cc = r.competition.replace(/\s*\(WRC[^)]*\)/i,'').trim();
-        if (r.result === t && (r.competition.indexOf(c) >= 0 || c.indexOf(cc) >= 0)) idx = i;
-      });
-      if (idx >= 0) { item.dataset.ri = idx; item.style.cursor = 'pointer'; }
-    });
-  }
-  var obs = new MutationObserver(function(muts) {
-    muts.forEach(function(m) {
-      m.addedNodes.forEach(function(n) { if (n.nodeType === 1) tagItems(n); });
-    });
+    if(idx>=0)rzOpen(idx);
   });
-  obs.observe(document.body, { childList: true, subtree: true });
-})();
-document.addEventListener('click', function(e) {
-  if (!window._rzData) return;
-  var item = e.target.closest && e.target.closest('.result-item[data-ri]');
-  if (!item) return;
-  rzOpen(parseInt(item.dataset.ri));
 });
-function rzDiscClass(d) {
-  d = (d || '').toLowerCase().replace(/\s/g,'');
-  if (d==='100m') return 'rz-disc-100m';
-  if (d==='60m')  return 'rz-disc-60m';
-  if (d==='200m') return 'rz-disc-200m';
-  if (d.indexOf('jump')>=0||d.indexOf('weit')>=0) return 'rz-disc-lj';
-  if (d==='80m')  return 'rz-disc-80m';
+function rzDiscClass(d){
+  d=(d||'').toLowerCase().replace(/\s/g,'');
+  if(d==='100m')return 'rz-disc-100m';
+  if(d==='60m')return 'rz-disc-60m';
+  if(d==='200m')return 'rz-disc-200m';
+  if(d.indexOf('jump')>=0||d.indexOf('weit')>=0)return 'rz-disc-lj';
+  if(d==='80m')return 'rz-disc-80m';
   return 'rz-disc-other';
 }
-function rzDecodePlatz(p) {
-  if (!p) return '';
-  var m = String(p).match(/^(\d+)(qf|sf|[rfh])?(\d+)?$/i);
-  if (!m) return '\uD83C\uDF96 Rang ' + p;
-  var rank=m[1], round=(m[2]||'').toLowerCase(), num=m[3]||'';
+function rzDecodePlatz(p){
+  if(!p)return'';
+  var m=String(p).match(/^(\d+)(qf|sf|[rfh])?(\d+)?$/i);
+  if(!m)return'Rang '+p;
+  var rank=m[1],round=(m[2]||'').toLowerCase(),num=m[3]||'';
   var R={r:'Lauf',h:'Vorlauf',f:'Final',qf:'Viertelfinale',sf:'Halbfinale'};
   var s='Rang '+rank;
-  if (round && R[round]) s += ' \u00B7 '+R[round]+(num?' '+num:'');
+  if(round&&R[round])s+=' \u00B7 '+R[round]+(num?' '+num:'');
   return s;
 }
-function rzOpen(idx) {
-  var d = window._rzData;
-  if (!d || !d.results) return;
-  var r = d.results[idx];
-  if (!r) return;
-  var hdr = document.getElementById('rz-header');
-  var indoor = r.indoor ? '\uD83C\uDFDF Halle' : '\u2600\uFE0F Outdoor';
-  hdr.innerHTML = '<span class="rz-disc-pill '+rzDiscClass(r.discipline)+'">'+r.discipline+'</span>'
+function rzOpen(idx){
+  var d=_rzData;if(!d||!d.results)return;
+  var r=d.results[idx];if(!r)return;
+  var hdr=document.getElementById('rz-header');
+  var indoor=r.indoor?'\uD83C\uDFDF Halle':'\u2600\uFE0F Outdoor';
+  hdr.innerHTML='<span class="rz-disc-pill '+rzDiscClass(r.discipline)+'">'+r.discipline+'</span>'
     +'<span class="rz-tag">'+indoor+'</span>'
     +'<span class="rz-tag">'+r.year+'</span>';
-  document.getElementById('rz-time').textContent = r.result || '\u2013';
-  var wEl = document.getElementById('rz-wind');
-  if (r.wind !== null && r.wind !== undefined && !r.indoor) {
-    wEl.textContent = 'Wind: '+(r.wind>=0?'+':'')+r.wind+' m/s';
-    wEl.style.display = '';
-  } else { wEl.style.display = 'none'; }
-  var pb = d.pbs && d.pbs[r.discipline];
-  document.getElementById('rz-pb').style.display =
-    (pb && pb.result===r.result && pb.date===r.date) ? '' : 'none';
-  var cc = r.competition.replace(/\s*\(WRC[^)]*\)\s*/i,'').trim();
-  var isWRC = /WRC/i.test(r.competition);
-  document.getElementById('rz-details').innerHTML =
-    '<div class="rz-row"><span class="rz-row-icon">\uD83C\uDF96</span>'
-      +'<span class="rz-row-text">'+rzDecodePlatz(r.place)+'</span></div>'
-    +'<div class="rz-row"><span class="rz-row-icon">\uD83C\uDFC6</span>'
-      +'<span class="rz-row-text">'+cc+(isWRC?'<span class="rz-wrc">WRC</span>':'')+'</span></div>'
-    +'<div class="rz-row"><span class="rz-row-icon">\uD83D\uDCCD</span>'
-      +'<span class="rz-row-text">'+(r.venue||'\u2013')+'</span></div>'
-    +'<div class="rz-row"><span class="rz-row-icon">\uD83D\uDCC5</span>'
-      +'<span class="rz-row-text">'+(r.date||'\u2013')+'</span></div>';
-  var sameDay = d.results.filter(function(x,i){ return i!==idx && x.competition===r.competition && x.date===r.date; });
-  var sdEl = document.getElementById('rz-sameday');
-  var sdList = document.getElementById('rz-sd-list');
-  if (sameDay.length > 0) {
-    sdList.innerHTML = sameDay.map(function(x) {
-      var ws = (x.wind!==null&&!x.indoor)?(' <span style="color:var(--text-dim);font-size:11px">'+(x.wind>=0?'+':'')+x.wind+'</span>'):'';
+  document.getElementById('rz-time').textContent=r.result||'\u2013';
+  var wEl=document.getElementById('rz-wind');
+  if(r.wind!==null&&r.wind!==undefined&&!r.indoor){
+    wEl.textContent='Wind: '+(r.wind>=0?'+':'')+r.wind+' m/s';
+    wEl.style.display='';
+  }else{wEl.style.display='none';}
+  var pb=d.pbs&&d.pbs[r.discipline];
+  document.getElementById('rz-pb').style.display=(pb&&pb.result===r.result&&pb.date===r.date)?'':'none';
+  var cc=r.competition.replace(/\s*\(WRC[^)]*\)\s*/i,'').trim();
+  var isWRC=/WRC/i.test(r.competition);
+  document.getElementById('rz-details').innerHTML=
+    '<div class="rz-row"><span class="rz-row-icon">\uD83C\uDF96</span><span class="rz-row-text">'+rzDecodePlatz(r.place)+'</span></div>'
+    +'<div class="rz-row"><span class="rz-row-icon">\uD83C\uDFC6</span><span class="rz-row-text">'+cc+(isWRC?'<span class="rz-wrc">WRC</span>':'')+'</span></div>'
+    +'<div class="rz-row"><span class="rz-row-icon">\uD83D\uDCCD</span><span class="rz-row-text">'+(r.venue||'\u2013')+'</span></div>'
+    +'<div class="rz-row"><span class="rz-row-icon">\uD83D\uDCC5</span><span class="rz-row-text">'+(r.date||'\u2013')+'</span></div>';
+  var sameDay=d.results.filter(function(x,i){return i!==idx&&x.competition===r.competition&&x.date===r.date;});
+  var sdEl=document.getElementById('rz-sameday');
+  if(sameDay.length>0){
+    document.getElementById('rz-sd-list').innerHTML=sameDay.map(function(x){
+      var wi=(x.wind!==null&&!x.indoor)?' <span style="color:var(--text-dim);font-size:11px">'+(x.wind>=0?'+':'')+x.wind+'</span>':'';
       return '<div class="rz-sd-item" onclick="rzOpen('+d.results.indexOf(x)+')">'
         +'<span class="rz-sd-disc">'+x.discipline+'</span>'
-        +'<span class="rz-sd-time">'+x.result+ws+'</span>'
+        +'<span class="rz-sd-time">'+x.result+wi+'</span>'
         +'<span class="rz-sd-place">'+(x.place||'')+'</span></div>';
     }).join('');
-    sdEl.style.display = '';
-  } else { sdEl.style.display = 'none'; }
+    sdEl.style.display='';
+  }else{sdEl.style.display='none';}
   document.getElementById('rz-overlay').classList.add('open');
 }
-function rzClose() { document.getElementById('rz-overlay').classList.remove('open'); }
-// ─────────────────────────────────────────────────────────────────────
+function rzClose(){document.getElementById('rz-overlay').classList.remove('open');}
+// ─────────────────────────────────────────────────────────────────────────────
 </script>
 
 
