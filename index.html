@@ -1273,6 +1273,80 @@ body {
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Top-2 Disziplinen nach World Athletics Score · Rangliste nach Summenpunkten</div>
         <div id="lie-status" style="font-size:11px;color:var(--text-dim);margin-bottom:8px;display:none"></div>
         <div id="lie-ranking-list"></div>
+
+      <!-- ── WA PUNKTE-RECHNER ── -->
+      <div class="card">
+        <div class="card-title">WA Punkte-Rechner 2025</div>
+
+        <!-- Mode tabs -->
+        <div style="display:flex;gap:6px;margin-bottom:14px">
+          <button id="waModeBtn1" onclick="waSetMode(1)" style="flex:1;padding:7px 0;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:var(--blue);color:#fff">Leistung → Punkte</button>
+          <button id="waModeBtn2" onclick="waSetMode(2)" style="flex:1;padding:7px 0;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:none;color:var(--text-muted)">Punkte → Leistung</button>
+        </div>
+
+        <!-- MODE 1: Leistung → Punkte -->
+        <div id="waMode1">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:5px">Geschlecht</label>
+              <select id="waCalcGender" onchange="waCalcUpdateEvents()" style="width:100%;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif">
+                <option value="women">Frauen</option>
+                <option value="men">Männer</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:5px">Disziplin</label>
+              <select id="waCalcEvent" onchange="waCalcRefresh()" style="width:100%;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"></select>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:5px">Leistung <span id="waCalcHint" style="font-weight:400;font-style:italic;text-transform:none;letter-spacing:0;color:var(--text-muted)"></span></label>
+            <input id="waCalcInput" type="text" placeholder="" oninput="waCalcRefresh()" style="width:100%;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;box-sizing:border-box">
+            <div id="waCalcError" style="font-size:11px;color:var(--red);margin-top:4px;min-height:16px"></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:12px;padding:16px 14px;text-align:center;border:1px solid var(--border)">
+            <div id="waCalcPoints" style="font-size:44px;font-weight:900;color:var(--text);line-height:1;font-family:'DM Mono',monospace">—</div>
+            <div style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:4px">WA Punkte 2025</div>
+            <div style="height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin:10px 0 4px">
+              <div id="waCalcBar" style="height:100%;border-radius:999px;background:var(--blue);width:0%;transition:width .4s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim)"><span>0</span><span>500</span><span>1000</span><span>1400</span></div>
+            <div id="waCalcLevel" style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600"></div>
+          </div>
+        </div>
+
+        <!-- MODE 2: Punkte → Leistung -->
+        <div id="waMode2" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:5px">Geschlecht</label>
+              <select id="waRevGender" onchange="waRevUpdateEvents()" style="width:100%;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif">
+                <option value="women">Frauen</option>
+                <option value="men">Männer</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:5px">Disziplin</label>
+              <select id="waRevEvent" onchange="waRevRefresh()" style="width:100%;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"></select>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:5px">Zielpunktzahl</label>
+            <input id="waRevInput" type="number" min="1" max="1400" placeholder="z.B. 986" oninput="waRevRefresh()" style="width:100%;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;box-sizing:border-box">
+            <div id="waRevError" style="font-size:11px;color:var(--red);margin-top:4px;min-height:16px"></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:12px;padding:16px 14px;text-align:center;border:1px solid var(--border)">
+            <div id="waRevResult" style="font-size:36px;font-weight:900;color:var(--text);line-height:1;font-family:'DM Mono',monospace;letter-spacing:-1px">—</div>
+            <div id="waRevUnit" style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:4px">Benötigte Leistung</div>
+            <div style="height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin:10px 0 4px">
+              <div id="waRevBar" style="height:100%;border-radius:999px;background:var(--orange);width:0%;transition:width .4s ease"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim)"><span>0</span><span>500</span><span>1000</span><span>1400</span></div>
+            <div id="waRevLevel" style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600"></div>
+          </div>
+        </div>
+
+      </div>
       </div>
     </div><!-- /tab-lieteam -->
 
@@ -1731,6 +1805,116 @@ function updateChart(disc) {
 
 
 }
+
+
+
+// ══════════════════════════════════════
+// WA PUNKTE-RECHNER (Hin + Rückrechnung)
+// ══════════════════════════════════════
+(function(){
+const WA_C={"men":{"TJ":[0.4603666024030417,90.96978768056579,-514.9946082626993],"5000m":[0.002777997945427213,-8.000608112196687,5760.418712362531],"300m":[1.8296570247447335,-209.30430382250051,5985.805789959268],"200m":[5.083329625804254,-360.8260380705033,6403.154333221377],"55mH":[30.085307708674918,-803.1373763838637,5359.772393310966],"60mH":[23.916231718984818,-698.1937268964539,5095.479315056291],"4x400m":[0.05050072203675704,-33.73384421285573,5633.448990227305],"50mH":[27.41182627032049,-726.5120697133789,4719.283643435643],"400m":[1.0210130425695638,-161.3092238081408,6371.289298935095],"Mile sh":[0.036900007414912395,-30.626657725760197,6354.958031052956],"600m":[0.3856992283143512,-99.89240864996827,6467.788691627793],"10000m":[0.0005239994429364625,-3.3011925260043427,5199.371486475808],"800m sh":[0.19739256108073278,-72.63927638712084,6682.6879602972185],"50m":[95.82235385745662,-1763.0165325322305,8108.971505376976],"500m":[0.585027774798931,-121.67863906127604,6326.92802974442],"100m":[24.642211664166098,-837.7135408530303,7119.3125116789015],"4x100m":[1.2360320753572864,-171.79529610507234,5969.431205180357],"110mH":[7.1470227474935655,-375.8846820439139,4920.401710892969],"400mH":[0.5459888468067362,-104.2787780128183,4979.068748674414],"HJ":[32.14570816360356,745.3746826150164,-705.259733494051],"2 Miles":[0.007029988518363783,-12.721403001585259,5755.13271902001],"2000m SC":[0.010229985822021836,-13.503484790678613,4456.117711582512],"PV":[3.0457199208785823,239.612026696057,-280.5412229935755],"HT":[0.0028444950947790204,15.081627308136717,-21.68901198504136],"3000m SC":[0.0043159973458793965,-8.804593368752649,4490.321079731511],"1500m":[0.04065992529984008,-31.307736299477256,6026.662254345021],"JT":[0.0024031524897170087,13.841186813175682,-21.05825095349428],"55m":[78.9227608844667,-1578.3239369830117,7890.637076645042],"1500m sh":[0.041999988506264074,-32.423575703958704,6257.669581143418],"3000m":[0.008150049932713843,-13.691983542337312,5750.59246378555],"LJ":[1.931092872960562,186.73134733641928,-479.70640445759636],"Road Marathon":[2.0101186255287035e-05,-0.6150659606552438,4705.042285787989],"Road HM":[9.469710951061014e-05,-1.3521892901331114,4827.020676429092],"2000m":[0.02181003181267993,-23.03116782160032,6080.168871850823],"5000m sh":[0.002900003148620267,-8.351976844926412,6013.40053571912],"Mile":[0.035099677603458446,-29.132456259137143,6044.924547011615],"SP":[0.04234614355526389,57.99966265925241,-55.823610246186945],"Road 10 km":[0.0005243835511893474,-3.302659028227424,5200.274036400777],"60m":[68.62032200155772,-1468.376079820242,7854.923996115336],"800m":[0.1980049254166545,-72.07136038821409,6558.28160300618],"1000m":[0.11229987246056083,-53.34129687676432,6334.142779359594],"DT":[0.00400631290161968,17.8920605010303,-27.18777464602681],"200m sh":[5.0428984333116205,-363.0051678271411,6532.672628951492],"4x400m sh":[0.04890033030582153,-33.25166827913472,5652.691308940412]},"women":{"TJ":[0.4296645887350792,90.3430418780863,-231.6675825305283],"5000m":[0.0008079992470730324,-3.3935897885437782,3563.2616780022654],"300m":[0.6999743364017235,-107.79032021608691,4149.692833384965],"200m":[2.2422237149162925,-204.01464451534775,4640.727341804304],"55mH":[13.198221547797402,-443.3395456766666,3722.9474163894774],"60mH":[11.16828188896136,-406.39148481091615,3696.9522386075114],"4x400m":[0.015620076884804046,-14.995086303404946,3598.7788204069657],"50mH":[16.212665326054548,-495.9578685610686,3792.827532194031],"400m":[0.3350059758445596,-73.6974469594461,4053.1545244171575],"Mile sh":[0.011540015186639607,-13.513232952897397,3955.963356088527],"600m":[0.1290024817337887,-46.439367295225566,4179.4139537496085],"10000m":[0.0001712000450308747,-1.5407985033832432,3466.7925173026015],"800m sh":[0.05719995663858857,-30.201001015322618,3986.4574604244845],"50m":[33.046243452504314,-799.5823293340509,4836.413712938258],"500m":[0.1875992157997608,-54.58957565931178,3971.259245572466],"100m":[9.927426450685289,-436.6751262119069,4802.020943877404],"4x100m":[0.38950036063393156,-76.3380579665054,3740.3711316947592],"400mH":[0.20856495718486912,-54.2249062108549,3524.488878249118],"HJ":[39.557908744493034,831.3655724464043,-601.5063267494843],"2 Miles":[0.0021569982582902714,-5.592213856668138,3624.5803229979647],"2000m SC":[0.003635987799696705,-6.777453730493733,3158.2797230951983],"PV":[3.9325797501069246,275.48968329946365,-205.1216924619548],"HT":[0.0030967239667614166,15.730166876520684,-22.699498543297523],"3000m SC":[0.0013229981350130343,-3.99544233512367,3016.5498521791887],"1500m":[0.01339999627048627,-14.471861176560651,3907.3655835949467],"JT":[0.004072274456476066,18.042616052881158,-18.842904339435336],"55m":[27.69222698350768,-728.2024319005941,4786.948624048266],"1500m sh":[0.013649954143477805,-14.741826462372728,3980.259331609617],"3000m":[0.0025389974609562604,-6.09357042856243,3656.127933666052],"LJ":[1.958114032649064,193.69548254413166,-233.98988652729167],"Road Marathon":[5.389966906974475e-06,-0.25224574933865895,2951.2162982728405],"Road HM":[2.5960366893742386e-05,-0.5606107770831628,3026.587224518895],"2000m":[0.006766010458436056,-10.148946030704451,3805.8288250550686],"5000m sh":[0.00082499992965758,-3.464991324219369,3638.23229190876],"Mile":[0.011649998601839462,-13.513881163102496,3918.992004961794],"SP":[0.046214387641356325,60.75503111383068,-25.931941888942674],"Road 10 km":[0.00017119892280619345,-1.540623663798911,3466.0215817096905],"60m":[24.91177544269476,-697.4127036580539,4880.84062414919],"800m":[0.06879989341997295,-34.399261916380055,4299.822125108796],"1000m":[0.038199708533426247,-25.211487793783817,4159.840558573429],"DT":[0.0040284238096806035,17.94169538353276,-19.210748193687323],"100mH":[3.982296326194273,-238.8619577729478,3581.9054393060505],"4x400m sh":[0.015500027842040298,-15.003873478513015,3630.8991499322874],"200m sh":[1.9617476310046413,-186.35304547847045,4425.540362004947],"2 Miles sh":[0.0022019917299053726,-5.708869030298274,3700.1929170416843]}};
+const WA_FIELD=new Set(['LJ','TJ','HJ','PV','SP','DT','HT','JT']);
+const WA_HINTS={'50m':'z.B. 5.80','55m':'z.B. 6.30','60m':'z.B. 7.00','100m':'z.B. 12.03','200m':'z.B. 24.50','300m':'z.B. 38.00','400m':'z.B. 55.00','500m':'z.B. 1:10.00','600m':'z.B. 1:30.00','800m':'z.B. 2:05.00','1000m':'z.B. 2:45.00','1500m':'z.B. 4:45.00','Mile':'z.B. 5:10.00','2000m':'z.B. 6:00.00','3000m':'z.B. 9:30.00','5000m':'z.B. 16:30.00','10000m':'z.B. 34:00.00','Road Marathon':'z.B. 2:30:00','Road HM':'z.B. 1:12:00','HJ':'z.B. 1.85','PV':'z.B. 4.50','LJ':'z.B. 6.50','TJ':'z.B. 13.50','SP':'z.B. 14.00','DT':'z.B. 48.00','HT':'z.B. 55.00','JT':'z.B. 52.00'};
+
+function waLevel(s){return s>=1200?'🌍 Weltklasse':s>=1000?'⭐ International':s>=900?'✓ Nationalniveau':s>=800?'◆ Leistungsbereich':'○ Breitensport';}
+function waBar(id,s){document.getElementById(id).style.width=Math.min(100,Math.max(0,s/1400*100))+'%';}
+function waParseTime(s){s=s.trim().replace(',','.');var p=s.split(':');if(p.length===3)return +p[0]*3600+ +p[1]*60+ +p[2];if(p.length===2)return +p[0]*60+ +p[1];return +s;}
+function waFmtTime(t){
+  if(t>=3600){var h=Math.floor(t/3600);var m=Math.floor((t%3600)/60);var s=t%60;return h+':'+String(m).padStart(2,'0')+':'+s.toFixed(2).padStart(5,'0');}
+  if(t>=60){var m=Math.floor(t/60);var s=t%60;return m+':'+s.toFixed(2).padStart(5,'0');}
+  return t.toFixed(2);
+}
+
+// ── MODE SWITCHING ──
+window.waSetMode=function(m){
+  document.getElementById('waMode1').style.display=m===1?'':'none';
+  document.getElementById('waMode2').style.display=m===2?'':'none';
+  var b1=document.getElementById('waModeBtn1'),b2=document.getElementById('waModeBtn2');
+  b1.style.background=m===1?'var(--blue)':'none';b1.style.color=m===1?'#fff':'var(--text-muted)';b1.style.border=m===1?'none':'1.5px solid var(--border)';
+  b2.style.background=m===2?'var(--orange)':'none';b2.style.color=m===2?'#fff':'var(--text-muted)';b2.style.border=m===2?'none':'1.5px solid var(--border)';
+};
+
+// ── MODE 1: Leistung → Punkte ──
+function waFillEvents(selId,g){
+  var sel=document.getElementById(selId);
+  var evs=Object.keys(WA_C[g]).sort();
+  sel.innerHTML=evs.map(e=>'<option value="'+e+'">'+e+'</option>').join('');
+  sel.value='100m';
+}
+window.waCalcUpdateEvents=function(){
+  waFillEvents('waCalcEvent',document.getElementById('waCalcGender').value);
+  waCalcUpdateHint();waCalcRefresh();
+};
+function waCalcUpdateHint(){
+  var ev=document.getElementById('waCalcEvent').value;
+  document.getElementById('waCalcHint').textContent=WA_FIELD.has(ev)?'(Meter)':'(Zeit)';
+  document.getElementById('waCalcInput').placeholder=WA_HINTS[ev]||'';
+}
+window.waCalcRefresh=function(){
+  waCalcUpdateHint();
+  var g=document.getElementById('waCalcGender').value;
+  var ev=document.getElementById('waCalcEvent').value;
+  var raw=document.getElementById('waCalcInput').value.trim();
+  var errEl=document.getElementById('waCalcError');
+  var ptsEl=document.getElementById('waCalcPoints');
+  if(!raw){ptsEl.textContent='—';waBar('waCalcBar',0);errEl.textContent='';document.getElementById('waCalcLevel').textContent='';return;}
+  var val=WA_FIELD.has(ev)?parseFloat(raw.replace(',','.')):waParseTime(raw);
+  if(isNaN(val)||val<=0){errEl.textContent='Ungültige Eingabe';ptsEl.textContent='—';waBar('waCalcBar',0);document.getElementById('waCalcLevel').textContent='';return;}
+  errEl.textContent='';
+  var c=WA_C[g][ev];
+  var score=Math.round(c[0]*val*val+c[1]*val+c[2]);
+  ptsEl.textContent=score>0?score:0;
+  waBar('waCalcBar',score);
+  document.getElementById('waCalcLevel').textContent=score>0?waLevel(score):'';
+};
+
+// ── MODE 2: Punkte → Leistung ──
+window.waRevUpdateEvents=function(){
+  waFillEvents('waRevEvent',document.getElementById('waRevGender').value);
+  waRevRefresh();
+};
+window.waRevRefresh=function(){
+  var g=document.getElementById('waRevGender').value;
+  var ev=document.getElementById('waRevEvent').value;
+  var raw=document.getElementById('waRevInput').value.trim();
+  var errEl=document.getElementById('waRevError');
+  var resEl=document.getElementById('waRevResult');
+  var unitEl=document.getElementById('waRevUnit');
+  var lvlEl=document.getElementById('waRevLevel');
+  if(!raw){resEl.textContent='—';waBar('waRevBar',0);errEl.textContent='';lvlEl.textContent='';unitEl.textContent='Benötigte Leistung';return;}
+  var S=parseInt(raw,10);
+  if(isNaN(S)||S<1||S>1400){errEl.textContent='Punktzahl 1–1400 eingeben';resEl.textContent='—';waBar('waRevBar',0);lvlEl.textContent='';return;}
+  errEl.textContent='';
+  var c=WA_C[g][ev];
+  var a=c[0],b=c[1],cc=c[2];
+  var disc=b*b-4*a*(cc-S);
+  if(disc<0){errEl.textContent='Keine gültige Leistung für diese Punktzahl';resEl.textContent='—';waBar('waRevBar',0);lvlEl.textContent='';return;}
+  var sqrtD=Math.sqrt(disc);
+  var x1=(-b-sqrtD)/(2*a);
+  var x2=(-b+sqrtD)/(2*a);
+  var val;
+  if(WA_FIELD.has(ev)){
+    var cands=[x1,x2].filter(function(x){return x>0;});
+    val=cands.length?Math.max.apply(null,cands):null;
+    if(val!==null){resEl.textContent=val.toFixed(2)+'m';unitEl.textContent=ev+' · Meter';}
+  } else {
+    var cands=[x1,x2].filter(function(x){return x>0;});
+    val=cands.length?Math.min.apply(null,cands):null;
+    if(val!==null){resEl.textContent=waFmtTime(val);unitEl.textContent=ev+' · Zeit';}
+  }
+  if(val===null){errEl.textContent='Ausserhalb des Wertebereichs';resEl.textContent='—';waBar('waRevBar',0);lvlEl.textContent='';return;}
+  waBar('waRevBar',S);
+  lvlEl.textContent=waLevel(S);
+};
+
+// Init
+waFillEvents('waCalcEvent','women');
+waCalcUpdateHint();
+waFillEvents('waRevEvent','women');
+waSetMode(1);
+})();
+
+
 
 // ══════════════════════════
 // TAB SWITCHING
