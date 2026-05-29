@@ -1275,13 +1275,21 @@ body {
         <div id="lie-ranking-list"></div>
 
       <!-- ── WA PUNKTE-RECHNER ── -->
-      <div class="card">
-        <div class="card-title">WA Punkte-Rechner 2025</div>
+      <div class="card" style="background:var(--surface);border-top:3px solid #111;padding-top:20px">
+        <!-- Card Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px">Rechner</div>
+            <div style="font-size:20px;font-weight:900;color:#111;letter-spacing:-0.5px;line-height:1">WA Punkte-Rechner</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-top:2px">Scoring Tables 2025</div>
+          </div>
+          <img src="/Fiona-Matt/WALogo.png" onerror="this.style.display='none'" style="height:44px;width:auto;opacity:0.9;flex-shrink:0">
+        </div>
 
         <!-- Mode tabs -->
-        <div style="display:flex;gap:6px;margin-bottom:14px">
-          <button id="waModeBtn1" onclick="waSetMode(1)" style="flex:1;padding:7px 0;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:var(--blue);color:#fff">Leistung → Punkte</button>
-          <button id="waModeBtn2" onclick="waSetMode(2)" style="flex:1;padding:7px 0;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:none;color:var(--text-muted)">Punkte → Leistung</button>
+        <div style="display:flex;gap:6px;margin-bottom:16px;background:var(--surface2);border-radius:12px;padding:4px;border:1px solid var(--border)">
+          <button id="waModeBtn1" onclick="waSetMode(1)" style="flex:1;padding:8px 0;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:#111;color:#fff;transition:all .2s">Leistung → Punkte</button>
+          <button id="waModeBtn2" onclick="waSetMode(2)" style="flex:1;padding:8px 0;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;background:none;color:var(--text-muted);transition:all .2s">Punkte → Leistung</button>
         </div>
 
         <!-- MODE 1: Leistung → Punkte -->
@@ -1304,14 +1312,14 @@ body {
             <input id="waCalcInput" type="text" placeholder="" oninput="waCalcRefresh()" style="width:100%;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;box-sizing:border-box">
             <div id="waCalcError" style="font-size:11px;color:var(--red);margin-top:4px;min-height:16px"></div>
           </div>
-          <div style="background:var(--surface2);border-radius:12px;padding:16px 14px;text-align:center;border:1px solid var(--border)">
-            <div id="waCalcPoints" style="font-size:44px;font-weight:900;color:var(--text);line-height:1;font-family:'DM Mono',monospace">—</div>
-            <div style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:4px">WA Punkte 2025</div>
-            <div style="height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin:10px 0 4px">
-              <div id="waCalcBar" style="height:100%;border-radius:999px;background:var(--blue);width:0%;transition:width .4s ease"></div>
+          <div style="background:#111;border-radius:14px;padding:18px 16px;text-align:center">
+            <div id="waCalcPoints" style="font-size:52px;font-weight:900;color:#fff;line-height:1;font-family:'DM Mono',monospace;letter-spacing:-2px">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:5px">WA PUNKTE 2025</div>
+            <div style="height:5px;background:rgba(255,255,255,0.15);border-radius:999px;overflow:hidden;margin:12px 0 4px">
+              <div id="waCalcBar" style="height:100%;border-radius:999px;background:#fff;width:0%;transition:width .4s ease"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim)"><span>0</span><span>500</span><span>1000</span><span>1400</span></div>
-            <div id="waCalcLevel" style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600"></div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.35)"><span>0</span><span>500</span><span>1000</span><span>1400</span></div>
+            <div id="waCalcLevel" style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:8px;font-weight:700"></div>
           </div>
         </div>
 
@@ -1335,14 +1343,14 @@ body {
             <input id="waRevInput" type="number" min="1" max="1400" placeholder="z.B. 986" oninput="waRevRefresh()" style="width:100%;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;box-sizing:border-box">
             <div id="waRevError" style="font-size:11px;color:var(--red);margin-top:4px;min-height:16px"></div>
           </div>
-          <div style="background:var(--surface2);border-radius:12px;padding:16px 14px;text-align:center;border:1px solid var(--border)">
-            <div id="waRevResult" style="font-size:36px;font-weight:900;color:var(--text);line-height:1;font-family:'DM Mono',monospace;letter-spacing:-1px">—</div>
-            <div id="waRevUnit" style="font-size:11px;color:var(--text-dim);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:4px">Benötigte Leistung</div>
-            <div style="height:6px;background:var(--border);border-radius:999px;overflow:hidden;margin:10px 0 4px">
-              <div id="waRevBar" style="height:100%;border-radius:999px;background:var(--orange);width:0%;transition:width .4s ease"></div>
+          <div style="background:#111;border-radius:14px;padding:18px 16px;text-align:center">
+            <div id="waRevResult" style="font-size:44px;font-weight:900;color:#fff;line-height:1;font-family:'DM Mono',monospace;letter-spacing:-1px">—</div>
+            <div id="waRevUnit" style="font-size:10px;color:rgba(255,255,255,0.5);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:5px">BENÖTIGTE LEISTUNG</div>
+            <div style="height:5px;background:rgba(255,255,255,0.15);border-radius:999px;overflow:hidden;margin:12px 0 4px">
+              <div id="waRevBar" style="height:100%;border-radius:999px;background:#fff;width:0%;transition:width .4s ease"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim)"><span>0</span><span>500</span><span>1000</span><span>1400</span></div>
-            <div id="waRevLevel" style="font-size:12px;color:var(--text-muted);margin-top:8px;font-weight:600"></div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.35)"><span>0</span><span>500</span><span>1000</span><span>1400</span></div>
+            <div id="waRevLevel" style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:8px;font-weight:700"></div>
           </div>
         </div>
 
@@ -1830,8 +1838,8 @@ window.waSetMode=function(m){
   document.getElementById('waMode1').style.display=m===1?'':'none';
   document.getElementById('waMode2').style.display=m===2?'':'none';
   var b1=document.getElementById('waModeBtn1'),b2=document.getElementById('waModeBtn2');
-  b1.style.background=m===1?'var(--blue)':'none';b1.style.color=m===1?'#fff':'var(--text-muted)';b1.style.border=m===1?'none':'1.5px solid var(--border)';
-  b2.style.background=m===2?'var(--orange)':'none';b2.style.color=m===2?'#fff':'var(--text-muted)';b2.style.border=m===2?'none':'1.5px solid var(--border)';
+  b1.style.background=m===1?'#111':'none';b1.style.color=m===1?'#fff':'var(--text-muted)';b1.style.border='none';
+  b2.style.background=m===2?'#111':'none';b2.style.color=m===2?'#fff':'var(--text-muted)';b2.style.border='none';
 };
 
 // ── MODE 1: Leistung → Punkte ──
