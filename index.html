@@ -965,6 +965,29 @@ body {
 .rz-sd-time { font-family:'DM Mono',monospace; font-size:14px; font-weight:500; color:var(--text); flex:1; }
 .rz-sd-place { font-size:11px; color:var(--text-dim); font-weight:600; }
 .result-item { cursor: pointer; /* rz */ }
+.rz-top5 { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.rz-top5-title {
+  font-size: 11px; font-weight: 700; color: var(--text-dim);
+  letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;
+}
+.rz-t5-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 8px; margin-bottom: 3px; font-size: 12px;
+}
+.rz-t5-row.fiona {
+  background: var(--blue-light); border: 1px solid var(--blue);
+}
+.rz-t5-rank {
+  font-weight: 800; color: var(--text-muted); min-width: 22px;
+  font-family: 'DM Mono', monospace; font-size: 11px;
+}
+.rz-t5-row.fiona .rz-t5-rank { color: var(--blue); }
+.rz-t5-name { flex: 1; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rz-t5-row.fiona .rz-t5-name { color: var(--blue); font-weight: 700; }
+.rz-t5-club { font-size: 10px; color: var(--text-dim); min-width: 60px; max-width: 90px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rz-t5-time { font-family: 'DM Mono', monospace; font-weight: 500; color: var(--text); min-width: 54px; text-align: right; }
+.rz-t5-row.fiona .rz-t5-time { color: var(--blue); font-weight: 700; }
+.rz-t5-dots { text-align: center; color: var(--text-dim); font-size: 12px; padding: 2px 0; letter-spacing: 2px; }
 
 </style>
 </head>
@@ -5271,6 +5294,37 @@ function rzOpen(idx){
     }).join('');
     sdEl.style.display='';
   }else{sdEl.style.display='none';}
+  // ── Top 5 ──────────────────────────────────────────────────
+  var top5El=document.getElementById('rz-top5');
+  var top5List=document.getElementById('rz-top5-list');
+  if(r.top5&&r.top5.length){
+    // Parse Fiona's numeric rank from r.place
+    var fRankNum=0;
+    var fm=String(r.place||'0').match(/(\d+)/);
+    if(fm)fRankNum=parseInt(fm[1],10);
+    var fInTop5=r.top5.some(function(a){return a.fiona;});
+    var rows='';
+    r.top5.forEach(function(a){
+      var isFiona=!!a.fiona;
+      rows+='<div class="rz-t5-row'+(isFiona?' fiona':'')+'">'+
+        '<div class="rz-t5-rank">'+a.rank+'.</div>'+
+        '<div class="rz-t5-name">'+a.name+(isFiona?' 🇱🇮':'')+'</div>'+
+        '<div class="rz-t5-club">'+( a.club||'')+'</div>'+
+        '<div class="rz-t5-time">'+a.result+'</div>'+
+      '</div>';
+    });
+    if(!fInTop5&&fRankNum>0){
+      rows+='<div class="rz-t5-dots">···</div>';
+      rows+='<div class="rz-t5-row fiona">'+
+        '<div class="rz-t5-rank">'+fRankNum+'.</div>'+
+        '<div class="rz-t5-name">Fiona Matt 🇱🇮</div>'+
+        '<div class="rz-t5-club">TV Eschen-Mauren</div>'+
+        '<div class="rz-t5-time">'+r.result+'</div>'+
+      '</div>';
+    }
+    top5List.innerHTML=rows;
+    top5El.style.display='';
+  }else{top5El.style.display='none';}
   document.getElementById('rz-overlay').classList.add('open');
 }
 function rzClose(){document.getElementById('rz-overlay').classList.remove('open');}
@@ -5292,6 +5346,10 @@ function rzClose(){document.getElementById('rz-overlay').classList.remove('open'
     <div class="rz-sameday" id="rz-sameday" style="display:none">
       <div class="rz-sameday-title">Weitere Starts an diesem Tag</div>
       <div id="rz-sd-list"></div>
+    </div>
+    <div class="rz-top5" id="rz-top5" style="display:none">
+      <div class="rz-top5-title">Top 5</div>
+      <div id="rz-top5-list"></div>
     </div>
   </div>
 </div>
