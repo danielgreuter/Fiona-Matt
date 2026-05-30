@@ -5298,10 +5298,9 @@ function rzOpen(idx){
   var top5El=document.getElementById('rz-top5');
   var top5List=document.getElementById('rz-top5-list');
   if(r.top5&&r.top5.length){
-    // Parse Fiona's numeric rank from r.place
-    var fRankNum=0;
-    var fm=String(r.place||'0').match(/(\d+)/);
-    if(fm)fRankNum=parseInt(fm[1],10);
+    // Fionas Gesamtrang: bevorzugt r.fionaRank (laportal), sonst r.place
+    var fRankNum=r.fionaRank||0;
+    if(!fRankNum){var fm=String(r.place||'0').match(/(\d+)/);if(fm)fRankNum=parseInt(fm[1],10);}
     var fInTop5=r.top5.some(function(a){return a.fiona;});
     var rows='';
     r.top5.forEach(function(a){
