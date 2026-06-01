@@ -2363,21 +2363,22 @@ function renderPBGrid(waResults) {
   }
 
   let html = '';
-  const shown = new Set();
-  pbs.forEach(r => {
+  const ORDER = ['100m','60m','200m','Long Jump'];
+  const idMap = {'100m':'pb-100m','60m':'pb-60m','200m':'pb-200m','Long Jump':'pb-lj'};
+  ORDER.forEach(key => {
+    const r = pbs.find(p => discMap[p.discipline] && discMap[p.discipline].key === key);
+    if (!r) return;
     const cfg = discMap[r.discipline];
-    if (!cfg || shown.has(cfg.key)) return;
-    shown.add(cfg.key);
     const records = Array.isArray(r.records) ? r.records.join(', ') : (r.records || '');
     // Fallback: if WA has no records, check FIONA.personalBests note for this discipline
     const discKey = cfg.key;
     const staticPB = (FIONA.personalBests || []).find(p => p.discipline === discKey);
     const staticNote = (staticPB && parseFloat(r.mark) <= (staticPB.numResult || 99)) ? (staticPB.note || '') : '';
     const note = records || staticNote || (r.notLegal ? 'n.l.' : '');
-    const isFirst = shown.size === 1;
+    const isFirst = key === '100m';
     const dateStr = r.date || '';
     const venueParts = (r.venue || '').replace(/\s*\([A-Z]{3}\)\s*(\(i\))?$/, '').trim();
-    html += `<div class="pb-item ${cfg.cls}${isFirst ? ' selected' : ''}" onclick="selectDisc('${cfg.key}')">
+    html += `<div id="${idMap[key]}" class="pb-item ${cfg.cls}${isFirst ? ' selected' : ''}" onclick="selectDisc('${cfg.key}')">
       <div class="pb-disc">${cfg.label}</div>
       <div class="pb-time">${r.mark}${cfg.unit === 'm' ? ' m' : ''}</div>
       <div class="pb-note">${note}</div>
@@ -2395,12 +2396,15 @@ function renderStaticPBs() {
   const grid = document.getElementById('pb-grid-dynamic');
   if (!grid) return;
   let html = '';
-  FIONA.personalBests.forEach((pb, i) => {
-    const labels = {'100m':'100m','60m':'60m Halle','Long Jump':'Weitsprung','200m':'200m'};
-    const cls = {'100m':'disc-100','60m':'disc-60','Long Jump':'disc-lj','200m':'disc-200'};
+  const ORDER_S = ['100m','60m','200m','Long Jump'];
+  const labels = {'100m':'100m','60m':'60m Halle','Long Jump':'Weitsprung','200m':'200m'};
+  const cls = {'100m':'disc-100','60m':'disc-60','Long Jump':'disc-lj','200m':'disc-200'};
+  const idMap2 = {'100m':'pb-100m','60m':'pb-60m','Long Jump':'pb-lj','200m':'pb-200m'};
+  ORDER_S.forEach(key => {
+    const pb = FIONA.personalBests.find(p => p.discipline === key);
+    if (!pb) return;
     const unit = pb.discipline === 'Long Jump' ? ' m' : '';
-    const idMap2 = {'100m':'pb-100m','60m':'pb-60m','Long Jump':'pb-lj','200m':'pb-200m'};
-    html += `<div id="${idMap2[pb.discipline]||''}" class="pb-item ${cls[pb.discipline]||''}${i===0?' selected':''}" onclick="selectDisc('${pb.discipline}')">
+    html += `<div id="${idMap2[pb.discipline]||''}" class="pb-item ${cls[pb.discipline]||''}${key==='100m'?' selected':''}" onclick="selectDisc('${pb.discipline}')">
       <div class="pb-disc">${labels[pb.discipline]||pb.discipline}</div>
       <div class="pb-time">${pb.result}${unit}</div>
       <div class="pb-note">${pb.note||''}</div>
@@ -2891,6 +2895,7 @@ document.addEventListener('DOMContentLoaded', function() {
   try { updateEMCountdown(); } catch(e) { console.error('updateEMCountdown:', e); }
   try { updateNextEventCard(); } catch(e) { console.error('updateNextEventCard:', e); }
   fetchUpcomingEvents().then(live => { if (live !== null) updateNextEventCard(live); }).catch(()=>{});
+  try { selectDisc('100m'); } catch(e) { console.error('selectDisc init:', e); }
   setTimeout(() => {
     try { renderScoreChart(currentDisc); } catch(e) { console.error('scoreChart:', e); }
     try { renderSeasonCompare(currentDisc); } catch(e) { console.error('seasonCompare:', e); }
