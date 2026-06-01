@@ -1,4 +1,4 @@
-// scrape_bestenliste.js — v4, Playwright mit PrimeFaces-kompatibler selectPF()
+// scrape_bestenliste.js — v5, + Kategorie-Filter (nur echte U18-Athlet:innen)
 
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -66,6 +66,37 @@ async function selectPF(page, componentId, labelText, optional = false) {
   }
 }
 
+/**
+ * Hakt die Checkbox "Nur Athlet/innen / Teams dieser Kategorie" an,
+ * damit nur Athlet:innen der gewählten Kategorie (U18) gelistet werden.
+ * Findet die Checkbox robust über das zugehörige <label> (keine ID-Raterei).
+ */
+async function setCategoryOnly(page) {
+  try {
+    const label = page.locator('label', { hasText: /dieser Kategorie/i }).first();
+    await label.waitFor({ state: 'visible', timeout: 8000 });
+    const forId = await label.getAttribute('for');           // z.B. form_anonym:xyz_input
+    if (forId) {
+      const boxId = forId.replace(/_input$/, '');
+      const esc   = boxId.replace(/:/g, '\\:');
+      const box   = page.locator(`#${esc} .ui-chkbox-box`).first();
+      const active = await box.evaluate(el => el.classList.contains('ui-state-active')).catch(() => false);
+      if (!active) {
+        await box.click({ timeout: 8000 });
+        await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+      }
+      console.log('  \u2713 Filter "nur diese Kategorie" gesetzt');
+      return;
+    }
+    // Fallback: Label direkt klicken
+    await label.click({ timeout: 5000 });
+    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+    console.log('  \u2713 Filter via Label-Klick gesetzt');
+  } catch (err) {
+    console.log(`  \u26a0 Kategorie-Filter nicht gesetzt: ${err.message.split('\n')[0]}`);
+  }
+}
+
 const DISCIPLINES = [
   { label: '60m',       saLabel: '60 m',  season: 'Indoor',  isJump: false },
   { label: '100m',      saLabel: '100 m', season: 'Outdoor', isJump: false },
@@ -95,6 +126,9 @@ async function scrapeDiscipline(page, disc, year) {
 
   await selectPF(page, 'form_anonym:bestlistDiscipline', disc.saLabel);
   console.log(`  ✓ Disziplin: ${disc.saLabel}`);
+
+  // Nur Athlet:innen dieser Kategorie (filtert U16/jüngere raus)
+  await setCategoryOnly(page);
 
   // Kategorie verify & re-set if needed (PrimeFaces kann nach Disziplin-Wahl zurückspringen)
   const catLabel = await page.locator('#form_anonym\\:bestlistCategory_label').innerText().catch(() => '');
