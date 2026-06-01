@@ -1232,17 +1232,17 @@ body {
 
       <!-- Disziplin-Banner (wie Übersicht) -->
       <div id="rank-disc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div class="pb-item disc-60"  id="rank-pb-60m"       onclick="selectRankDisc('60m')"       style="cursor:pointer">
-          <div class="pb-disc">60m Halle</div>
-          <div class="pb-time" id="rank-res-60m">—</div>
-          <div class="pb-note" id="rank-gap-60m"></div>
-          <div class="pb-date" id="rank-rank-60m"></div>
-        </div>
         <div class="pb-item disc-100" id="rank-pb-100m"      onclick="selectRankDisc('100m')"      style="cursor:pointer">
           <div class="pb-disc">100m</div>
           <div class="pb-time" id="rank-res-100m">—</div>
           <div class="pb-note" id="rank-gap-100m"></div>
           <div class="pb-date" id="rank-rank-100m"></div>
+        </div>
+        <div class="pb-item disc-60"  id="rank-pb-60m"       onclick="selectRankDisc('60m')"       style="cursor:pointer">
+          <div class="pb-disc">60m Halle</div>
+          <div class="pb-time" id="rank-res-60m">—</div>
+          <div class="pb-note" id="rank-gap-60m"></div>
+          <div class="pb-date" id="rank-rank-60m"></div>
         </div>
         <div class="pb-item disc-200" id="rank-pb-200m"      onclick="selectRankDisc('200m')"      style="cursor:pointer">
           <div class="pb-disc">200m</div>
@@ -2474,7 +2474,7 @@ async function fetchWAPBs() {
 // RANKING TAB
 // ══════════════════════════════════════════════════
 let currentRankYear = '2026';
-let currentRankDisc = '60m';
+let currentRankDisc = '100m';
 let liveRankData = null;
 
 // Year buttons for ranking tab
@@ -2911,7 +2911,7 @@ function initDynamicData(waResults, waPBs) {
 renderStaticPBs();
 renderRankingBars();
 renderRankBanners();
-selectRankDisc('60m');
+selectRankDisc('100m');
 renderRankList();
 loadBestenliste();  // async — updates bars wenn KV-Daten vorhanden
 loadLiveResults();  // async — WA Resultate (Resultate-Tab Liste)
