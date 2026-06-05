@@ -1,0 +1,23 @@
+name: Programm Patch ausführen
+
+on:
+  workflow_dispatch:
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch ausführen
+        run: find . -name patch_prog.py | head -1 | xargs python3
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --staged --quiet && echo "Keine Aenderungen" || git commit -m "fix: redundante Disziplinzeile in PROGRAMM entfernt"
+          git push
