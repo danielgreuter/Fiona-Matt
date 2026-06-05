@@ -92,10 +92,29 @@ function parseRowCells(cells, disc, indoor, year) {
   };
 }
 
+// Robust goto: Retry bei transienten Netzwerkfehlern (ERR_CONNECTION_REFUSED etc.)
+async function gotoRetry(page, url, opts, tries = 4) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await page.goto(url, opts);
+    } catch (e) {
+      lastErr = e;
+      const msg = String((e && e.message) || e);
+      const transient = /net::ERR_|ERR_CONNECTION|ERR_TIMED_OUT|ERR_EMPTY_RESPONSE|ERR_NETWORK_CHANGED|Timeout/i.test(msg);
+      if (!transient || i === tries - 1) throw e;
+      const wait = 3000 * (i + 1) * (i + 1);   // 3s, 12s, 27s
+      console.log(`    \u23f3 goto fehlgeschlagen (${msg.split('\n')[0]}), Retry ${i + 1}/${tries - 1} in ${wait / 1000}s`);
+      await page.waitForTimeout(wait);
+    }
+  }
+  throw lastErr;
+}
+
 async function scrapeQuery(outer, inner, con, year, cat, disc, indoor) {
   const saUrl = buildSaUrl(con, year, cat, disc, indoor);
 
-  await outer.goto(saUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await gotoRetry(outer, saUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await outer.waitForTimeout(4000);
 
   const iframeSrc = await outer.evaluate(() => {
@@ -105,7 +124,7 @@ async function scrapeQuery(outer, inner, con, year, cat, disc, indoor) {
   });
   if (!iframeSrc) { console.log(`    ⚠ Kein Iframe`); return []; }
 
-  await inner.goto(iframeSrc, { waitUntil: 'networkidle', timeout: 30000 });
+  await gotoRetry(inner, iframeSrc, { waitUntil: 'networkidle', timeout: 30000 });
   await inner.waitForTimeout(1500);
 
   const info = await inner.evaluate(() => {
@@ -397,6 +416,7 @@ async function main() {
         rows.forEach(r => console.log(`      ✅ ${r.result} | ${r.date} | ${r.competition}`));
       }
       allResults.push(...rows);
+      await outer.waitForTimeout(1500);   // hoeflich: Rate-Limit vermeiden
     }
   }
 
