@@ -5037,10 +5037,21 @@ function openEventModal(el, arr, id) {
     return '<span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,0.2);color:#fff">' + disc + '</span>';
   }).join('');
 
-  var extraHtml = e.extraLines ?
+  var progText = e.extraLines || '';
+  if (progText) {
+    var progLines = progText.split('\n');
+    var firstLine = (progLines[0] || '').trim();
+    var discTokens = firstLine.split(/[,\/]/).map(function(t){ return t.trim(); }).filter(Boolean);
+    var discOnlyRe = /^(\d{1,3}\s*m|\d\s*x\s*\d{2,4}\s*m?|weit(sprung)?|hoch(sprung)?|kugel(stossen)?|speer(wurf)?|diskus(wurf)?|hammer(wurf)?|stab(hochsprung)?|drei(sprung)?)$/i;
+    if (discTokens.length > 0 && discTokens.every(function(t){ return discOnlyRe.test(t); })) {
+      progLines.shift();
+      progText = progLines.join('\n').trim();
+    }
+  }
+  var extraHtml = progText ?
     '<div style="margin:0 16px 12px;padding:14px;background:var(--blue-light);border-radius:14px;border:1px solid var(--blue-mid)">' +
     '<div style="font-size:10px;font-weight:800;color:var(--blue);letter-spacing:1px;margin-bottom:8px">📋 PROGRAMM</div>' +
-    '<div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.8">' + e.extraLines + '</div></div>' : '';
+    '<div style="font-size:13px;color:var(--text);white-space:pre-line;line-height:1.8">' + progText + '</div></div>' : '';
 
   var deadlineHtml = e.deadline ?
     '<div style="margin:0 16px 12px;display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--orange-light);border-radius:12px">' +
