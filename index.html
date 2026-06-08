@@ -5614,12 +5614,21 @@ function closeWAScoreZoom(){
 <!-- ===== Team-LIE Zoom-Modal (openLIEZoom) ===== -->
 <style>
 .lz-chart{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-.lz-bar-row{display:grid;grid-template-columns:100px 1fr 42px;align-items:center;gap:8px;font-size:11px}
+.lz-bar-row{display:grid;grid-template-columns:92px 1fr 56px;align-items:center;gap:8px;font-size:11px}
 .lz-bar-row.me .lz-bar-name{color:var(--blue);font-weight:800}
 .lz-bar-name{font-weight:600;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lz-bar-track{height:14px;background:var(--surface2);border:1px solid var(--border);border-radius:999px;overflow:hidden}
 .lz-bar-fill{height:100%;border-radius:999px;transition:width .4s ease}
-.lz-bar-val{font-family:'DM Mono',monospace;font-weight:800;color:var(--text);text-align:right}
+.lz-bar-val{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+.lz-bar-val .v{font-family:'DM Mono',monospace;font-weight:800;color:var(--text);font-size:12px}
+.lz-bar-val .r{font-family:'DM Mono',monospace;font-weight:600;color:var(--text-dim);font-size:9px;margin-top:1px}
+.lz-t5{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.lz-t5-row{display:grid;grid-template-columns:58px 78px 1fr;gap:8px;align-items:start;padding:7px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:11px}
+.lz-t5-row.best{border-color:var(--gold);background:rgba(212,175,55,.08)}
+.lz-t5-date{color:var(--text-dim);font-weight:600;white-space:nowrap}
+.lz-t5-perf{font-family:'DM Mono',monospace;font-weight:800;color:var(--text);white-space:nowrap}
+.lz-t5-comp{color:var(--text-dim);line-height:1.3;min-width:0}
+.lz-t5-comp b{color:var(--text);font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 <div class="rz-overlay" id="lie-zoom-overlay" onclick="if(event.target===this)closeLIEZoom()">
   <div class="rz-card" id="lie-zoom-card"></div>
@@ -5644,6 +5653,61 @@ function lieDiscLabel(name){
     .replace('Discus Throw','Diskus')
     .replace('Javelin Throw','Speer')
     .replace('Hurdles','H\u00fcrden');
+}
+var _lieT5Name=null,_lieT5Disc=null;
+function lieDiscKey(s){return String(s||'').toLowerCase().replace(/\s+/g,'').replace('metres','m').replace('metre','m');}
+function lieIsField(s){var n=String(s||'').toLowerCase();return n.indexOf('jump')>=0||n.indexOf('weit')>=0||n.indexOf('hoch')>=0||n.indexOf('put')>=0||n.indexOf('kugel')>=0||n.indexOf('throw')>=0||n.indexOf('diskus')>=0||n.indexOf('discus')>=0||n.indexOf('speer')>=0||n.indexOf('javelin')>=0;}
+function lieTop5Rows(discName){
+  var SR=(typeof saResultsData!=='undefined'&&saResultsData&&saResultsData.results)?saResultsData.results:null;
+  if(!SR) return null;
+  var key=lieDiscKey(discName);
+  var field=lieIsField(discName);
+  var rows=SR.filter(function(r){return lieDiscKey(r.discipline)===key;});
+  rows.sort(function(a,b){
+    var av=(a.numResult!=null)?a.numResult:parseFloat(String(a.result).replace(',','.'));
+    var bv=(b.numResult!=null)?b.numResult:parseFloat(String(b.result).replace(',','.'));
+    if(isNaN(av))return 1; if(isNaN(bv))return -1;
+    return field?(bv-av):(av-bv);
+  });
+  return rows.slice(0,5);
+}
+function lieTop5Html(name, discName){
+  var title='Top 5 \u00b7 '+lieDiscLabel(discName);
+  if(name!=='Fiona Matt'){
+    return '<div class="rz-top5-title">'+title+'</div>'+
+      '<div style="font-size:11px;color:var(--text-dim);padding:8px 4px">Einzelresultate sind aktuell nur f\u00fcr Fiona Matt verf\u00fcgbar.</div>';
+  }
+  var rows=lieTop5Rows(discName);
+  if(rows===null){
+    return '<div class="rz-top5-title">'+title+'</div>'+
+      '<div style="font-size:11px;color:var(--text-dim);padding:8px 4px">\u23f3 Lade Resultate\u2026</div>';
+  }
+  if(!rows.length){
+    return '<div class="rz-top5-title">'+title+'</div>'+
+      '<div style="font-size:11px;color:var(--text-dim);padding:8px 4px">Keine Einzelresultate in dieser Disziplin.</div>';
+  }
+  var field=lieIsField(discName);
+  var body=rows.map(function(r,i){
+    var wind='';
+    if(!field&&r.wind!==''&&r.wind!=null){
+      var w=parseFloat(String(r.wind).replace(',','.'));
+      if(!isNaN(w)){var ws=(w>0?'+':'')+w.toFixed(1);wind=' <span style="font-size:9px;color:'+(r.windAssisted?'var(--red)':'var(--text-dim)')+'">('+ws+')</span>';}
+    }
+    var place=r.place?('<span style="font-size:9px;color:var(--text-dim)"> \u00b7 '+r.place+'</span>'):'';
+    var venue=r.venue?(' \u00b7 '+r.venue):'';
+    var comp=r.competition?r.competition:'\u2014';
+    return '<div class="lz-t5-row'+(i===0?' best':'')+'">'+
+      '<div class="lz-t5-date">'+(r.date||'\u2014')+'</div>'+
+      '<div class="lz-t5-perf">'+(r.result||'\u2014')+wind+'</div>'+
+      '<div class="lz-t5-comp"><b>'+comp+'</b><span>'+venue.replace(/^ \u00b7 /,'')+place+'</span></div>'+
+    '</div>';
+  }).join('');
+  return '<div class="rz-top5-title">'+title+(field?' (Bestweiten)':' (Bestzeiten)')+'</div>'+
+    '<div class="lz-t5">'+body+'</div>';
+}
+function lieFillTop5(){
+  var box=document.getElementById('lie-top5-box');
+  if(box&&_lieT5Name) box.innerHTML=lieTop5Html(_lieT5Name,_lieT5Disc);
 }
 function openLIEZoom(name, clickedDisc){
   var ATH=(typeof LIE_ATHLETES!=='undefined')?LIE_ATHLETES:[];
@@ -5686,7 +5750,7 @@ function openLIEZoom(name, clickedDisc){
       return '<div class="lz-bar-row'+(c.isClicked?' me':'')+'">'+
         '<div class="lz-bar-name">'+(i+1)+'. '+label+(cIsFi?' \ud83c\uddf1\ud83c\uddee':'')+'</div>'+
         '<div class="lz-bar-track"><div class="lz-bar-fill" style="width:'+pct+'%;background:'+(c.isClicked?'var(--blue)':'var(--border-strong,#94a3b8)')+'"></div></div>'+
-        '<div class="lz-bar-val">'+c.score+'</div>'+
+        '<div class="lz-bar-val"><span class="v">'+c.score+'</span>'+(c.result?'<span class="r">'+c.result+'</span>':'')+'</div>'+
       '</div>';
     }).join('');
     chartHtml='<div class="rz-top5-title">Team LIE \u00b7 '+lieDiscLabel(clicked.name)+' \u00b7 WA Punkte</div>'+
@@ -5695,6 +5759,9 @@ function openLIEZoom(name, clickedDisc){
 
   var url=(d&&d.url)?('https://worldathletics.org/athletes/liechtenstein/'+d.url)
         :(meta.url?('https://worldathletics.org/athletes/liechtenstein/'+meta.url):null);
+
+  _lieT5Name=name; _lieT5Disc=clicked?clicked.name:'';
+  var top5Html=lieTop5Html(name, clicked?clicked.name:'');
 
   var card=document.getElementById('lie-zoom-card');
   card.innerHTML=
@@ -5712,12 +5779,16 @@ function openLIEZoom(name, clickedDisc){
       (clicked?('<div style="text-align:right"><div style="font-size:34px;font-weight:900;color:var(--blue);line-height:1;font-family:\'DM Mono\',monospace">'+clicked.score+'</div><div style="font-size:9px;color:var(--text-dim);font-weight:700;letter-spacing:1px">WA PKT.</div></div>'):'')+
     '</div>'+
     (clicked?('<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;color:var(--text-dim);font-weight:700;letter-spacing:.5px;text-transform:uppercase">Bestleistung</div><div style="font-size:20px;font-weight:800;color:var(--text);font-family:\'DM Mono\',monospace;margin-top:2px">'+(clicked.result||'\u2014')+'</div></div><span class="rz-disc-pill '+lieDiscPill(clicked.name)+'">'+lieDiscLabel(clicked.name)+'</span></div>'):'')+
+    '<div class="rz-top5" id="lie-top5-box">'+top5Html+'</div>'+
     '<div class="rz-top5"><div class="rz-top5-title">Alle Disziplinen</div>'+discListHtml+'</div>'+
     (chartHtml?('<div class="rz-top5">'+chartHtml+'</div>'):'')+
     (d&&d.updated?('<div style="font-size:9px;color:var(--text-dim);margin-top:10px">WA Stand: '+d.updated+'</div>'):'')+
     (url?('<a href="'+url+'" target="_blank" style="display:block;text-align:center;margin-top:12px;font-size:12px;color:var(--blue);text-decoration:none;font-weight:700">World Athletics Profil \u2197</a>'):'');
 
   document.getElementById('lie-zoom-overlay').classList.add('open');
+  if(isFiona && (typeof saResultsData==='undefined' || !saResultsData || !saResultsData.results)){
+    if(typeof loadSAResults==='function'){ try{ Promise.resolve(loadSAResults()).then(lieFillTop5).catch(lieFillTop5); }catch(_e){} }
+  }
 }
 function closeLIEZoom(){var o=document.getElementById('lie-zoom-overlay');if(o)o.classList.remove('open');}
 </script>
