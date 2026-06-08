@@ -5654,8 +5654,8 @@ function lieDiscLabel(name){
     .replace('Javelin Throw','Speer')
     .replace('Hurdles','H\u00fcrden');
 }
-var _lieT5Name=null,_lieT5Disc=null;
-function lieDiscKey(s){return String(s||'').toLowerCase().replace(/\s+/g,'').replace('metres','m').replace('metre','m');}
+var _lieT5Name=null,_lieT5Disc=null,_lieT5Slug=null;
+function lieDiscKey(s){var n=String(s||'').toLowerCase().replace(/\s+/g,'').replace('metres','m').replace('metre','m');if(n.indexOf('weit')>=0||n.indexOf('longjump')>=0)return 'lj';if(n.indexOf('hoch')>=0||n.indexOf('highjump')>=0)return 'hj';if(n.indexOf('drei')>=0||n.indexOf('triplejump')>=0)return 'tj';if(n.indexOf('stab')>=0||n.indexOf('polevault')>=0)return 'pv';if(n.indexOf('kugel')>=0||n.indexOf('shotput')>=0)return 'sp';if(n.indexOf('diskus')>=0||n.indexOf('discus')>=0)return 'dt';if(n.indexOf('speer')>=0||n.indexOf('javelin')>=0)return 'jt';var m=n.match(/(\d+)m(h)?/);if(m)return m[1]+'m'+(m[2]||'');return n;}
 function lieIsField(s){var n=String(s||'').toLowerCase();return n.indexOf('jump')>=0||n.indexOf('weit')>=0||n.indexOf('hoch')>=0||n.indexOf('put')>=0||n.indexOf('kugel')>=0||n.indexOf('throw')>=0||n.indexOf('diskus')>=0||n.indexOf('discus')>=0||n.indexOf('speer')>=0||n.indexOf('javelin')>=0;}
 function lieTop5Rows(discName){
   var SR=(typeof saResultsData!=='undefined'&&saResultsData&&saResultsData.results)?saResultsData.results:null;
@@ -5671,13 +5671,13 @@ function lieTop5Rows(discName){
   });
   return rows.slice(0,5);
 }
+function lieParseMark(s){s=String(s||'').replace(',','.').trim();if(!s)return null;if(s.indexOf(':')>=0){var p=s.split(':');var mm=parseFloat(p[0]),ss=parseFloat(p[1]);if(isNaN(mm)||isNaN(ss))return null;return mm*60+ss;}var f=parseFloat(s);return isNaN(f)?null:f;}
+function lieAthCache(slug){try{var raw=localStorage.getItem('lie_ath_'+slug);if(!raw)return null;var o=JSON.parse(raw);if(!o||!o.t||(Date.now()-o.t>864e5))return null;return o.d;}catch(e){return null;}}
+function lieFetchAthlete(slug){return fetch(PROXY_URL+'?action=athlete&slug='+encodeURIComponent(slug)).then(function(r){return r.json();}).then(function(d){if(d&&d.results){try{localStorage.setItem('lie_ath_'+slug,JSON.stringify({t:Date.now(),d:d}));}catch(e){}}return d;});}
+function lieTop5RowsAthlete(discName){var c=_lieT5Slug?lieAthCache(_lieT5Slug):null;if(!c||!c.results)return null;var key=lieDiscKey(discName);var field=lieIsField(discName);var rows=c.results.filter(function(r){return lieDiscKey(r.discipline)===key;});rows.sort(function(a,b){var av=lieParseMark(a.result),bv=lieParseMark(b.result);if(av==null)return 1;if(bv==null)return -1;return field?(bv-av):(av-bv);});return rows.slice(0,5);}
 function lieTop5Html(name, discName){
   var title='Top 5 \u00b7 '+lieDiscLabel(discName);
-  if(name!=='Fiona Matt'){
-    return '<div class="rz-top5-title">'+title+'</div>'+
-      '<div style="font-size:11px;color:var(--text-dim);padding:8px 4px">Einzelresultate sind aktuell nur f\u00fcr Fiona Matt verf\u00fcgbar.</div>';
-  }
-  var rows=lieTop5Rows(discName);
+  var rows=(name==='Fiona Matt')?lieTop5Rows(discName):lieTop5RowsAthlete(discName);
   if(rows===null){
     return '<div class="rz-top5-title">'+title+'</div>'+
       '<div style="font-size:11px;color:var(--text-dim);padding:8px 4px">\u23f3 Lade Resultate\u2026</div>';
@@ -5691,7 +5691,7 @@ function lieTop5Html(name, discName){
     var wind='';
     if(!field&&r.wind!==''&&r.wind!=null){
       var w=parseFloat(String(r.wind).replace(',','.'));
-      if(!isNaN(w)){var ws=(w>0?'+':'')+w.toFixed(1);wind=' <span style="font-size:9px;color:'+(r.windAssisted?'var(--red)':'var(--text-dim)')+'">('+ws+')</span>';}
+      if(!isNaN(w)){var ws=(w>0?'+':'')+w.toFixed(1);wind=' <span style="font-size:9px;color:'+((r.windAssisted||w>2.0)?'var(--red)':'var(--text-dim)')+'">('+ws+')</span>';}
     }
     var place=r.place?('<span style="font-size:9px;color:var(--text-dim)"> \u00b7 '+r.place+'</span>'):'';
     var venue=r.venue?(' \u00b7 '+r.venue):'';
@@ -5760,7 +5760,7 @@ function openLIEZoom(name, clickedDisc){
   var url=(d&&d.url)?('https://worldathletics.org/athletes/liechtenstein/'+d.url)
         :(meta.url?('https://worldathletics.org/athletes/liechtenstein/'+meta.url):null);
 
-  _lieT5Name=name; _lieT5Disc=clicked?clicked.name:'';
+  _lieT5Name=name; _lieT5Disc=clicked?clicked.name:''; _lieT5Slug=(meta&&meta.url)?meta.url:((d&&d.url)?d.url:'');
   var top5Html=lieTop5Html(name, clicked?clicked.name:'');
 
   var card=document.getElementById('lie-zoom-card');
@@ -5786,8 +5786,14 @@ function openLIEZoom(name, clickedDisc){
     (url?('<a href="'+url+'" target="_blank" style="display:block;text-align:center;margin-top:12px;font-size:12px;color:var(--blue);text-decoration:none;font-weight:700">World Athletics Profil \u2197</a>'):'');
 
   document.getElementById('lie-zoom-overlay').classList.add('open');
-  if(isFiona && (typeof saResultsData==='undefined' || !saResultsData || !saResultsData.results)){
-    if(typeof loadSAResults==='function'){ try{ Promise.resolve(loadSAResults()).then(lieFillTop5).catch(lieFillTop5); }catch(_e){} }
+  if(isFiona){
+    if(!(typeof saResultsData!=='undefined'&&saResultsData&&saResultsData.results)&&typeof loadSAResults==='function'){
+      try{ Promise.resolve(loadSAResults()).then(lieFillTop5).catch(lieFillTop5); }catch(_e){}
+    }
+  } else if(_lieT5Slug){
+    if(!lieAthCache(_lieT5Slug)){
+      try{ lieFetchAthlete(_lieT5Slug).then(lieFillTop5).catch(lieFillTop5); }catch(_e){}
+    }
   }
 }
 function closeLIEZoom(){var o=document.getElementById('lie-zoom-overlay');if(o)o.classList.remove('open');}
