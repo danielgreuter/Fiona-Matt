@@ -1,0 +1,29 @@
+name: RZ Top5 Wind Patch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch index.html
+        run: python3 .github/scripts/patch_rzwind.py
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Keine Aenderung - nichts zu committen."
+          else
+            git add index.html
+            git commit -m "feat: Resultate-Zoom - Wind pro Top5-Eintrag"
+            git push
+          fi
