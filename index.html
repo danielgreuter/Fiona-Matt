@@ -3489,13 +3489,23 @@ function drawLineChart(containerId, rows, cfg) {
   const bestPt = pts[bestIdx];
   const currPt = pts[currIdx];
 
-  const mkr = (pt, label, col) =>
-    '<circle cx="' + pt.x.toFixed(1) + '" cy="' + pt.y.toFixed(1) + '" r="6" fill="white" stroke="' + col + '" stroke-width="2.5"/>' +
-    '<circle cx="' + pt.x.toFixed(1) + '" cy="' + pt.y.toFixed(1) + '" r="2.6" fill="' + col + '"/>' +
-    '<text x="' + pt.x.toFixed(1) + '" y="' + (pt.y - 12).toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="800" fill="' + col + '">' + label + '</text>';
+  // chartLabelClamp: Label horizontal in den Chart klemmen, Punkt optional ohne Text
+  const mkr = (pt, label, col) => {
+    let out =
+      '<circle cx="' + pt.x.toFixed(1) + '" cy="' + pt.y.toFixed(1) + '" r="6" fill="white" stroke="' + col + '" stroke-width="2.5"/>' +
+      '<circle cx="' + pt.x.toFixed(1) + '" cy="' + pt.y.toFixed(1) + '" r="2.6" fill="' + col + '"/>';
+    if (label) {
+      const tw = String(label).length * 6.2;         // grobe Textbreite
+      let lx = pt.x;
+      if (lx - tw / 2 < 2)     lx = 2 + tw / 2;      // linker Rand
+      if (lx + tw / 2 > W - 2) lx = W - 2 - tw / 2;  // rechter Rand
+      out += '<text x="' + lx.toFixed(1) + '" y="' + (pt.y - 12).toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="800" fill="' + col + '">' + label + '</text>';
+    }
+    return out;
+  };
 
   const mBest = mkr(bestPt, 'PB ' + fmt(bestVal), color);
-  const mCurr = currIdx === bestIdx ? '' : mkr(currPt, fmt(currPt.v), '#7C8AA5');
+  const mCurr = currIdx === bestIdx ? '' : mkr(currPt, '', '#7C8AA5');
 
   // Y-ticks (3 levels)
   const yTicks = [0, 0.5, 1].map(f => {
