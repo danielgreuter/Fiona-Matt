@@ -1,0 +1,29 @@
+name: Chart-Labels Patch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch index.html
+        run: python3 .github/scripts/patch_chartlabels.py
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Keine Aenderung - nichts zu committen."
+          else
+            git add index.html
+            git commit -m "fix: Charts - nur PB-Label, Labels an Raender geklemmt"
+            git push
+          fi
