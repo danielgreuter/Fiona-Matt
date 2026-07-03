@@ -5361,11 +5361,17 @@ function rzOpen(idx){
     var rows='';
     r.top5.forEach(function(a){
       var isFiona=!!a.fiona;
+      var rzT5Wind='';
+      if(a.wind!=null&&!isNaN(a.wind)){
+        var aw=(a.wind>=0?'+':'')+Number(a.wind).toFixed(1);
+        var wcol=(a.windAssisted||a.wind>2.0)?'var(--red)':'var(--text-dim)';
+        rzT5Wind=' <span style="font-size:9px;font-weight:600;color:'+wcol+'">'+aw+'</span>';
+      }
       rows+='<div class="rz-t5-row'+(isFiona?' fiona':'')+'">'+
         '<div class="rz-t5-rank">'+a.rank+'.</div>'+
         '<div class="rz-t5-name">'+a.name+(isFiona?' 🇱🇮':'')+'</div>'+
         '<div class="rz-t5-club">'+( a.club||'')+'</div>'+
-        '<div class="rz-t5-time">'+a.result+'</div>'+
+        '<div class="rz-t5-time">'+a.result+rzT5Wind+'</div>'+
       '</div>';
     });
     if(!fInTop5&&fRankNum>0){
