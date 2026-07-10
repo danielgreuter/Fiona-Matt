@@ -2962,10 +2962,10 @@ setTimeout(verifyOverviewCharts, 450);
 
 // ── EM COUNTDOWN ──
 function updateEMCountdown() {
-  const emDate = new Date('2026-07-16');
+  const emDate = new Date(2026, 6, 16); // lokal, nicht UTC (sonst Off-by-one)
   const today = new Date();
   today.setHours(0,0,0,0);
-  const diff = Math.ceil((emDate - today) / 86400000);
+  const diff = Math.round((emDate - today) / 86400000);
   const el = document.getElementById('em-days-count');
   if (!el) return;
   if (diff > 0) el.textContent = diff;
