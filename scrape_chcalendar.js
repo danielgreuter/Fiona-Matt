@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// scrape_chcalendar.js  (v3: Lese-Fallbacks table tr / Roh-HTML-Regex + Diagnose + Screenshot)
+// scrape_chcalendar.js  (v4: Suchmaske - erst 'Suchen' klicken, dann Resultate lesen)
 // Liest den alabus Swiss-Athletics Eventkalender VOLLSTAENDIG
 // (alle PrimeFaces-Seiten) und laedt ihn in den Worker-KV
 // (Key: chcalendar:v1), den ?action=chcalendar ausliefert.
@@ -137,12 +137,53 @@ async function gotoRetry(page, url, opts, tries = 4) {
   throw lastErr;
 }
 
+// Die Seite zeigt initial nur die Suchmaske - erst der Suchen-Klick liefert Events
+async function triggerSearch(page) {
+  const candidates = [
+    'button:has-text("Suchen")',
+    'a.ui-button:has-text("Suchen")',
+    'span.ui-button-text:has-text("Suchen")',
+    'button:has-text("Suche")',
+    'a.ui-button:has-text("Suche")',
+    'input[type="submit"]',
+    'button[id*="search" i]',
+    'a[id*="search" i]',
+    'button[id*="such" i]',
+    'a[id*="such" i]',
+  ];
+  for (const sel of candidates) {
+    try {
+      const loc = page.locator(sel).first();
+      if (await loc.count()) {
+        console.log(`   Suche ausloesen via ${sel}`);
+        await loc.click();
+        await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+        await page.waitForTimeout(3000);
+        return true;
+      }
+    } catch (e) { /* naechster Kandidat */ }
+  }
+  console.log('   \u26a0 Kein Suchen-Button gefunden - verfuegbare Buttons:');
+  try {
+    const labels = await page.evaluate(() =>
+      [...document.querySelectorAll('button, a.ui-button, input[type=submit], input[type=button]')]
+        .map(b => (b.innerText || b.value || b.id || '').replace(/\s+/g, ' ').trim())
+        .filter(Boolean).slice(0, 15)
+    );
+    console.log('   ' + labels.map(l => `"${l}"`).join(' | '));
+  } catch (e) { /* egal */ }
+  return false;
+}
+
 async function main() {
-  console.log('🚀 chcalendar v3\n');
+  console.log('🚀 chcalendar v4\n');
   const browser = await chromium.launch({ headless: true });
   const page = await (await browser.newContext()).newPage();
   await gotoRetry(page, URL, { waitUntil: 'networkidle', timeout: 45000 });
   await page.waitForTimeout(1500);
+
+  // Erst die Suche ausloesen - die Seite zeigt initial nur die Filtermaske
+  await triggerSearch(page);
 
   // Zeilen pro Seite maximieren, falls Auswahl vorhanden (PrimeFaces rpp-Dropdown)
   try {
