@@ -34,4 +34,6 @@ jobs:
         if: always()
         with:
           name: ch-calendar
-          path: ch_calendar.json
+          path: |
+            ch_calendar.json
+            debug_chcal.png
