@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════
-// scrape_chcalendar.js  (v4: Suchmaske - erst 'Suchen' klicken, dann Resultate lesen)
-// Liest den alabus Swiss-Athletics Eventkalender VOLLSTAENDIG
-// (alle PrimeFaces-Seiten) und laedt ihn in den Worker-KV
-// (Key: chcalendar:v1), den ?action=chcalendar ausliefert.
-// Filterlogik identisch zum bisherigen Worker-Code.
+// scrape_chcalendar.js  (v5)
+// Einstieg ueber die offizielle Swiss-Athletics-Seite
+// (Session-Fix fuer "Der Benutzer ist nicht mehr gueltig"),
+// dann im alabus-iframe: Suchen klicken, blaettern, parsen.
+// Upload in Worker-KV (Key: chcalendar:v1).
 // Aufruf: node scrape_chcalendar.js --upload
 // ═══════════════════════════════════════════════════
 const { chromium } = require('playwright');
@@ -13,7 +13,8 @@ const CF_API_TOKEN  = process.env.CF_API_TOKEN  || '';
 const CF_KV_NS_ID   = process.env.CF_KV_NS_ID   || '';
 const UPLOAD = process.argv.includes('--upload');
 
-const URL = 'https://alabus.swiss-athletics.ch/satweb/faces/eventcalendar.xhtml?lang=de';
+const WRAPPER_URL = 'https://www.swiss-athletics.ch/wettkaempfe/veranstaltungen/wettkampfkalender/';
+const DIRECT_URL  = 'https://alabus.swiss-athletics.ch/satweb/faces/eventcalendar.xhtml?lang=de';
 const KV_KEY = 'chcalendar:v1';
 
 async function uploadKV(data) {
@@ -26,11 +27,88 @@ async function uploadKV(data) {
   console.log(res.ok ? '✅ KV OK' : `❌ KV ${res.status}: ${await res.text()}`);
 }
 
-// Aktuelle Tabellen-Zeilen als Text-Zellen auslesen (3 Fallback-Stufen)
-async function readRows(page) {
+// Robust goto: Retry bei transienten Netzwerkfehlern
+async function gotoRetry(page, url, opts, tries = 4) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await page.goto(url, opts);
+    } catch (e) {
+      lastErr = e;
+      const msg = String((e && e.message) || e);
+      const transient = /net::ERR_|ERR_CONNECTION|ERR_TIMED_OUT|ERR_EMPTY_RESPONSE|ERR_NETWORK_CHANGED|Timeout/i.test(msg);
+      if (!transient || i === tries - 1) throw e;
+      const wait = 3000 * (i + 1) * (i + 1);
+      console.log(`   \u23f3 goto fehlgeschlagen (${msg.split('\n')[0]}), Retry ${i + 1}/${tries - 1} in ${wait / 1000}s`);
+      await page.waitForTimeout(wait);
+    }
+  }
+  throw lastErr;
+}
+
+// Cookie-Consent der Swiss-Athletics-Seite wegklicken (best effort)
+async function acceptCookies(page) {
+  const candidates = [
+    'button:has-text("Alle akzeptieren")',
+    'button:has-text("Akzeptieren")',
+    'button:has-text("OK")',
+    'button:has-text("Ja")',
+    'a:has-text("OK")',
+  ];
+  for (const sel of candidates) {
+    try {
+      const loc = page.locator(sel).first();
+      if (await loc.count() && await loc.isVisible().catch(() => false)) {
+        await loc.click({ timeout: 3000 });
+        console.log(`   Cookie-Banner bestaetigt (${sel})`);
+        await page.waitForTimeout(800);
+        return;
+      }
+    } catch (e) { /* naechster */ }
+  }
+}
+
+// alabus-iframe auf der Wrapper-Seite finden
+async function findAlabusFrame(page) {
+  for (let i = 0; i < 20; i++) {
+    for (const f of page.frames()) {
+      if (/alabus\.swiss-athletics\.ch/i.test(f.url())) return f;
+    }
+    await page.waitForTimeout(500);
+  }
+  return null;
+}
+
+// Suchen-Klick im Kalender (ctx = Frame oder Page)
+async function triggerSearch(ctx) {
+  const candidates = [
+    'button:has-text("Suchen")',
+    'a.ui-button:has-text("Suchen")',
+    'span.ui-button-text:has-text("Suchen")',
+    'input[type="submit"]',
+    'button[id*="search" i]',
+    'a[id*="search" i]',
+  ];
+  for (const sel of candidates) {
+    try {
+      const loc = ctx.locator(sel).first();
+      if (await loc.count()) {
+        console.log(`   Suche ausloesen via ${sel}`);
+        await loc.click();
+        await ctx.waitForTimeout(3500);
+        return true;
+      }
+    } catch (e) { /* naechster */ }
+  }
+  console.log('   \u26a0 Kein Suchen-Button gefunden');
+  return false;
+}
+
+// Zeilen lesen (ctx = Frame oder Page), 3 Fallback-Stufen
+async function readRows(ctx) {
   for (const sel of ['tbody tr', 'table tr']) {
     try {
-      const rows = await page.$$eval(sel, trs =>
+      const rows = await ctx.$$eval(sel, trs =>
         trs.map(tr => [...tr.querySelectorAll('td')].map(td =>
           (td.innerText || '').replace(/\s+/g, ' ').trim()
         )).filter(c => c.length >= 3)
@@ -38,9 +116,8 @@ async function readRows(page) {
       if (rows.length) return rows;
     } catch (e) { /* naechste Stufe */ }
   }
-  // Stufe 3: Roh-HTML per Regex (gleiches Muster wie der Worker, das nachweislich Zeilen liefert)
   try {
-    const html = await page.content();
+    const html = await ctx.content();
     const rows = [];
     const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
     let rm;
@@ -58,24 +135,20 @@ async function readRows(page) {
   } catch (e) { return []; }
 }
 
-// Diagnose bei leerer Seite
-async function diagnosePage(page) {
+async function diagnose(ctx, page) {
   try {
-    const title = await page.title();
-    const info = await page.evaluate(() => ({
+    const info = await ctx.evaluate(() => ({
       tables: document.querySelectorAll('table').length,
       trs: document.querySelectorAll('tr').length,
-      iframes: document.querySelectorAll('iframe').length,
       text: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 300),
     }));
-    console.log(`   \u26a0 Diagnose: <title>=${title} | tables=${info.tables} trs=${info.trs} iframes=${info.iframes}`);
+    console.log(`   \u26a0 Diagnose: url=${ctx.url()} | tables=${info.tables} trs=${info.trs}`);
     console.log(`   \u26a0 Seitentext: ${info.text}`);
     await page.screenshot({ path: 'debug_chcal.png', fullPage: true }).catch(() => {});
   } catch (e) { console.log('   Diagnose fehlgeschlagen: ' + e.message); }
 }
 
 function rowToEvent(cells) {
-  // Datum: erstes dd.mm.yyyy in Zelle 0 (auch bei "30.06.2026 - 01.07.2026")
   const dm = (cells[0] || '').match(/(\d{2})\.(\d{2})\.(\d{4})/);
   if (!dm) return null;
   const date = `${dm[1]}.${dm[2]}.${dm[3]}`;
@@ -83,21 +156,17 @@ function rowToEvent(cells) {
   const venue = cells[2] || '';
   if (name.length < 3) return null;
 
-  // Kanton: erste Zelle ab Index 3, die exakt 2 Grossbuchstaben ist
   let canton = '';
   for (let i = 3; i < cells.length; i++) {
     if (/^[A-Z]{2}$/.test(cells[i])) { canton = cells[i]; break; }
   }
 
-  // Meldeschluss: letztes dd.mm.yyyy in den Zellen ab Index 3
   let deadline = '';
   for (let i = cells.length - 1; i >= 3; i--) {
     const m = (cells[i] || '').match(/(\d{2}\.\d{2}\.\d{4})/);
     if (m) { deadline = m[1]; break; }
   }
 
-  // Disziplinen-Heuristik (identisch zum Worker): falls eine Zelle Disziplinen
-  // listet, muss "100m" vorkommen; sonst Namens-Heuristik
   let disciplines = '';
   for (let i = 3; i < cells.length; i++) {
     const cell = cells[i] || '';
@@ -110,7 +179,6 @@ function rowToEvent(cells) {
     : /WRC|national|nachwuchs|meeting/i.test(name);
   if (!has100m) return null;
 
-  // Nur zukuenftige Events
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const evDate = new Date(+dm[3], +dm[2] - 1, +dm[1]);
   if (evDate < today) return null;
@@ -118,94 +186,54 @@ function rowToEvent(cells) {
   return { date, name, venue, canton, deadline, past: false };
 }
 
-// Robust goto: Retry bei transienten Netzwerkfehlern (ERR_CONNECTION_REFUSED etc.)
-async function gotoRetry(page, url, opts, tries = 4) {
-  let lastErr;
-  for (let i = 0; i < tries; i++) {
-    try {
-      return await page.goto(url, opts);
-    } catch (e) {
-      lastErr = e;
-      const msg = String((e && e.message) || e);
-      const transient = /net::ERR_|ERR_CONNECTION|ERR_TIMED_OUT|ERR_EMPTY_RESPONSE|ERR_NETWORK_CHANGED|Timeout/i.test(msg);
-      if (!transient || i === tries - 1) throw e;
-      const wait = 3000 * (i + 1) * (i + 1);   // 3s, 12s, 27s
-      console.log(`   \u23f3 goto fehlgeschlagen (${msg.split('\n')[0]}), Retry ${i + 1}/${tries - 1} in ${wait / 1000}s`);
-      await page.waitForTimeout(wait);
-    }
-  }
-  throw lastErr;
-}
-
-// Die Seite zeigt initial nur die Suchmaske - erst der Suchen-Klick liefert Events
-async function triggerSearch(page) {
-  const candidates = [
-    'button:has-text("Suchen")',
-    'a.ui-button:has-text("Suchen")',
-    'span.ui-button-text:has-text("Suchen")',
-    'button:has-text("Suche")',
-    'a.ui-button:has-text("Suche")',
-    'input[type="submit"]',
-    'button[id*="search" i]',
-    'a[id*="search" i]',
-    'button[id*="such" i]',
-    'a[id*="such" i]',
-  ];
-  for (const sel of candidates) {
-    try {
-      const loc = page.locator(sel).first();
-      if (await loc.count()) {
-        console.log(`   Suche ausloesen via ${sel}`);
-        await loc.click();
-        await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
-        await page.waitForTimeout(3000);
-        return true;
-      }
-    } catch (e) { /* naechster Kandidat */ }
-  }
-  console.log('   \u26a0 Kein Suchen-Button gefunden - verfuegbare Buttons:');
-  try {
-    const labels = await page.evaluate(() =>
-      [...document.querySelectorAll('button, a.ui-button, input[type=submit], input[type=button]')]
-        .map(b => (b.innerText || b.value || b.id || '').replace(/\s+/g, ' ').trim())
-        .filter(Boolean).slice(0, 15)
-    );
-    console.log('   ' + labels.map(l => `"${l}"`).join(' | '));
-  } catch (e) { /* egal */ }
-  return false;
-}
-
 async function main() {
-  console.log('🚀 chcalendar v4\n');
+  console.log('🚀 chcalendar v5\n');
   const browser = await chromium.launch({ headless: true });
   const page = await (await browser.newContext()).newPage();
-  await gotoRetry(page, URL, { waitUntil: 'networkidle', timeout: 45000 });
+
+  // 1) Offizieller Einstieg ueber die Swiss-Athletics-Seite (gueltige Session)
+  let ctx = null;
+  try {
+    await gotoRetry(page, WRAPPER_URL, { waitUntil: 'networkidle', timeout: 60000 });
+    await acceptCookies(page);
+    ctx = await findAlabusFrame(page);
+    if (ctx) console.log(`   alabus-iframe gefunden: ${ctx.url()}`);
+    else console.log('   \u26a0 Kein alabus-iframe auf der Wrapper-Seite - Fallback auf Direktaufruf');
+  } catch (e) {
+    console.log('   \u26a0 Wrapper-Seite fehlgeschlagen (' + e.message.split('\n')[0] + ') - Fallback auf Direktaufruf');
+  }
+
+  // 2) Fallback: Direktaufruf wie bisher
+  if (!ctx) {
+    await gotoRetry(page, DIRECT_URL, { waitUntil: 'networkidle', timeout: 45000 });
+    ctx = page;
+  }
   await page.waitForTimeout(1500);
 
-  // Erst die Suche ausloesen - die Seite zeigt initial nur die Filtermaske
-  await triggerSearch(page);
+  // 3) Suche ausloesen
+  await triggerSearch(ctx);
 
-  // Zeilen pro Seite maximieren, falls Auswahl vorhanden (PrimeFaces rpp-Dropdown)
+  // 4) Zeilen pro Seite maximieren, falls Auswahl vorhanden
   try {
-    const rpp = page.locator('select.ui-paginator-rpp-options').first();
+    const rpp = ctx.locator('select.ui-paginator-rpp-options').first();
     if (await rpp.count()) {
       const values = await rpp.locator('option').allTextContents();
       const max = values.map(v => parseInt(v, 10)).filter(Number.isFinite).sort((a, b) => b - a)[0];
       if (max) {
         await rpp.selectOption(String(max));
-        await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-        await page.waitForTimeout(1200);
+        await ctx.waitForTimeout(1500);
         console.log(`   Zeilen pro Seite: ${max}`);
       }
     }
-  } catch (e) { console.log('   (rpp-Auswahl uebersprungen: ' + e.message + ')'); }
+  } catch (e) { /* optional */ }
 
+  // 5) Blaettern und sammeln
   const events = [];
   const seen = new Set();
   let lastSig = '';
   for (let pg = 1; pg <= 60; pg++) {
-    const rows = await readRows(page);
-    if (pg === 1 && !rows.length) await diagnosePage(page);
+    const rows = await readRows(ctx);
+    if (pg === 1 && !rows.length) await diagnose(ctx, page);
     const sig = rows.length ? rows[0].join('|') : '';
     if (sig && sig === lastSig) { console.log(`   Seite ${pg}: identisch zur vorherigen - Ende`); break; }
     lastSig = sig;
@@ -222,19 +250,16 @@ async function main() {
     }
     console.log(`   Seite ${pg}: ${rows.length} Zeilen, ${added} relevante Events`);
 
-    // Weiter blaettern, solange "next" nicht deaktiviert ist
-    const next = page.locator('a.ui-paginator-next').first();
+    const next = ctx.locator('a.ui-paginator-next').first();
     if (!(await next.count())) { console.log('   Kein Paginator - Ende'); break; }
     const cls = (await next.getAttribute('class')) || '';
     if (cls.includes('ui-state-disabled')) { console.log('   Letzte Seite erreicht'); break; }
     await next.click();
-    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-    await page.waitForTimeout(900);
+    await ctx.waitForTimeout(1200);
   }
 
   await browser.close();
 
-  // Sortierung nach Datum (wie Worker-Ausgabe erwartet)
   events.sort((a, b) => {
     const pa = a.date.split('.'), pb = b.date.split('.');
     return new Date(+pa[2], +pa[1] - 1, +pa[0]) - new Date(+pb[2], +pb[1] - 1, +pb[0]);
