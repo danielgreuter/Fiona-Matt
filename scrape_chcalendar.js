@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// scrape_chcalendar.js  (v1)
+// scrape_chcalendar.js  (v2: goto-Retry bei transienten alabus-Fehlern)
 // Liest den alabus Swiss-Athletics Eventkalender VOLLSTAENDIG
 // (alle PrimeFaces-Seiten) und laedt ihn in den Worker-KV
 // (Key: chcalendar:v1), den ?action=chcalendar ausliefert.
@@ -79,11 +79,30 @@ function rowToEvent(cells) {
   return { date, name, venue, canton, deadline, past: false };
 }
 
+// Robust goto: Retry bei transienten Netzwerkfehlern (ERR_CONNECTION_REFUSED etc.)
+async function gotoRetry(page, url, opts, tries = 4) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await page.goto(url, opts);
+    } catch (e) {
+      lastErr = e;
+      const msg = String((e && e.message) || e);
+      const transient = /net::ERR_|ERR_CONNECTION|ERR_TIMED_OUT|ERR_EMPTY_RESPONSE|ERR_NETWORK_CHANGED|Timeout/i.test(msg);
+      if (!transient || i === tries - 1) throw e;
+      const wait = 3000 * (i + 1) * (i + 1);   // 3s, 12s, 27s
+      console.log(`   \u23f3 goto fehlgeschlagen (${msg.split('\n')[0]}), Retry ${i + 1}/${tries - 1} in ${wait / 1000}s`);
+      await page.waitForTimeout(wait);
+    }
+  }
+  throw lastErr;
+}
+
 async function main() {
-  console.log('🚀 chcalendar v1\n');
+  console.log('🚀 chcalendar v2\n');
   const browser = await chromium.launch({ headless: true });
   const page = await (await browser.newContext()).newPage();
-  await page.goto(URL, { waitUntil: 'networkidle', timeout: 45000 });
+  await gotoRetry(page, URL, { waitUntil: 'networkidle', timeout: 45000 });
   await page.waitForTimeout(1500);
 
   // Zeilen pro Seite maximieren, falls Auswahl vorhanden (PrimeFaces rpp-Dropdown)
