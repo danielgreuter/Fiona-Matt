@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// scrape_chcalendar.js  (v5)
+// scrape_chcalendar.js  (v6)
 // Einstieg ueber die offizielle Swiss-Athletics-Seite
 // (Session-Fix fuer "Der Benutzer ist nicht mehr gueltig"),
 // dann im alabus-iframe: Suchen klicken, blaettern, parsen.
@@ -79,28 +79,71 @@ async function findAlabusFrame(page) {
   return null;
 }
 
+// Wartet, bis nach dem Such-Klick echte Datenzeilen erscheinen
+async function waitForResults(ctx, ms = 15000) {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    try {
+      const n = await ctx.evaluate(() => {
+        // Datenzeilen: <tr> mit >=3 <td>, die ein Datum enthalten
+        const trs = [...document.querySelectorAll('tr')];
+        let c = 0;
+        for (const tr of trs) {
+          const tds = tr.querySelectorAll('td');
+          if (tds.length >= 3 && /\d{2}\.\d{2}\.\d{4}/.test(tr.innerText || '')) c++;
+        }
+        const noData = /keine\s+(daten|wettk|ergebnisse)/i.test(document.body.innerText || '');
+        return c > 0 ? c : (noData ? -1 : 0);
+      });
+      if (n > 0) { console.log(`   Ergebnisse erschienen (${n} Datenzeilen)`); return true; }
+      if (n === -1) { console.log('   Suche lieferte "keine Daten"'); return false; }
+    } catch (e) { /* weiter warten */ }
+    await ctx.waitForTimeout(600);
+  }
+  console.log('   \u26a0 Timeout beim Warten auf Ergebnisse');
+  return false;
+}
+
 // Suchen-Klick im Kalender (ctx = Frame oder Page)
 async function triggerSearch(ctx) {
   const candidates = [
     'button:has-text("Suchen")',
     'a.ui-button:has-text("Suchen")',
     'span.ui-button-text:has-text("Suchen")',
+    'a[href*="such" i]',
     'input[type="submit"]',
     'button[id*="search" i]',
     'a[id*="search" i]',
+    'button[id*="such" i]',
+    'a[id*="such" i]',
   ];
   for (const sel of candidates) {
     try {
       const loc = ctx.locator(sel).first();
       if (await loc.count()) {
         console.log(`   Suche ausloesen via ${sel}`);
-        await loc.click();
-        await ctx.waitForTimeout(3500);
-        return true;
+        // Zweifacher Anlauf: normaler Klick, dann DOM-Klick (PrimeFaces onclick)
+        await loc.click({ timeout: 5000 }).catch(() => {});
+        if (await waitForResults(ctx, 12000)) return true;
+        console.log('   Kein Ergebnis - erzwinge DOM-Klick');
+        await ctx.evaluate((s) => {
+          const el = document.querySelector(s.replace(/:has-text\([^)]*\)/, ''));
+          if (el) el.click();
+        }, sel).catch(() => {});
+        if (await waitForResults(ctx, 12000)) return true;
       }
     } catch (e) { /* naechster */ }
   }
-  console.log('   \u26a0 Kein Suchen-Button gefunden');
+  // Letzter Versuch: irgendeinen sichtbaren Button mit Text "Suchen" per DOM klicken
+  try {
+    await ctx.evaluate(() => {
+      const el = [...document.querySelectorAll('button, a, input[type=submit], span')]
+        .find(b => /^\s*suchen\s*$/i.test((b.innerText || b.value || '')));
+      if (el) el.click();
+    });
+    if (await waitForResults(ctx, 12000)) return true;
+  } catch (e) { /* egal */ }
+  console.log('   \u26a0 Suche konnte nicht ausgeloest werden');
   return false;
 }
 
@@ -187,7 +230,7 @@ function rowToEvent(cells) {
 }
 
 async function main() {
-  console.log('🚀 chcalendar v5\n');
+  console.log('🚀 chcalendar v6\n');
   const browser = await chromium.launch({ headless: true });
   const page = await (await browser.newContext()).newPage();
 
@@ -210,7 +253,7 @@ async function main() {
   }
   await page.waitForTimeout(1500);
 
-  // 3) Suche ausloesen
+  // 3) Suche ausloesen (wartet intern auf Ergebnisse)
   await triggerSearch(ctx);
 
   // 4) Zeilen pro Seite maximieren, falls Auswahl vorhanden
