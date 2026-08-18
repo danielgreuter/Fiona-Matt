@@ -166,7 +166,7 @@ async function scrapeDiscipline(page, disc, year) {
       );
       if (i++ < 3) first3.push(cols.slice(0, 12));
       const rank = parseInt(cols[0]);
-      if (rank > 0 && rank <= 100) result.push(cols);
+      if (rank > 0 && rank <= 200) result.push(cols); // bis 200, damit Fiona auch ausserhalb Top 15 gefunden wird
     }
     return { result, first3 };
   });
@@ -176,7 +176,7 @@ async function scrapeDiscipline(page, disc, year) {
 
   if (rows.length === 0) return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona: null, top15: [] };
 
-  const top15 = rows.slice(0, 15).map(cols => {
+  const parseRow = cols => {
     const windLike = /^[+-]?\d+\.\d+$/.test(cols[2]);
     const rawIdx   = windLike ? 4 : 3;
     const nameIdx  = (cols[rawIdx] === 'NH*' || cols[rawIdx] === '') ? rawIdx + 1 : rawIdx;
@@ -192,15 +192,21 @@ async function scrapeDiscipline(page, disc, year) {
       comp_date: cols[nameIdx + 6] || '',   // "21.02.2026"
       isFiona:   (cols[nameIdx] || '').includes('Matt'),
     };
-  });
+  };
 
-  const fRow  = top15.find(r => r.isFiona);
+  const top15 = rows.slice(0, 15).map(parseRow);
+
+  // Fiona in ALLEN geladenen Zeilen suchen (nicht nur Top 15),
+  // damit ihr Rang auch ausserhalb der Top 15 ausgewiesen wird.
+  const allParsed = rows.map(parseRow);
+  const fRow = allParsed.find(r => r.isFiona);
   const fiona = fRow ? {
     rank: fRow.rank, result: fRow.result, wind: fRow.wind,
-    gapToFirst: top15[0] ? (parseFloat(fRow.result) - parseFloat(top15[0].result) >= 0 ? '+' : '') + (parseFloat(fRow.result) - parseFloat(top15[0].result)).toFixed(2) : null,
+    club: fRow.club, born: fRow.born, venue: fRow.venue, comp_date: fRow.comp_date,
+    gapToFirst: allParsed[0] ? (parseFloat(fRow.result) - parseFloat(allParsed[0].result) >= 0 ? '+' : '') + (parseFloat(fRow.result) - parseFloat(allParsed[0].result)).toFixed(2) : null,
   } : null;
 
-  if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}`);
+  if (fiona) console.log(`  ⭐ Fiona: Rang ${fiona.rank} — ${fiona.result}${top15.some(r=>r.isFiona)?'':' (ausserhalb Top 15)'}`);
   else console.log(`  — Fiona nicht in Top ${rows.length}`);
   if (top15[0]) console.log(`  1.: ${top15[0].name} ${top15[0].result}`);
 
