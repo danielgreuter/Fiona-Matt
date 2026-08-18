@@ -2606,6 +2606,7 @@ function renderRankList() {
     if (live.fiona) {
       fionaRank   = live.fiona.rank;
       fionaResult = live.fiona.result;
+      if (live.fiona.club) fionaClub = live.fiona.club;  // fionaAppendRich
     }
   }
 
@@ -2647,7 +2648,11 @@ function renderRankList() {
   // If Fiona not in top15, add separator + Fiona row
   if (!fionaInTop15 && fionaRank && fionaResult) {
     html += `<div style="text-align:center;font-size:11px;color:var(--text-dim);padding:4px 0">· · ·</div>`;
-    html += rankRow(fionaRank, 'Fiona Matt', fionaClub, fionaResult, disc, true);
+    const fw = (useLife && live.fiona) ? live.fiona.wind : null;
+    const fBorn = (useLife && live.fiona && live.fiona.born) ? String(live.fiona.born).slice(-4) : null;
+    const fVenue = (useLife && live.fiona) ? (live.fiona.venue || '') : '';
+    const fDate = (useLife && live.fiona) ? (live.fiona.comp_date || '') : '';
+    html += rankRow(fionaRank, 'Fiona Matt', fionaClub, fionaResult, disc, true, fw, fVenue, fDate, fBorn);
   }
 
   // Source note
