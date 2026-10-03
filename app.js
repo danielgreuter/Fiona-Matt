@@ -23,16 +23,26 @@
   }
 
   async function load(){
-    try{
-      const res=await fetch("./athlete_results.json",{cache:"no-store"});
-      state.data=await res.json();
-      $("#syncStatus").textContent="Daten geladen";
-      renderAll();
-    }catch(e){
-      $("#syncStatus").textContent="Datenfehler";
-      $("#dataWarning").textContent="Athletikdaten konnten nicht geladen werden.";
-      console.error(e);
+    const sources=[
+      "https://fiona-proxy.daniel-greuter.workers.dev?action=sa-results",
+      "./athlete_results.json"
+    ];
+    let lastError=null;
+    for(const url of sources){
+      try{
+        const res=await fetch(url,{cache:"no-store"});
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        const data=await res.json();
+        if(!data || !Array.isArray(data.results)) throw new Error("Ungültiges Datenformat");
+        state.data=data;
+        $("#syncStatus").textContent=url.startsWith("http")?"Live-Daten":"Lokale Daten";
+        renderAll();
+        return;
+      }catch(e){ lastError=e; }
     }
+    $("#syncStatus").textContent="Datenfehler";
+    $("#dataWarning").textContent="Athletikdaten konnten nicht geladen werden.";
+    console.error(lastError);
   }
 
   function renderCountdown(){
