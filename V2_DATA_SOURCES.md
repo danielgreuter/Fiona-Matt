@@ -126,3 +126,10 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - WA-Einzelresultate mit Zeit/Leistung, Wind (m/s), Datum, Wettkampf und Ort; Chartpunkte per Tastatur oder Klick mit Details. Indoor ohne Wind, fehlende Winddaten ausdrücklich benannt.
 - Dezentes originales WA-Logo von `https://media.aws.iaaf.org/logos/wa-logo.svg` (auf offizieller WA-Startseite eingebunden); lokale SVG-Datei für Offline-Nutzung. Senegal-Flagge als exakte Vektorflagge im Dakar-Modul.
 - Regression: reale WA- und Team-Payloads als Testfixtures; 16 Tests und 27 Chromium-Layoutprüfungen bestanden. Kein Kalender-Schreibzugriff. V1-Archiv bleibt unverändert.
+
+## Home, 150 m und Kalender 03.10.2026
+- WA-Ansicht verwendet ausschliesslich live abgerufene oder als Cache ausgewiesene WA-Resultate/PBs. Keine eingebetteten V1-Monatswerte oder PB-Fallbacks. Beste Punktzahl mit Zeit direkt im Chart.
+- 150-m-Einzelresultate werden aus der bestehenden WA-Quelle in die vollständige Resultatliste übernommen und dort als World Athletics gekennzeichnet. Der SA-Scraper fragt 150 m bisher nicht ab; keine Ergebnisse oder Disziplin-IDs erfunden. Wiederholte Abrufe duplizieren die Resultate nicht.
+- Home-PB-Boxen sind Tastatur-/Touch-Schaltflächen; ausgewählte Box mit aria-pressed und passender 60-/100-/150-/200-m-Kurve, Saisonbestleistung setzt Saisonfilter.
+- Wettkampfkalender startet mit allen gelieferten Terminen; Wappen über unveränderten V1-Worker-Pfad anhand Kanton/Ort. Kalender-Live-Payload: zwölf Wettkämpfe bis September, keine kommenden Wettkämpfe. Keine zukünftigen Termine erfunden.
+- Rot-blauer Hintergrund ausserhalb weisser Karten. V1-Archiv bleibt unverändert. 18 Tests und 27 Chromium-Prüfungen bestanden.

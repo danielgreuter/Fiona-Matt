@@ -2,6 +2,7 @@
   const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=String(text);if(cls)n.className=cls;return n;};
   const panels=document.querySelector('#sourcePanels');
   const records={};
+  let resultObserver;
   function row(parent,label,value,note='') {
     const n=el('div',null,'result');const main=el('div',null,'result-main');
     main.append(el('strong',label),el('span',note));n.append(main,el('strong',value));parent.append(n);
@@ -34,10 +35,10 @@
     if(assisted.length){section.append(el('h3','Windunterstützt · separat'));assisted.forEach(r=>row(section,r.date+' · '+r.venue,r.result+' s','Wind '+r.wind));}
     section.append(el('h3','PB-Historie · 100 m'));let best=Infinity;
     sprint.slice().sort((a,b)=>String(a.dateISO).localeCompare(String(b.dateISO))).forEach(r=>{if(r.numResult<best){best=r.numResult;row(section,r.date,r.result+' s',r.venue);}});
-    document.querySelector('#view-analysis .grid').append(section);
+    section.id='performanceCenter';const previous=document.querySelector('#performanceCenter');if(previous)previous.replaceWith(section);else document.querySelector('#view-analysis .grid').append(section);
     const detail=document.querySelector('#resultDetail');
     document.querySelector('#closeDetail').onclick=()=>detail.close();
-    document.addEventListener('click',e=>{
+    document.onclick=e=>{
       const target=e.target.closest('.result[data-result-index]');if(!target)return;
       const r=results[Number(target.dataset.resultIndex)];if(!r)return;
       const box=document.querySelector('#detailContent');box.replaceChildren(el('h2',(r.disciplineLabel||r.discipline)+' · '+r.result));
@@ -45,10 +46,10 @@
       for(const [key,label]of Object.entries(labels))if(r[key]!=null&&r[key]!=='')row(box,label,r[key]);
       if(r.top5?.length){box.append(el('h3','Laportal · Top 5'));for(const entry of r.top5)row(box,(entry.rank||'—')+'. '+entry.name,entry.result,[entry.club,entry.wind!=null?'Wind '+entry.wind:''].filter(Boolean).join(' · '));}
       const raw=el('details');raw.append(el('summary','Vollständige Quelldaten'),el('pre',JSON.stringify(r,null,2)));box.append(raw);detail.showModal();
-    });
+    };
     const bind=()=>document.querySelectorAll('#latestResults .result,#allResults .result').forEach(node=>{if(node.dataset.resultIndex!=null){node.tabIndex=0;node.setAttribute('role','button');node.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();node.click();}};}});
-    new MutationObserver(bind).observe(document.querySelector('#allResults'),{childList:true});
-    new MutationObserver(bind).observe(document.querySelector('#latestResults'),{childList:true});
+    if(resultObserver)resultObserver.disconnect();resultObserver=new MutationObserver(bind);resultObserver.observe(document.querySelector('#allResults'),{childList:true});
+    resultObserver.observe(document.querySelector('#latestResults'),{childList:true});
     setTimeout(bind,0);
   });
 })();
