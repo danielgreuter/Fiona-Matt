@@ -4,16 +4,16 @@ window.FionaSources = (() => {
   const definitions = [
     ['bestenliste', 'Swiss Athletics · U18 Rankings', d => !!d?.disciplines],
     ['wa-pbs', 'World Athletics · Bestleistungen', d => Array.isArray(d?.pbs)],
-    ['results', 'World Athletics · Resultate / Punkte', Array.isArray],
+    ['results', 'World Athletics · Resultate / Punkte', d => Array.isArray(d) || Array.isArray(d?.results)],
     ['lieteam', 'Team Liechtenstein', d => d && Object.values(d).some(a => Array.isArray(a?.discs))],
     ['calendar', 'Fionas Wettkampf- & Trainingskalender', Array.isArray],
     ['chcalendar', 'Schweizer Wettkampfkalender', d => Array.isArray(d?.events)],
     ['upcoming', 'Kommende Wettkämpfe', d => Array.isArray(d) || Array.isArray(d?.events)]
   ];
-  async function load([action, title, validate]) {
+  async function load([action, title, validate], force=false) {
     const key = 'fiona-v2-source:' + action;
     try {
-      const response = await fetch(base + '?action=' + action, {cache:'no-store', signal:AbortSignal.timeout(15000)});
+      const response = await fetch(base + '?action=' + action + (action==='results' && force ? '&force=1' : ''), {cache:'no-store', signal:AbortSignal.timeout(15000)});
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const data = await response.json();
       if (!validate(data)) throw new Error('Unbekanntes Datenformat');
@@ -37,10 +37,10 @@ window.FionaSources = (() => {
   }
   return {
     definitions,
-    loadOne:async action => {
+    loadOne:async (action,options={}) => {
       const def=definitions.find(d=>d[0]===action);
       if (!def) throw new Error('Unbekannte Quelle');
-      return load(def);
+      return load(def,!!options.force);
     },
     loadAll:async (callback=()=>{}) => Promise.allSettled(definitions.map(async def => callback(await load(def))))
   };

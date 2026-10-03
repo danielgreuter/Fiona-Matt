@@ -11,7 +11,7 @@
     const card=el('section',null,'card span-12');card.append(el('h2',record.title));
     card.append(el('p',record.status==='live'?'Quelle erreichbar · abgerufen '+new Date(record.loadedAt).toLocaleString('de-CH'):record.status==='cache'?'Gespeicherter Stand · '+new Date(record.loadedAt).toLocaleString('de-CH'):'Quelle momentan nicht erreichbar','data-note'));
     const d=record.data;
-    if(d){const count=Array.isArray(d)?d.length:Array.isArray(d.events)?d.events.length:Array.isArray(d.pbs)?d.pbs.length:record.action==='lieteam'?Object.keys(d).length:Object.keys(d.disciplines||{}).length;card.append(el('p',count+' Einträge / Bereiche verfügbar'));}
+    if(d){const count=Array.isArray(d)?d.length:Array.isArray(d.results)?d.results.length:Array.isArray(d.events)?d.events.length:Array.isArray(d.pbs)?d.pbs.length:record.action==='lieteam'?Object.keys(d).length:Object.keys(d.disciplines||{}).length;card.append(el('p',count+' Einträge / Bereiche verfügbar'));}
     if(d){const raw=el('details');raw.append(el('summary','Vollständige Quelldaten'),el('pre',JSON.stringify(d,null,2)));card.append(raw);}
     else card.append(el('p','Alle bisherigen Ansichten und gespeicherten Informationen bleiben über „Bisherige App“ erreichbar.'));
     card.dataset.source=record.action;
