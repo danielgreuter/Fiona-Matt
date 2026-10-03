@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#08111f">
+  <meta name="theme-color" content="#1E3A8A">
   <meta name="description" content="Fiona Matt Athletics · Performance Dashboard">
   <title>Fiona Matt Athletics · V2</title>
   <link rel="manifest" href="./manifest.webmanifest">
@@ -11,45 +11,61 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <div id="splash-screen" aria-label="Fiona Matt Athletics Intro">
+    <img class="splash-logo" src="./icon-192-fixed.png" alt="Fionas FM-Logo" width="192" height="192">
+    <div class="splash-name"><span>Fiona</span> Matt</div>
+    <p class="splash-sub">Athletics · Liechtenstein</p>
+    <button id="skipIntro" class="splash-skip" type="button">App öffnen</button>
+  </div>
+  <noscript><style>#splash-screen{display:none}</style></noscript>
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="brand-mark">FM</div>
-        <div class="brand-copy"><strong>Fiona Matt Athletics</strong><span>Performance Dashboard · V2</span></div>
+        <button id="replayIntro" class="brand-logo" type="button" aria-label="Fionas Intro ansehen"><img src="./icon-192-fixed.png" alt="FM" width="40" height="40"></button><img class="topbar-portrait" src="./assets/fiona-portrait.jpg" alt="Fiona Matt" width="36" height="36">
+        <div class="brand-copy"><strong>Fiona Matt Athletics</strong><span>Sprint · Liechtenstein</span></div>
       </div>
       <div class="top-actions"><div class="status-pill"><i class="status-dot"></i><span id="syncStatus">Daten werden geladen</span></div></div>
     </div>
   </header>
 
   <main class="shell">
+    <section class="athlete-banner" aria-label="Fiona Matt Athletenheader">
+      <div class="athlete-country"><img src="./assets/liechtenstein-flag.webp" alt="Flagge Liechtensteins" width="30" height="18">Liechtenstein <span>SPRINT</span></div>
+      <div class="athlete-identity">
+        <button id="openPortrait" class="athlete-photo" type="button" aria-label="Fionas Originalfoto vergrössern"><img src="./assets/fiona-portrait.jpg" alt="Fiona Matt mit ihrer Medaille" width="3072" height="4080"><span>Foto ansehen ↗</span></button>
+        <div class="athlete-copy"><p class="athlete-eyebrow">Fiona Matt Athletics</p><h1><span>Fiona</span> Matt<span class="name-dot">.</span></h1><p class="athlete-description">Sprinterin aus Liechtenstein.<br>100 m im Fokus.</p><div class="athlete-meta"><span>TV Eschen-Mauren</span><span>100 m · 60 m · 200 m</span><span>Jahrgang 2009</span></div></div>
+        <img class="athlete-signature" src="./icon-192-fixed.png" alt="Fionas persönliches FM-Logo" width="80" height="80">
+      </div>
+      <div class="athlete-achievements"><div><span class="achievement-medal" aria-hidden="true"><svg viewBox="0 0 48 60" width="28" height="35" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="17,0 24,8 17,22" fill="#C8860A" opacity="0.9"/>
+                <polygon points="31,0 24,8 31,22" fill="#B07008" opacity="0.9"/>
+                <circle cx="24" cy="40" r="18" fill="#F5B800"/>
+                <circle cx="24" cy="40" r="14" fill="#FFD85C"/>
+                <circle cx="24" cy="40" r="10" fill="#FFC200"/>
+                <text x="24" y="45" text-anchor="middle" font-size="12" fill="#8B6000" font-family="sans-serif" font-weight="bold">1</text>
+              </svg></span><span><strong>Schweizer Meisterin U16</strong><small>80 m · Lausanne 2024</small></span></div><div><span class="achievement-medal" aria-hidden="true"><svg viewBox="0 0 48 60" width="28" height="35" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="17,0 24,8 17,22" fill="#7A4510" opacity="0.9"/>
+                <polygon points="31,0 24,8 31,22" fill="#6A3A0A" opacity="0.9"/>
+                <circle cx="24" cy="40" r="18" fill="#CD7F32"/>
+                <circle cx="24" cy="40" r="14" fill="#E8975A"/>
+                <circle cx="24" cy="40" r="10" fill="#D4782A"/>
+                <text x="24" y="45" text-anchor="middle" font-size="12" fill="#5A2A08" font-family="sans-serif" font-weight="bold">3</text>
+              </svg></span><span><strong>SM Halle U18 · Bronze</strong><small>60 m · Magglingen 2026</small></span></div></div>
+    </section>
     <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
     <section id="view-home" class="view active">
-      <div class="hero">
-        <article class="hero-main">
-          <div class="kicker">Liechtenstein · 100 m</div>
-          <h1>Fiona<br>Matt</h1>
-          <div class="hero-sub"><span>🇱🇮 Liechtenstein</span><span>TV Eschen-Mauren</span><span>Jg. 2009</span></div>
-          <div class="goal">
-            <div class="goal-date"><strong>08</strong><span>Nov 2026</span></div>
-            <div><h3>Youth Olympic Games · Dakar</h3><p>100 m · nächstes Saisonhighlight</p></div>
-          </div>
-        </article>
-        <aside class="hero-side">
-          <div>
-            <div class="countdown-label">Countdown bis 100 m</div>
-            <div class="countdown" id="countdown">— <small>Tage</small></div>
-            <p class="data-note" id="raceDayStatus"></p>
-            <div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div>
-            <p class="data-note">100 m am 08.11.2026 · genaue Startzeit und Laufzuteilung noch nicht hinterlegt</p>
-          </div>
-          <div class="data-note" id="dataWarning">Datenstand wird geprüft …</div>
-        </aside>
-      </div>
+      <section class="dakar-card" aria-label="Fionas nächstes Saisonhighlight Dakar">
+        <div class="dakar-mascot"><img src="./assets/dakar-mascot.png" alt="Dakar-2026-Maskottchen mit erhobenen Armen" width="387" height="516"></div>
+        <div class="dakar-main"><p class="dakar-kicker">Nächstes Saisonhighlight</p><h2>Dakar <span>2026</span></h2><p class="dakar-sub">Youth Olympic Games</p><div class="dakar-date">08. November · 100 m</div><p id="raceDayStatus" class="race-status"></p></div>
+        <div class="dakar-count"><span>Bis zum Wettkampftag</span><div class="countdown" id="countdown">— <small>Tage</small></div><div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div></div>
+        <p class="dakar-schedule">Genaue Startzeit und Laufzuteilung noch nicht hinterlegt.</p>
+      </section>
+      <p class="data-note" id="dataWarning">Datenstand wird geprüft …</p>
 
       <div class="section-title">Performance</div>
       <section class="card span-12">
         <div class="card-head">
-          <div><h2 class="card-title">Key Metrics</h2><p class="card-sub">automatisch aus Swiss-Athletics-Daten berechnet</p></div>
+          <div><h2 class="card-title">Fionas Bestleistungen</h2><p class="card-sub">automatisch aus Swiss-Athletics-Daten berechnet</p></div>
           <span class="badge info" id="seasonBadge">Saison 2026</span>
         </div>
         <div class="metrics" id="metrics"></div>
@@ -166,6 +182,7 @@
   <script src="./historical-data.js"></script>
   <script src="./data-models.js"></script>
   <script src="./data-adapters.js"></script>
+  <script src="./personal-ui.js"></script>
   <script src="./app.js"></script>
   <script src="./migration-ui.js"></script>
   <script src="./extensions.js"></script>

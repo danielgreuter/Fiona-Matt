@@ -1,10 +1,14 @@
-const CACHE_NAME='fiona-matt-v2-20261003c';
+const CACHE_NAME='fiona-matt-v2-20261003-personal';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
+  '/Fiona-Matt/personal-ui.js',
+  '/Fiona-Matt/assets/fiona-portrait.jpg',
+  '/Fiona-Matt/assets/liechtenstein-flag.webp',
+  '/Fiona-Matt/assets/dakar-mascot.png',
   '/Fiona-Matt/data-adapters.js',
   '/Fiona-Matt/extensions.js',
   '/Fiona-Matt/historical-data.js',

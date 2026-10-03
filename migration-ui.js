@@ -35,10 +35,10 @@
     const ys=rows.map(r=>r.score),min=Math.min(...ys)-15,max=Math.max(...ys)+15;
     const times=rows.map(r=>Date.parse(r.dateISO+'T00:00:00Z'));const lo=Math.min(...times),hi=Math.max(...times);
     const x=i=>pad+(hi===lo?0.5:(times[i]-lo)/(hi-lo))*(width-2*pad),y=v=>height-pad-(v-min)/(max-min)*(height-2*pad);
-    for(const v of [min,(min+max)/2,max]){const line=document.createElementNS(ns,'line');for(const [key,val] of Object.entries({x1:pad,x2:width-pad,y1:y(v),y2:y(v),stroke:'#33465f'}))line.setAttribute(key,val);svg.append(line);const text=document.createElementNS(ns,'text');text.setAttribute('x',2);text.setAttribute('y',y(v)+4);text.setAttribute('fill','#9fb0c7');text.textContent=Math.round(v);svg.append(text);}
-    const path=document.createElementNS(ns,'path');path.setAttribute('d',rows.map((r,i)=>`${i?'L':'M'}${x(i)},${y(r.score)}`).join(' '));path.setAttribute('stroke','#6ee7ff');path.setAttribute('fill','none');path.setAttribute('stroke-width','3');svg.append(path);
-    rows.forEach((r,i)=>{const dot=document.createElementNS(ns,'circle');for(const [k,v] of Object.entries({cx:x(i),cy:y(r.score),r:5,fill:r.origin==='World Athletics'?'#6ee7ff':'#8b5cf6'}))dot.setAttribute(k,v);const title=document.createElementNS(ns,'title');title.textContent=r.date+' · '+r.score+' Punkte · '+r.origin;dot.append(title);svg.append(dot);});
-    parent.append(svg);parent.append(node('p',rows[0].date+' → '+rows[rows.length-1].date+' · Türkis: WA-Resultate · Violett: historische V1-Daten','data-note'));
+    for(const v of [min,(min+max)/2,max]){const line=document.createElementNS(ns,'line');for(const [key,val] of Object.entries({x1:pad,x2:width-pad,y1:y(v),y2:y(v),stroke:'#e3e8f2'}))line.setAttribute(key,val);svg.append(line);const text=document.createElementNS(ns,'text');text.setAttribute('x',2);text.setAttribute('y',y(v)+4);text.setAttribute('fill','#66758c');text.textContent=Math.round(v);svg.append(text);}
+    const path=document.createElementNS(ns,'path');path.setAttribute('d',rows.map((r,i)=>`${i?'L':'M'}${x(i)},${y(r.score)}`).join(' '));path.setAttribute('stroke','#2563eb');path.setAttribute('fill','none');path.setAttribute('stroke-width','3');svg.append(path);
+    rows.forEach((r,i)=>{const dot=document.createElementNS(ns,'circle');for(const [k,v] of Object.entries({cx:x(i),cy:y(r.score),r:5,fill:r.origin==='World Athletics'?'#2563eb':'#dc2626'}))dot.setAttribute(k,v);const title=document.createElementNS(ns,'title');title.textContent=r.date+' · '+r.score+' Punkte · '+r.origin;dot.append(title);svg.append(dot);});
+    parent.append(svg);parent.append(node('p',rows[0].date+' → '+rows[rows.length-1].date+' · Blau: WA-Resultate · Rot: historische V1-Daten','data-note'));
   }
   function renderWA(){
     const root=$('#waContent'),c=card('WA-Punkte & Entwicklung','Punkte aus den bestehenden Quellen; historische Einträge werden sichtbar gekennzeichnet.');

@@ -17,11 +17,11 @@ Die neue Oberfläche ist auf `v2` vorbereitet. `main`, die öffentliche App, bes
 
 Diese Screenshots verwenden **simulierte Testantworten und den vorhandenen lokalen Resultatbestand**. Sie belegen die Darstellung, nicht aktuelle sportliche Bestleistungen oder Live-Erreichbarkeit.
 
-[Mobile Vorschau](docs/v2-mobile-preview.jpg) · [Desktop Vorschau](docs/v2-desktop-preview.jpg)
+[Mobile Vorschau](docs/v2-mobile-preview.jpg) · [Desktop Vorschau](docs/v2-desktop-preview.jpg) · [FM-Intro](docs/v2-intro-preview.jpg)
 
 ## Validierung
 
-- `npm test`: 11 Daten-/UI-Regressionstests bestanden, insbesondere Saisontrennung, Teil- und Gesamtausfälle, Kalenderfehler sowie explizites Löschen.
+- `npm test`: 12 Daten-/UI-Regressionstests bestanden, insbesondere Saisontrennung, Teil- und Gesamtausfälle, Kalenderfehler sowie explizites Löschen.
 - `npm run test:browser`: echter Chromium, neun Ansichten bei 320, 390 und 1440 Pixeln; keine JavaScript-Fehler und kein horizontaler Seitenüberlauf. WA-Zoom und Dialoge geprüft.
 - JavaScript-Syntax geprüft. Screenshots von Desktop, Smartphone, WA-Zoom, Rankings, Training, Team und Kalender visuell kontrolliert.
 - Testzugriffe schreiben keine echten Kalenderdaten. Die automatisierten Tests intercepten alle externen APIs.
@@ -33,3 +33,11 @@ Die Live-Worker-Abfragen liefern aus dieser Entwicklungsumgebung HTTP 403. Aktue
 Lokal: `npm ci --ignore-scripts`, `npm test`, statischen Server im Repository starten. Browserprüfung mit installiertem Playwright-Chromium; alternativ `FIONA_BROWSER_PATH=/pfad/zu/chromium npm run test:browser`.
 
 Screenshots im Repository werden nur mit `FIONA_EXPORT_PREVIEWS=1` bewusst aktualisiert; normale Browsertests schreiben ausschliesslich temporäre QA-Dateien.
+
+## Persönlicher Designstand nach Daniels Rückmeldung
+
+Die Licht-/Farbwelt orientiert sich wieder an V1: helle Flächen, Liechtenstein-Blau und Rot. Fionas unverändertes Originalfoto, der grosse Name, Vereins-/Disziplinangaben sowie die beiden übernommenen Medaillen bleiben über allen Tabs sichtbar. Auch die kompakte Kopfzeile zeigt Foto und Original-FM-Logo. Das animierte Intro mit ihrem Logo erscheint beim Öffnen und kann übersprungen oder erneut angesehen werden. Das von Daniel hochgeladene Dakar-Maskottchen ist im Dakar-Bereich eingebunden.
+
+Das Foto und die Flagge wurden bytegleich aus V1 ausgelagert; die Maskottchen-Dateien wurden unverändert aus den Anhängen übernommen. Die Bildgestaltung erfolgt ausschliesslich über Layout/CSS. Keine KI-Neuerstellung von Fiona oder ihrem Logo.
+
+Fester Rückkehrpunkt der Originalversion: siehe [V1_RESTORE.md](V1_RESTORE.md).

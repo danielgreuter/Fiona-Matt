@@ -40,16 +40,17 @@
         if(url.startsWith("http")){try{localStorage.setItem("fiona-v2-sa-results",JSON.stringify(data));}catch{}}
         window.dispatchEvent(new CustomEvent("fiona-results",{detail:data}));
         $("#syncStatus").textContent=url.startsWith("http")?"Live-Daten":"Lokale Daten";
+        $("#syncStatus").closest(".status-pill").dataset.mode=url.startsWith("http")?"live":"cache";
         renderAll();
         return;
       }catch(e){
         lastError=e;
         if(url.startsWith("http")){
-          try{const data=JSON.parse(localStorage.getItem("fiona-v2-sa-results"));if(Array.isArray(data?.results)){state.data=window.FionaModels.normalizeResults(data);window.dispatchEvent(new CustomEvent("fiona-results",{detail:state.data}));$("#syncStatus").textContent="Gespeicherte Daten";renderAll();return;}}catch{}
+          try{const data=JSON.parse(localStorage.getItem("fiona-v2-sa-results"));if(Array.isArray(data?.results)){state.data=window.FionaModels.normalizeResults(data);window.dispatchEvent(new CustomEvent("fiona-results",{detail:state.data}));$("#syncStatus").textContent="Gespeicherte Daten";$("#syncStatus").closest(".status-pill").dataset.mode="cache";renderAll();return;}}catch{}
         }
       }
     }
-    $("#syncStatus").textContent="Datenfehler";
+    $("#syncStatus").textContent="Datenfehler";$("#syncStatus").closest(".status-pill").dataset.mode="error";
     $("#dataWarning").textContent="Athletikdaten konnten nicht geladen werden.";
     console.error(lastError);
   }
@@ -70,7 +71,7 @@
     if(!scraped || !Number.isFinite(scraped.getTime())) {$("#dataWarning").textContent="Datenstand nicht angegeben · Aktualität unbestätigt";return;}
     const age=daysBetween(scraped,new Date());
     $("#dataWarning").textContent=`Datenquelle: Swiss Athletics · Stand ${fmtDate(scraped)} · ${age} Tage alt`;
-    $("#dataWarning").className="data-note";
+    $("#dataWarning").className=age>3?"data-note is-stale":"data-note";
     if(age<=3){
       $("#dataWarning").textContent=`Datenquelle: Swiss Athletics · aktuell per ${fmtDate(scraped)}`;
     }
@@ -112,7 +113,7 @@
     const ticks=[ymin,(ymin+ymax)/2,ymax];
     el.innerHTML=`
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="100 Meter Entwicklung">
-        <defs><linearGradient id="lineGradient" x1="0" x2="1"><stop offset="0%" stop-color="#6ee7ff"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+        <defs><linearGradient id="lineGradient" x1="0" x2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#dc2626"/></linearGradient></defs>
         ${ticks.map(t=>`<line class="chart-grid" x1="${p.l}" x2="${W-p.r}" y1="${y(t)}" y2="${y(t)}"/><text class="chart-axis" x="2" y="${y(t)+3}">${t.toFixed(2)}</text>`).join("")}
         <path class="chart-line" d="${path}"/>
         ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind||"n/a")}</title></circle>`).join("")}
