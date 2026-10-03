@@ -31,3 +31,15 @@ dialog{background:white;color:var(--text);border:1px solid var(--line);border-ra
 .team-points{color:#1e3a8a;white-space:nowrap;font-size:14px;padding-top:5px}
 .team-ranking-row .comparison-track{grid-column:2/4;margin:0}
 @media(max-width:420px){.team-ranking-row{grid-template-columns:24px minmax(0,1fr);gap:6px 8px;padding:14px 4px}.team-points{grid-column:2;padding-top:0}.team-ranking-row .comparison-track{grid-column:2}.senegal-flag{width:48px;height:32px}.wa-source-brand img{width:120px}}
+/* Liechtenstein backdrop echoes Fiona's banner; cards stay white. */
+html{background:#1e3a8a}body{background:linear-gradient(114deg,#1e3a8a 0%,#2457c5 63%,#3579ed 76%,#dc3544 76.2%,#b91c1c 100%);background-attachment:fixed}
+.section-title,.footer,.shell>#dataWarning{color:#e3ecff}.section-nav .tab{background:#fff}.shell>.data-note{color:#e3ecff}
+#metrics .metric{text-align:left;width:100%;border:1px solid #dce6f9;transition:box-shadow .15s,border-color .15s,background .15s}
+#metrics .metric.selected{border:2px solid #2563eb;padding:17px 15px;background:#eef4ff;box-shadow:0 0 0 3px #2563eb12}
+#metrics .metric.selected .metric-label{color:#1e3a8a}#metrics .metric:active{transform:translateY(1px)}
+.event-heading{display:flex;align-items:center;gap:12px}.event-heading h3{margin:4px 0 8px}.event-emblem{width:28px;height:32px;object-fit:contain;flex-shrink:0}
+@media(max-width:600px){#metrics .metric.selected{padding:13px 11px}.event-emblem{width:25px;height:29px}}
+#dataWarning{color:#e3ecff}#metrics{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:600px){#metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#metrics .metric:last-child{grid-column:1/-1}}
+
+#dataWarning.is-stale{color:#8a4b08}

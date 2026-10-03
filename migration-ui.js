@@ -2,17 +2,17 @@
   const M=window.FionaModels,H=window.FIONA_HISTORICAL;
   const sources={};
   let saResults=[];
-  const state={rankDisc:'100m',rankYear:'2026',waDisc:'100m',waYear:'Alle',teamDisc:'Alle',teamGender:'Alle',calendarSource:'Fiona',calendarSearch:'',calendarPeriod:'Kommende',weekOffset:0};
+  const state={rankDisc:'100m',rankYear:'2026',waDisc:'100m',waYear:'Alle',teamDisc:'Alle',teamGender:'Alle',calendarSource:'Fiona',calendarSearch:'',calendarPeriod:'Alle',weekOffset:0};
   const $=s=>document.querySelector(s);
   const node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=String(text);if(cls)e.className=cls;return e;};
   const button=(label,callback,cls='tab')=>{const b=node('button',label,cls);b.type='button';b.onclick=callback;return b;};
   function select(label,values,value,change){const wrap=node('label',null,'control');wrap.append(node('span',label));const s=node('select',null,'select');for(const [v,l] of values.map(x=>Array.isArray(x)?x:[x,x])){const o=node('option',l);o.value=v;s.append(o);}s.value=value;s.onchange=()=>change(s.value);wrap.append(s);return wrap;}
-  const discs=[['60m','60 m'],['100m','100 m'],['200m','200 m'],['Long Jump','Weitsprung']];
+  const discs=[['60m','60 m'],['100m','100 m'],['150m','150 m'],['200m','200 m'],['Long Jump','Weitsprung']];
   const value=(r)=>r?.result||r?.mark||'—';
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Vaduz',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const safeLink=(label,url)=>{const a=node('a',label,'tab');try{const u=new URL(url);if(u.protocol!=='https:')return node('span',label);a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';}catch{return node('span',label);}return a;};
   const card=(title,sub)=>{const c=node('section',null,'card');c.append(node('h2',title));if(sub)c.append(node('p',sub,'card-sub'));return c;};
-  function status(parent,action){const r=sources[action];parent.append(button('↻ Aktualisieren',async()=>{await window.FionaSources.loadOne(action,{force:true});}));parent.append(node('p',!r?'Quelle wird geladen …':r.status==='live'?'Quelle erreichbar · Abruf '+new Date(r.loadedAt).toLocaleString('de-CH'):r.status==='cache'?'Gespeicherter Abruf '+new Date(r.loadedAt).toLocaleString('de-CH')+' · Live-Quelle nicht erreichbar':'Live-Quelle nicht erreichbar · historische V1-Daten, soweit vorhanden','data-note'));}
+  function status(parent,action){const r=sources[action];parent.append(button('↻ Aktualisieren',async()=>{await window.FionaSources.loadOne(action,{force:true});}));parent.append(node('p',!r?'Quelle wird geladen …':r.status==='live'?'Quelle erreichbar · Abruf '+new Date(r.loadedAt).toLocaleString('de-CH'):r.status==='cache'?'Gespeicherter Abruf '+new Date(r.loadedAt).toLocaleString('de-CH')+' · Live-Quelle nicht erreichbar':'Live-Quelle nicht erreichbar · kein aktueller Abruf','data-note'));}
   function table(parent,headers,rows){const wrap=node('div',null,'table-wrap');const t=node('table',null,'data-table');const head=node('thead');const tr=node('tr');headers.forEach(h=>tr.append(node('th',h)));head.append(tr);t.append(head);const body=node('tbody');for(const item of rows){const r=node('tr');if(item.fiona)r.className='fiona-row';for(const cell of item.cells){const td=node('td');if(cell instanceof Element)td.append(cell);else td.textContent=String(cell??'—');r.append(td);}body.append(r);}t.append(body);wrap.append(t);parent.append(wrap);}
   function dateLabel(e){return e.date||e.start?.dateTime||e.start?.date||'';}
   function details(parent,record){const d=node('details');d.append(node('summary','Vollständige Details'),node('pre',JSON.stringify(record,null,2)));parent.append(d);}
@@ -38,9 +38,10 @@
     const x=i=>pad+(hi===lo?0.5:(times[i]-lo)/(hi-lo))*(width-2*pad),y=v=>height-pad-(v-min)/(max-min)*(height-2*pad);
     for(const v of [min,(min+max)/2,max]){const line=document.createElementNS(ns,'line');for(const [key,val] of Object.entries({x1:pad,x2:width-pad,y1:y(v),y2:y(v),stroke:'#e3e8f2'}))line.setAttribute(key,val);svg.append(line);const text=document.createElementNS(ns,'text');text.setAttribute('x',2);text.setAttribute('y',y(v)+4);text.setAttribute('fill','#66758c');text.textContent=Math.round(v);svg.append(text);}
     const path=document.createElementNS(ns,'path');path.setAttribute('d',rows.map((r,i)=>`${i?'L':'M'}${x(i)},${y(r.score)}`).join(' '));path.setAttribute('stroke','#2563eb');path.setAttribute('fill','none');path.setAttribute('stroke-width','3');svg.append(path);
+    const bestIndex=rows.findIndex(r=>r.score===Math.max(...ys));const best=rows[bestIndex];const bestLabel=document.createElementNS(ns,'text');bestLabel.setAttribute('x',Math.min(width-pad,Math.max(pad,x(bestIndex))));bestLabel.setAttribute('y',Math.max(20,y(best.score)-15));bestLabel.setAttribute('text-anchor',x(bestIndex)>width/2?'end':'start');bestLabel.setAttribute('fill','#1e3a8a');bestLabel.setAttribute('font-weight','700');bestLabel.textContent=best.score+' Punkte · '+resultLabel({...best,discipline:state.waDisc});svg.append(bestLabel);
     rows.forEach((r,i)=>{const dot=document.createElementNS(ns,'circle');for(const [k,v] of Object.entries({cx:x(i),cy:y(r.score),r:5,fill:r.origin==='World Athletics'?'#2563eb':'#dc2626'}))dot.setAttribute(k,v);const title=document.createElementNS(ns,'title');title.textContent=r.date+' · '+resultLabel({...r,discipline:state.waDisc})+' · '+r.score+' Punkte · Wind '+windLabel(r)+' · '+r.origin;dot.append(title);dot.setAttribute('tabindex','0');dot.setAttribute('role','button');dot.setAttribute('aria-label',title.textContent);dot.onclick=()=>waResultDetail({...r,discipline:state.waDisc});dot.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dot.onclick();}};svg.append(dot);});
     for(const i of [...new Set([0,Math.floor((rows.length-1)/2),rows.length-1])]){const label=document.createElementNS(ns,'text');label.setAttribute('x',x(i));label.setAttribute('y',height-10);label.setAttribute('text-anchor',i===0?'start':i===rows.length-1?'end':'middle');label.setAttribute('fill','#66758c');label.textContent=rows[i].dateISO;svg.append(label);}
-    parent.append(svg);parent.append(node('p',rows[0].date+' → '+rows[rows.length-1].date+' · Blau: WA-Einzelresultate · Rot: historische V1-Monatswerte · Punkt antippen für Zeit und Wind','data-note'));
+    parent.append(svg);parent.append(node('p',rows[0].date+' → '+rows[rows.length-1].date+' · Abgerufene WA-Einzelresultate · Punkt antippen für Zeit und Wind','data-note'));
   }
   function waBrand(parent){const a=safeLink('','https://worldathletics.org/');a.className='wa-source-brand';const img=node('img');img.src='./assets/world-athletics-logo.svg';img.alt='World Athletics';img.width=180;img.height=40;a.append(img,node('span','Datenquelle'));parent.append(a);}
   const waResults=()=>{const data=sources.results?.data;return Array.isArray(data)?data:data?.results||[];};
@@ -56,7 +57,7 @@
     const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.waDisc,v=>{state.waDisc=v;renderWA();}),select('Zeitraum',['Alle','2026','2025','2024'],state.waYear,v=>{state.waYear=v;renderWA();}));c.append(controls);status(c,'results');
     const live=waResults(),latest=live.map(r=>M.dateKey(r.date)).filter(Boolean).sort().at(-1);
     if(latest)c.append(node('p','Neuester Einzelresultat-Eintrag der WA-Quelle: '+latest+' · Ein erfolgreicher Abruf bestätigt keinen vollständigen Saisonbestand.','data-note'));
-    const raw=M.scoreRows(live,H.athlete.seasons?.waScoreHistory?.[state.waDisc],state.waDisc);
+    const raw=M.scoreRows(live,[],state.waDisc);
     const rows=raw.filter(r=>r.dateISO&&(state.waYear==='Alle'||r.dateISO.startsWith(state.waYear)));
     const filtered=live.filter(r=>M.discipline(r.discipline||r.name)===state.waDisc&&(state.waYear==='Alle'||M.dateKey(r.date).startsWith(state.waYear))).map(r=>({...r,origin:'World Athletics'}));
     const showTable=(parent,list)=>table(parent,['Datum','Zeit / Leistung','WA-Punkte','Wind','Wettkampf / Ort'],list.map(r=>({cells:[r.date,button(resultLabel(r),()=>waResultDetail(r),'athlete-link'),r.score>0?r.score:'—',windLabel(r),[r.competition,r.venue].filter(Boolean).join(' · ')||'—']})));
@@ -68,9 +69,9 @@
     if(filtered.length)showTable(c,filtered.slice().sort((a,b)=>M.dateKey(b.date).localeCompare(M.dateKey(a.date))));else c.append(node('p','Keine Einzelresultate von der Quelle geliefert.'));
     const newer=saResults.filter(r=>M.discipline(r.discipline)===state.waDisc&&M.dateKey(r.dateISO||r.date)> (latest||'')&&(state.waYear==='Alle'||M.dateKey(r.dateISO||r.date).startsWith(state.waYear))).sort((a,b)=>M.dateKey(b.dateISO||b.date).localeCompare(M.dateKey(a.dateISO||a.date)));
     if(newer.length){c.append(node('h3','Neuere Resultate · Swiss Athletics'));c.append(node('p','Diese Resultate sind neuer als die WA-Einzelresultat-Liste. WA-Punkte werden für sie von der WA-Quelle bisher nicht geliefert.','data-note'));showTable(c,newer.map(r=>({...r,score:null,origin:'Swiss Athletics'})));c.append(safeLink('Swiss-Athletics-Quelle','https://www.swiss-athletics.ch/'));}
-    c.append(node('p','Punkte werden unverändert aus der Quelle übernommen. Fehlende Punkte oder Windwerte werden nicht geschätzt. Historische Monatswerte sind im Chart rot markiert.','data-note'));
-    const pbs=sources.results?.data?.pbs||sources['wa-pbs']?.data?.pbs||H.athlete.personalBests;
-    if(pbs?.length){c.append(node('h3',sources.results?.data?.pbs||sources['wa-pbs']?.data?'Bestleistungen laut World Athletics':'Bestleistungen · historischer V1-Stand'));if(!sources.results?.data?.pbs&&!sources['wa-pbs']?.data)c.append(node('p','Eingebettete Bestleistungen aus V1 · Aktualität nicht bestätigt','data-note'));table(c,['Disziplin','Leistung','Punkte','Datum','Wind'],pbs.map(r=>({cells:[r.discipline,resultLabel(r),r.score>0?r.score:'—',r.date,windLabel(r)]})));c.append(node('p','Die PB-Liste ist eine separate Quellenliste. Ein PB-Eintrag ohne gelieferten Wind ist kein Nachweis eines regulären Resultats.','data-note'));}
+    c.append(node('p','Punkte werden unverändert aus der Quelle übernommen. Fehlende Punkte oder Windwerte werden nicht geschätzt. Der Chart enthält ausschliesslich abgerufene WA-Einzelresultate.','data-note'));
+    const pbs=sources.results?.data?.pbs||sources['wa-pbs']?.data?.pbs;
+    if(pbs?.length){c.append(node('h3','Abgerufene Bestleistungen · World Athletics'));table(c,['Disziplin','Leistung','Punkte','Datum','Wind'],pbs.map(r=>({cells:[r.discipline,resultLabel(r),r.score>0?r.score:'—',r.date,windLabel(r)]})));c.append(node('p','Die PB-Liste ist eine separate Quellenliste. Ein PB-Eintrag ohne gelieferten Wind ist kein Nachweis eines regulären Resultats.','data-note'));}
     root.replaceChildren(c);
   }
   const teamMeta=name=>H.team.find(a=>a.name===name)||{name};
@@ -100,8 +101,16 @@
     c.append(node('p','Gleiche Punktzahl = gleicher Rang. Ohne Punkte wird kein Rang vergeben. Werden weniger als zwei Disziplinen geliefert, zeigen wir nur die vorhandenen. WA-Leistungspunkte vergleichen einzelne Leistungen, nicht das offizielle World Ranking.','data-note'));
     const roster=node('details');roster.append(node('summary','Athlet:innen & Profile'));for(const a of H.team){const line=node('p');line.append(button(a.name,()=>athleteDetail(a.name,state.teamDisc==='Alle'?'100m':state.teamDisc),'athlete-link'),node('span',' · '+a.club));roster.append(line);}c.append(roster);root.replaceChildren(c);
   }
+  function eventEmblem(e){
+    const cantons='ZH BE LU UR SZ OW NW GL ZG FR SO BS BL SH AR AI SG GR AG TG TI VD VS NE GE JU'.split(' ');
+    let code=String(e.canton||'').toUpperCase();const loc=[e.venue,e.venueCity,e.location].filter(x=>typeof x==='string').join(' ').toLowerCase();
+    if(!code){for(const [city,canton]of [['basel','BS'],['thun','BE'],['magglingen','BE'],['langenthal','BE'],['bellinzona','TI'],['freiburg','FR'],['fribourg','FR'],['freienbach','SZ'],['frauenfeld','TG'],['st. gallen','SG'],['winterthur','ZH']])if(loc.includes(city)){code=canton;break;}}
+    let src='',alt='';if(cantons.includes(code)){src='https://fiona-proxy.daniel-greuter.workers.dev?action=wappen&v=3&c='+code;alt='Kantonswappen '+code;}
+    else {const country=String(e.country||'').toUpperCase();if(['LIE','LI'].includes(country)||/schaan|vaduz|mauren|liechtenstein/.test(loc)){src='./assets/liechtenstein-flag.webp';alt='Liechtenstein';}else if(country==='SEN'||loc.includes('dakar')){src='./assets/senegal-flag.svg';alt='Senegal';}else if(['AUT','ITA','GER','MON'].includes(country)){src='https://fiona-proxy.daniel-greuter.workers.dev?action=wappen&v=3&c='+country;alt=country;}}
+    if(!src)return null;const img=node('img',null,'event-emblem');img.src=src;img.alt=alt;img.width=28;img.height=32;img.loading='lazy';img.onerror=()=>{img.hidden=true;};return img;
+  }
   function eventRow(parent,e,editable=false){
-    const box=node('article',null,'calendar-event');box.append(node('div',dateLabel(e),'event-date'),node('h3',e.name||e.title||e.summary||'Termin'));const location=e.venue||(typeof e.location==='string'?e.location:'');if(location)box.append(node('p',location));
+    const box=node('article',null,'calendar-event');const heading=node('div',null,'event-heading');const emblem=eventEmblem(e);if(emblem)heading.append(emblem);const title=node('div');title.append(node('div',dateLabel(e),'event-date'),node('h3',e.name||e.title||e.summary||'Termin'));heading.append(title);box.append(heading);const location=e.venue||(typeof e.location==='string'?e.location:'');if(location)box.append(node('p',location));
     const comment=e.comment||e.description||e.details||e.note;if(comment)box.append(node('p',comment,'event-comment'));
     const tags=[...(e.disciplines||[]),e.fionaStarting?'Fiona startet':'',e.deadline?'Meldeschluss: '+e.deadline:'',e.time||e.startTime||''].filter(Boolean);if(tags.length)box.append(node('p',tags.join(' · '),'data-note'));
     const actions=node('div',null,'tabs');actions.append(button('Details',()=>{const root=openDetail(e.name||e.title||'Termin');eventRow(root,e,false);details(root,e);}));if(editable&&e.id!=null)actions.append(button('Bearbeiten',()=>eventEditor(e)),button('Löschen',()=>deleteEvent(e)));box.append(actions);parent.append(box);
@@ -114,6 +123,7 @@
     if(state.calendarSource==='Fiona'&&sources.calendar?.data)events=events.filter(M.isCompetition);
     if(state.calendarSource==='Fiona'&&!sources.calendar?.data)c.append(node('p','Historischer V1-Kalender · Termine und Teilnahmestatus können überholt sein.','data-note'));
     events=events.filter(e=>{const d=M.dateKey(e.date||e.start);return state.calendarPeriod==='Alle'||d&&(state.calendarPeriod==='Kommende'?d>=today():d<today());}).filter(e=>JSON.stringify(e).toLocaleLowerCase('de').includes(state.calendarSearch.toLocaleLowerCase('de'))).slice().sort((a,b)=>M.dateKey(a.date||a.start).localeCompare(M.dateKey(b.date||b.start)));
+    const future=events.filter(e=>M.dateKey(e.date||e.start)>=today());c.append(node('p',events.length+' Wettkämpfe in dieser Ansicht · '+future.length+' kommende. Der Kalender zeigt den gelieferten Quellenstand.','data-note'));
     const liveEditable=state.calendarSource==='Fiona'&&sources.calendar?.status==='live';for(const e of events)eventRow(c,e,liveEditable);if(!events.length)c.append(node('p','Keine Wettkämpfe für diesen Filter.'));root.replaceChildren(c);
   }
   async function mutation(action,body){
