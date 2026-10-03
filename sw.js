@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261003-personal';
+const CACHE_NAME='fiona-matt-v2-20261003-wa-team-2';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
@@ -9,6 +9,8 @@ const ASSETS=[
   '/Fiona-Matt/assets/fiona-portrait.jpg',
   '/Fiona-Matt/assets/liechtenstein-flag.webp',
   '/Fiona-Matt/assets/dakar-mascot.png',
+  '/Fiona-Matt/assets/senegal-flag.svg',
+  '/Fiona-Matt/assets/world-athletics-logo.svg',
   '/Fiona-Matt/data-adapters.js',
   '/Fiona-Matt/extensions.js',
   '/Fiona-Matt/historical-data.js',

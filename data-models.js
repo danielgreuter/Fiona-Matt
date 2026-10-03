@@ -36,7 +36,7 @@
     return [...unique.values()].sort((a,b)=>dateKey(a.date||a.start).localeCompare(dateKey(b.date||b.start)));
   }
   function scoreRows(live,history,disc) {
-    const rows = (live||[]).filter(r=>discipline(r.discipline||r.name)===disc && number(r.score)>0)
+    const rows = (Array.isArray(live)?live:live?.results||[]).filter(r=>discipline(r.discipline||r.name)===disc && number(r.score)>0)
       .map(r=>({...r,score:number(r.score),dateISO:dateKey(r.date),origin:'World Athletics'}));
     for (const h of history||[]) {
       const dateISO = dateKey(h.label);
@@ -60,7 +60,23 @@
     const gap = other => other && Number.isFinite(number(other.result)) && Number.isFinite(number(fiona?.result)) ? Math.abs(number(fiona.result)-number(other.result)).toFixed(2) : null;
     return {rows,fiona,ahead,behind,gapAhead:gap(ahead),gapBehind:gap(behind),historical:!live,year,disc};
   }
-  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking};
+
+  function teamRanking(data,roster,gender='Alle',disc='Alle') {
+    const names=[...new Set([...roster.map(a=>a.name),...Object.keys(data||{})])];
+    const rows=[];
+    for(const name of names){
+      const meta=roster.find(a=>a.name===name)||{name};
+      if(gender!=='Alle'&&meta.gender!==gender)continue;
+      const best=(data?.[name]?.discs||[]).slice().sort((a,b)=>(number(b.score)||0)-(number(a.score)||0)).slice(0,2);
+      for(const d of best)if(disc==='Alle'||discipline(d.name||d.discipline)===disc)rows.push({...d,athleteName:name,meta,updated:data[name].updated});
+      if(!best.length&&disc==='Alle')rows.push({athleteName:name,meta,name:'—',result:'—',score:null});
+    }
+    rows.sort((a,b)=>(number(b.score)||0)-(number(a.score)||0)||a.athleteName.localeCompare(b.athleteName));
+    let rank=0,previous;
+    rows.forEach((r,i)=>{const score=number(r.score);if(score>0){if(score!==previous)rank=i+1;r.rank=rank;previous=score;}else r.rank=null;});
+    return rows;
+  }
+  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking};
   api.normalizeResults = data => ({...data,results:data.results.map(raw=>{
     const dateISO=dateKey(raw.dateISO||raw.date);
     return {...raw,discipline:discipline(raw.discipline),numResult:number(raw.numResult??raw.result),dateISO,year:raw.year||dateISO.slice(0,4)};

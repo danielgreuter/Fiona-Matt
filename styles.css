@@ -15,3 +15,19 @@ dialog{background:white;color:var(--text);border:1px solid var(--line);border-ra
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
 .achievement-medal svg{width:25px;height:31px;display:block}.dakar-mascot img{clip-path:inset(1px 0)}@media(max-width:600px){.achievement-medal svg{width:20px;height:25px}}
 .status-dot{background:#94a3b8}.status-pill[data-mode=live] .status-dot{background:#059669}.status-pill[data-mode=cache] .status-dot{background:#d97706}.status-pill[data-mode=error] .status-dot{background:#dc2626}
+
+/* Dakar host and unobtrusive source attribution */
+.senegal-flag{display:block;width:60px;height:40px;margin:8px 0 13px 5px;transform:rotate(-9deg);border-radius:3px;box-shadow:0 3px 8px #172b4d25}
+.wa-source-brand{display:flex;align-items:center;gap:12px;width:fit-content;margin:10px 0 20px;text-decoration:none;color:var(--muted);font-size:11px}
+.wa-source-brand img{width:132px;height:auto;opacity:.8}
+.score-chart circle[role=button]{cursor:pointer}
+.score-chart circle[role=button]:focus{stroke:#1e3a8a;stroke-width:3;outline:none}
+.team-ranking-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:8px 12px;padding:16px 10px;border-bottom:1px solid var(--border);align-items:start}
+.team-rank{font-weight:800;color:#64748b;font-size:20px;padding-top:3px}
+.team-ranking-info{display:grid;gap:4px;min-width:0}
+.team-ranking-info .athlete-link{text-align:left;justify-self:start}
+.team-ranking-performance{display:grid;gap:3px;margin-top:5px}
+.team-ranking-performance .data-note{margin:0;font-size:11px}
+.team-points{color:#1e3a8a;white-space:nowrap;font-size:14px;padding-top:5px}
+.team-ranking-row .comparison-track{grid-column:2/4;margin:0}
+@media(max-width:420px){.team-ranking-row{grid-template-columns:24px minmax(0,1fr);gap:6px 8px;padding:14px 4px}.team-points{grid-column:2;padding-top:0}.team-ranking-row .comparison-track{grid-column:2}.senegal-flag{width:48px;height:32px}.wa-source-brand img{width:120px}}

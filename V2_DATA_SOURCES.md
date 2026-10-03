@@ -117,3 +117,12 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Tests: `npm test` prüft Datenverlust, historische Saisontrennung, Ausfälle, Teamdetails, Kalenderfehler, explizites Löschen und Navigation. Alle Schreibzugriffe sind in Tests simuliert.
 - Grenzen: Live-Worker-Abfragen aus der Entwicklungsumgebung liefern HTTP 403. Ein vollständiger Abgleich mit aktuellen Live-Payloads steht deshalb weiterhin aus. V1 bleibt zugänglich; weitere Sonderfunktionen wie der bisherige Punkte-Rechner bleiben dort bis zu ihrer gesonderten Migration.
 - Browser-QA des weiteren Reviewstands: neun Ansichten bei 320/390/1440 px ohne JavaScript-Fehler oder Seitenüberlauf, mit simulierten Quellantworten. Screenshots und Grenzen siehe `V2_REVIEW.md`.
+
+## WA-/Team-Korrektur 03.10.2026 nach Veröffentlichung
+- Live-Vertrag von `results` geprüft: `{results, pbs, topScore}` zusätzlich zum älteren Arrayformat. Bisher wurde die Objektantwort fälschlich verworfen; die Quelle und sämtliche Zusatzfelder werden jetzt akzeptiert und behalten.
+- Erzwungener WA-Abruf (`force=1`) über die vorhandene Worker-Funktion. Der aktuell gelieferte Bestand enthält 13 Einzelresultate, neuester Eintrag 01.07.2026; die PB-Liste enthält einen separaten Eintrag vom 11.07.2026. Keine Vollständigkeit der Saison behauptet.
+- Swiss-Athletics-Live-Quelle geprüft: 104 Resultate bis 06.09.2026. Neuere SA-Resultate werden zusätzlich im WA-Bereich gezeigt, ohne Punkte zu erfinden.
+- Team LIE: die zwei höchsten gelieferten Disziplinwerte pro Athlet werden gemeinsam rangiert, gleiche Punktzahl gleicher Rang, fehlende Punkte ohne Rang. Alle zwölf hinterlegten Athlet:innen bleiben erhalten.
+- WA-Einzelresultate mit Zeit/Leistung, Wind (m/s), Datum, Wettkampf und Ort; Chartpunkte per Tastatur oder Klick mit Details. Indoor ohne Wind, fehlende Winddaten ausdrücklich benannt.
+- Dezentes originales WA-Logo von `https://media.aws.iaaf.org/logos/wa-logo.svg` (auf offizieller WA-Startseite eingebunden); lokale SVG-Datei für Offline-Nutzung. Senegal-Flagge als exakte Vektorflagge im Dakar-Modul.
+- Regression: reale WA- und Team-Payloads als Testfixtures; 16 Tests und 27 Chromium-Layoutprüfungen bestanden. Kein Kalender-Schreibzugriff. V1-Archiv bleibt unverändert.
