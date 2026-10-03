@@ -38,7 +38,7 @@
             <div class="countdown-label">Countdown bis 100 m</div>
             <div class="countdown" id="countdown">— <small>Tage</small></div>
             <div class="progress-wrap">
-              <div class="progress-meta"><span>Road to Dakar</span><span id="progressText">—</span></div>
+              <div class="progress-meta"><span>Zieltermin</span><span id="progressText">—</span></div>
               <div class="progress"><span id="progressBar" style="width:0%"></span></div>
             </div>
           </div>
@@ -144,6 +144,9 @@
       </section>
     </section>
 
+    <section class="card"><h2>Daten & weitere Bereiche</h2><div class="tabs"><button class="tab" data-goto="sources">Rankings · WA · Team LIE · Kalender</button><a class="tab" href="./legacy.html">Bisherige App · alle Funktionen</a></div></section>
+    <section id="view-sources" class="view"><div class="section-title">Athletics Hub</div><div id="sourcePanels" class="grid"></div></section>
+    <dialog id="resultDetail"><button id="closeDetail" class="tab">Schliessen</button><div id="detailContent"></div></dialog>
     <div class="footer">Fiona Matt Athletics · V2 · GitHub Pages PWA</div>
   </main>
 
@@ -156,6 +159,8 @@
   </nav>
 
   <script src="./config.js"></script>
+  <script src="./data-adapters.js"></script>
   <script src="./app.js"></script>
+  <script src="./extensions.js"></script>
 </body>
 </html>

@@ -99,3 +99,10 @@ Nicht umsetzen:
 Bis zum vollständigen Funktionsabgleich bleiben bestehende Scraper und produktiven Workflows unangetastet.
 
 V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, bevor der Informationsumfang vollständig repliziert ist.
+
+## Migration 03.10.2026
+- `data-adapters.js`: unabhängige Lesezugriffe auf `bestenliste`, `wa-pbs`, `results`, `lieteam`, `calendar`, `chcalendar`, `upcoming`; vollständige Payloads bleiben erhalten. Browsercache nach erfolgreichem Abruf, sichtbarer Cache-Status bei Ausfall.
+- `extensions.js`: Rankinglisten inkl. Fiona, Team-Disziplinen und WA-Punkte, Kalender, Top-5, windunterstützte 100 m, PB-Historie, vollständige Resultatdetails.
+- `legacy.html`: unveränderte V1 aus main als Übergangsansicht. Enthält insbesondere historische eingebettete Rankings, Zoomansichten und Kalenderbearbeitung bis zur vollständigen Migration.
+- Keine Scraper, produktiven Workflows oder Proxy-Schreibpfade geändert.
+- Noch offen: vollständige native V2-Migration von WA-Zoom, Teamvergleichen, Kalenderbearbeitung und 2025-Fallbacks; visuelle Browserprüfung und Live-Quellenprüfung.

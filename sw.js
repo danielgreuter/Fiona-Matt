@@ -1,10 +1,13 @@
-const CACHE_NAME='fiona-matt-v2-20261003';
+const CACHE_NAME='fiona-matt-v2-20261003b';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
+  '/Fiona-Matt/data-adapters.js',
+  '/Fiona-Matt/extensions.js',
+  '/Fiona-Matt/athlete_results.json',
   '/Fiona-Matt/manifest.webmanifest',
   '/Fiona-Matt/icon-192-fixed.png',
   '/Fiona-Matt/icon-512.png'
@@ -17,7 +20,7 @@ self.addEventListener('install',event=>{
 
 self.addEventListener('activate',event=>{
   event.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k))))
+    caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('fiona-matt-v2-')&&k!==CACHE_NAME).map(k=>caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -32,6 +35,7 @@ self.addEventListener('fetch',event=>{
   event.respondWith(
     fetch(event.request)
       .then(response=>{
+        if (!response.ok) return response;
         const copy=response.clone();
         caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
         return response;

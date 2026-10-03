@@ -9,7 +9,7 @@
   const daysBetween=(a,b)=>Math.ceil((b-a)/86400000);
 
   function legal(r){
-    const w = parseFloat(r.wind);
+    const w = parseFloat(String(r.wind).replace(",", "."));
     return !r.windAssisted && (Number.isNaN(w) || w <= 2.0);
   }
   function byDateDesc(a,b){ return new Date(b.dateISO)-new Date(a.dateISO); }
@@ -35,6 +35,7 @@
         const data=await res.json();
         if(!data || !Array.isArray(data.results)) throw new Error("Ungültiges Datenformat");
         state.data=data;
+        window.dispatchEvent(new CustomEvent("fiona-results",{detail:data}));
         $("#syncStatus").textContent=url.startsWith("http")?"Live-Daten":"Lokale Daten";
         renderAll();
         return;
@@ -119,7 +120,9 @@
     $$("[data-chart-year]").forEach(b=>b.onclick=()=>{state.chartYear=b.dataset.chartYear;renderChartTabs();renderChart("#progressChart",state.chartYear)});
   }
 
-  function resultHtml(r){
+  function resultHtml(raw){
+    const esc=v=>String(v??" ").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
+    const r=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,typeof v==="string"?esc(v):v]));
     return `<div class="result">
       <div class="result-time">${r.result}<small> s</small></div>
       <div class="result-main"><strong>${r.disciplineLabel||r.discipline} · ${r.competition}</strong><span>${r.venue||"—"}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind:""} · ${r.place||""}</span></div>
@@ -156,7 +159,7 @@
     let arr=(state.data?.results||[]).slice().sort(byDateDesc);
     if(state.discipline!=="Alle") arr=arr.filter(r=>(r.disciplineLabel||r.discipline)===state.discipline);
     if(state.year!=="Alle") arr=arr.filter(r=>String(r.year)===String(state.year));
-    $("#allResults").innerHTML=arr.slice(0,80).map(resultHtml).join("")||'<div class="empty">Keine Resultate für diesen Filter.</div>';
+    $("#allResults").innerHTML=arr.map(resultHtml).join("")||'<div class="empty">Keine Resultate für diesen Filter.</div>';
   }
 
   function renderSeasonComparison(){

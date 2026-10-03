@@ -185,3 +185,5 @@ img{max-width:100%;display:block}
   .result{grid-template-columns:72px 1fr}.result-date{display:none}
   .profile-grid{grid-template-columns:1fr 1fr}
 }
+/* Progressive migration: source cards and keyboard-accessible result details. */
+dialog{background:#101c2e;color:#edf5ff;border:1px solid #33465f;border-radius:20px;width:min(760px,92vw);max-height:85vh;padding:24px}dialog::backdrop{background:#000a}details{padding:12px 0}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:400px;overflow:auto}.result[data-result-index]{cursor:pointer}.result:focus-visible{outline:2px solid #6ee7ff}.tabs a{text-decoration:none;color:inherit}.tabs{flex-wrap:wrap}
