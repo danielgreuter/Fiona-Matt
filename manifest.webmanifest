@@ -1,14 +1,18 @@
 {
   "name": "Fiona Matt Athletics",
   "short_name": "Fiona Matt",
-  "description": "Athletics Tracking App für Fiona Matt · Liechtenstein 🇱🇮",
+  "description": "Performance Dashboard für Fiona Matt · Liechtenstein",
   "start_url": "/Fiona-Matt/",
   "scope": "/Fiona-Matt/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1E3A8A",
-  "theme_color": "#1E3A8A",
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
   "lang": "de",
+  "categories": [
+    "sports",
+    "health"
+  ],
   "icons": [
     {
       "src": "/Fiona-Matt/icon-192-fixed.png",
