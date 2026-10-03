@@ -31,3 +31,5 @@ Diese Screenshots verwenden **simulierte Testantworten und den vorhandenen lokal
 Die Live-Worker-Abfragen liefern aus dieser Entwicklungsumgebung HTTP 403. Aktuelle Payloads, ihre Vollständigkeit, echte Schreibberechtigungen und PWA-Installation müssen auf der späteren Preview-Origin geprüft werden. Startzeiten und Lauf-/Bahnzuteilung für Dakar sind nicht hinterlegt. V1 bleibt als Übergangsansicht für zusätzliche Sonderfunktionen (z. B. bestehender Punkte-Rechner) erreichbar. Kein vollständiger V1/V2-Funktionsabgleich und kein Produktionsrelease behauptet.
 
 Lokal: `npm ci --ignore-scripts`, `npm test`, statischen Server im Repository starten. Browserprüfung mit installiertem Playwright-Chromium; alternativ `FIONA_BROWSER_PATH=/pfad/zu/chromium npm run test:browser`.
+
+Screenshots im Repository werden nur mit `FIONA_EXPORT_PREVIEWS=1` bewusst aktualisiert; normale Browsertests schreiben ausschliesslich temporäre QA-Dateien.
