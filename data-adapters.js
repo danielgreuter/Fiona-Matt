@@ -19,14 +19,29 @@ window.FionaSources = (() => {
       if (!validate(data)) throw new Error('Unbekanntes Datenformat');
       const record = {action,title,data,loadedAt:new Date().toISOString(),status:'live'};
       try { localStorage.setItem(key,JSON.stringify(record)); } catch {}
+      window.dispatchEvent(new CustomEvent("fiona-source",{detail:record}));
       return record;
     } catch (error) {
       try {
         const cached = JSON.parse(localStorage.getItem(key));
-        if (cached && validate(cached.data)) return {...cached,status:'cache',error:error.message};
+        if (cached && validate(cached.data)) {
+          const record={...cached,status:'cache',error:error.message};
+          window.dispatchEvent(new CustomEvent('fiona-source',{detail:record}));
+          return record;
+        }
       } catch {}
-      return {action,title,status:'unavailable',error:error.message};
+      const record={action,title,status:'unavailable',error:error.message};
+      window.dispatchEvent(new CustomEvent('fiona-source',{detail:record}));
+      return record;
     }
   }
-  return {definitions,loadAll:async callback => Promise.allSettled(definitions.map(async def => callback(await load(def))))};
+  return {
+    definitions,
+    loadOne:async action => {
+      const def=definitions.find(d=>d[0]===action);
+      if (!def) throw new Error('Unbekannte Quelle');
+      return load(def);
+    },
+    loadAll:async (callback=()=>{}) => Promise.allSettled(definitions.map(async def => callback(await load(def))))
+  };
 })();

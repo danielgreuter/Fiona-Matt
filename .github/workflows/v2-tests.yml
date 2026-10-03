@@ -1,0 +1,26 @@
+name: V2 regression tests
+on:
+  push:
+    branches: [v2]
+  pull_request:
+    paths:
+      - '*.js'
+      - 'index.html'
+      - 'styles.css'
+      - 'package*.json'
+      - 'tests/**'
+      - '.github/workflows/v2-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test

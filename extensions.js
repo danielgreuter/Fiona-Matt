@@ -11,30 +11,15 @@
     const card=el('section',null,'card span-12');card.append(el('h2',record.title));
     card.append(el('p',record.status==='live'?'Quelle erreichbar · abgerufen '+new Date(record.loadedAt).toLocaleString('de-CH'):record.status==='cache'?'Gespeicherter Stand · '+new Date(record.loadedAt).toLocaleString('de-CH'):'Quelle momentan nicht erreichbar','data-note'));
     const d=record.data;
-    if(record.action==='bestenliste'&&d){
-      for(const [disc,rank] of Object.entries(d.disciplines)){
-        card.append(el('h3',disc+' · '+(rank.year||'Saison laut Quelle')));
-        const list=[...(rank.top15||[])];
-        if(rank.fiona&&!list.some(r=>r.name==='Fiona Matt'||r.isFiona))list.push({...rank.fiona,name:'Fiona Matt'});
-        for(const r of list)row(card,(r.rank||'—')+'. '+r.name,r.result,[r.club,r.wind!=null?'Wind '+r.wind:'',r.location,r.date].filter(Boolean).join(' · '));
-      }
-    }else if(record.action==='lieteam'&&d){
-      for(const [name,a] of Object.entries(d)){
-        const box=el('details');box.append(el('summary',name));
-        for(const disc of a.discs||[])row(box,disc.name,disc.result,disc.score!=null?disc.score+' WA-Punkte':'');
-        card.append(box);
-      }
-    }else if(d){
-      const list=Array.isArray(d)?d:d.pbs||d.events||[];
-      for(const r of list){
-        row(card,r.discipline||r.title||r.summary||r.name||r.competition||'Termin',r.result||r.mark||r.date||r.start?.dateTime||r.start?.date||r.start||'—',[r.date,r.venue,typeof r.location==='string'?r.location:'',r.score!=null?r.score+' WA-Punkte':'',r.isWettkampf===false?'Training':''].filter(Boolean).join(' · '));
-      }
-    }
+    if(d){const count=Array.isArray(d)?d.length:Array.isArray(d.events)?d.events.length:Array.isArray(d.pbs)?d.pbs.length:record.action==='lieteam'?Object.keys(d).length:Object.keys(d.disciplines||{}).length;card.append(el('p',count+' Einträge / Bereiche verfügbar'));}
     if(d){const raw=el('details');raw.append(el('summary','Vollständige Quelldaten'),el('pre',JSON.stringify(d,null,2)));card.append(raw);}
     else card.append(el('p','Alle bisherigen Ansichten und gespeicherten Informationen bleiben über „Bisherige App“ erreichbar.'));
-    panels.append(card);
+    card.dataset.source=record.action;
+    const previous=[...panels.children].find(c=>c.dataset.source===record.action);
+    if(previous)previous.replaceWith(card);else panels.append(card);
   }
-  window.FionaSources.loadAll(render);
+  window.addEventListener("fiona-source",event=>render(event.detail));
+  window.FionaSources.loadAll(()=>{});
   window.addEventListener('fiona-results',event=>{
     const data=event.detail;const results=data.results||[];
     const legal=r=>!r.windAssisted&&(!Number.isFinite(parseFloat(String(r.wind).replace(',','.')))||parseFloat(String(r.wind).replace(',','.'))<=2);
@@ -52,8 +37,16 @@
     document.querySelector('#view-analysis .grid').append(section);
     const detail=document.querySelector('#resultDetail');
     document.querySelector('#closeDetail').onclick=()=>detail.close();
-    document.addEventListener('click',e=>{const target=e.target.closest('.result[data-result-index]');if(!target)return;const r=results[Number(target.dataset.resultIndex)];if(!r)return;const box=document.querySelector('#detailContent');box.replaceChildren(el('h2',(r.disciplineLabel||r.discipline)+' · '+r.result));for(const [key,value]of Object.entries(r))if(value!=null&&value!=='')row(box,key,typeof value==='object'?JSON.stringify(value):value);detail.showModal();});
-    const bind=()=>document.querySelectorAll('#latestResults .result,#allResults .result').forEach(node=>{const r=results.find(r=>node.textContent.includes(r.competition)&&node.textContent.includes(r.date)&&node.textContent.includes(r.result)&&node.textContent.includes(r.disciplineLabel||r.discipline));if(r){node.dataset.resultIndex=results.indexOf(r);node.tabIndex=0;node.setAttribute('role','button');node.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();node.click();}};}});
+    document.addEventListener('click',e=>{
+      const target=e.target.closest('.result[data-result-index]');if(!target)return;
+      const r=results[Number(target.dataset.resultIndex)];if(!r)return;
+      const box=document.querySelector('#detailContent');box.replaceChildren(el('h2',(r.disciplineLabel||r.discipline)+' · '+r.result));
+      const labels={date:'Datum',venue:'Ort',competition:'Wettkampf',place:'Lauf / Rang',fionaRank:'Gesamtrang Fiona',wind:'Wind (m/s)',indoor:'Indoor',source:'Quelle',year:'Saison',score:'WA-Punkte',waScore:'WA-Punkte',windAssisted:'Windunterstützt'};
+      for(const [key,label]of Object.entries(labels))if(r[key]!=null&&r[key]!=='')row(box,label,r[key]);
+      if(r.top5?.length){box.append(el('h3','Laportal · Top 5'));for(const entry of r.top5)row(box,(entry.rank||'—')+'. '+entry.name,entry.result,[entry.club,entry.wind!=null?'Wind '+entry.wind:''].filter(Boolean).join(' · '));}
+      const raw=el('details');raw.append(el('summary','Vollständige Quelldaten'),el('pre',JSON.stringify(r,null,2)));box.append(raw);detail.showModal();
+    });
+    const bind=()=>document.querySelectorAll('#latestResults .result,#allResults .result').forEach(node=>{if(node.dataset.resultIndex!=null){node.tabIndex=0;node.setAttribute('role','button');node.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();node.click();}};}});
     new MutationObserver(bind).observe(document.querySelector('#allResults'),{childList:true});
     new MutationObserver(bind).observe(document.querySelector('#latestResults'),{childList:true});
     setTimeout(bind,0);

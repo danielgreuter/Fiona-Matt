@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261003b';
+const CACHE_NAME='fiona-matt-v2-20261003c';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
@@ -7,6 +7,9 @@ const ASSETS=[
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/data-adapters.js',
   '/Fiona-Matt/extensions.js',
+  '/Fiona-Matt/historical-data.js',
+  '/Fiona-Matt/data-models.js',
+  '/Fiona-Matt/migration-ui.js',
   '/Fiona-Matt/athlete_results.json',
   '/Fiona-Matt/manifest.webmanifest',
   '/Fiona-Matt/icon-192-fixed.png',

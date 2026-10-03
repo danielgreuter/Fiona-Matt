@@ -22,6 +22,7 @@
   </header>
 
   <main class="shell">
+    <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
     <section id="view-home" class="view active">
       <div class="hero">
         <article class="hero-main">
@@ -37,10 +38,9 @@
           <div>
             <div class="countdown-label">Countdown bis 100 m</div>
             <div class="countdown" id="countdown">— <small>Tage</small></div>
-            <div class="progress-wrap">
-              <div class="progress-meta"><span>Zieltermin</span><span id="progressText">—</span></div>
-              <div class="progress"><span id="progressBar" style="width:0%"></span></div>
-            </div>
+            <p class="data-note" id="raceDayStatus"></p>
+            <div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div>
+            <p class="data-note">100 m am 08.11.2026 · genaue Startzeit und Laufzuteilung noch nicht hinterlegt</p>
           </div>
           <div class="data-note" id="dataWarning">Datenstand wird geprüft …</div>
         </aside>
@@ -67,7 +67,7 @@
         <section class="card span-5">
           <div class="card-head">
             <div><h2 class="card-title">Trainingswoche</h2><p class="card-sub">Grundstruktur Richtung Dakar</p></div>
-            <span class="badge good">6 Einheiten</span>
+            <span class="badge info">Grundstruktur ab 12.10.</span>
           </div>
           <div class="training-list" id="trainingWeek"></div>
         </section>
@@ -96,12 +96,12 @@
       </section>
     </section>
 
-    <section id="view-training" class="view">
+    <section id="view-training" class="view"><section class="card"><h2>Dein Trainingskalender</h2><div id="liveTraining"></div></section>
       <div class="section-title">Training</div>
       <div class="grid">
         <section class="card span-7">
           <div class="card-head"><div><h2 class="card-title">Wochenstruktur</h2><p class="card-sub">Track + Kraft</p></div></div>
-          <div class="training-list" id="trainingFull"></div>
+          <div class="training-list" id="trainingFull"></div><p class="data-note">Grundstruktur ab 12.10.2026 · Inhalte gemäss Trainerplan</p>
         </section>
         <section class="card span-5">
           <div class="card-head"><div><h2 class="card-title">Dakar Focus</h2><p class="card-sub">Sprintleistung im Mittelpunkt</p></div></div>
@@ -144,7 +144,11 @@
       </section>
     </section>
 
-    <section class="card"><h2>Daten & weitere Bereiche</h2><div class="tabs"><button class="tab" data-goto="sources">Rankings · WA · Team LIE · Kalender</button><a class="tab" href="./legacy.html">Bisherige App · alle Funktionen</a></div></section>
+    
+    <section id="view-rankings" class="view"><div class="section-title">Rankings</div><div id="rankingsContent"></div></section>
+    <section id="view-wa" class="view"><div class="section-title">World Athletics</div><div id="waContent"></div></section>
+    <section id="view-team" class="view"><div class="section-title">Team Liechtenstein</div><div id="teamContent"></div></section>
+    <section id="view-calendar" class="view"><div class="section-title">Wettkampfkalender</div><div id="calendarContent"></div></section>
     <section id="view-sources" class="view"><div class="section-title">Athletics Hub</div><div id="sourcePanels" class="grid"></div></section>
     <dialog id="resultDetail"><button id="closeDetail" class="tab">Schliessen</button><div id="detailContent"></div></dialog>
     <div class="footer">Fiona Matt Athletics · V2 · GitHub Pages PWA</div>
@@ -159,8 +163,11 @@
   </nav>
 
   <script src="./config.js"></script>
+  <script src="./historical-data.js"></script>
+  <script src="./data-models.js"></script>
   <script src="./data-adapters.js"></script>
   <script src="./app.js"></script>
+  <script src="./migration-ui.js"></script>
   <script src="./extensions.js"></script>
 </body>
 </html>

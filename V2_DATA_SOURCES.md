@@ -106,3 +106,14 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - `legacy.html`: unveränderte V1 aus main als Übergangsansicht. Enthält insbesondere historische eingebettete Rankings, Zoomansichten und Kalenderbearbeitung bis zur vollständigen Migration.
 - Keine Scraper, produktiven Workflows oder Proxy-Schreibpfade geändert.
 - Noch offen: vollständige native V2-Migration von WA-Zoom, Teamvergleichen, Kalenderbearbeitung und 2025-Fallbacks; visuelle Browserprüfung und Live-Quellenprüfung.
+
+## Weitere Migration 03.10.2026
+- `historical-data.js` übernimmt sämtliche eingebetteten FIONA-Felder und die Team-LIE-Profilzuordnung aus V1, unverändert und als historischen Stand gekennzeichnet.
+- `data-models.js`: Datumsnormalisierung, Disziplinzuordnung, getrennte Saisonrankings, Trainings-Deduplizierung. Gleiche WA-Punkte in unterschiedlichen Monaten bleiben erhalten.
+- `migration-ui.js`: native Rankingfilter, Fiona-Abstände nur bei tatsächlich vorhandenem Nachbarrang, WA-Chart mit Zoom und Top-5, Teamvergleich mit allen gelieferten Disziplinen, individuelle WA-Resultate, Trainingswochen und Kalenderdetails.
+- Kalenderbearbeitung nutzt die unveränderten bestehenden `calendar-add`, `calendar-update`, `calendar-delete`-POST-Verträge. Kein Schreibzugriff beim Laden. Löschen braucht eine zweite explizite Schaltfläche. Fehler verändern die angezeigten Quelldaten nicht.
+- `extensions.js`: Datenstatus samt vollständigen Payloads und lesbare Laportal-Top-5 in Resultatdetails.
+- `app.js`: kompletter Resultatbestand ohne 80er-Abschneidung, gespeicherte SA-Daten bei Ausfall, direkte View-Links, Dakar-/Vaduz-Uhren und tagesbasierter Countdown.
+- Tests: `npm test` prüft Datenverlust, historische Saisontrennung, Ausfälle, Teamdetails, Kalenderfehler, explizites Löschen und Navigation. Alle Schreibzugriffe sind in Tests simuliert.
+- Grenzen: Live-Worker-Abfragen aus der Entwicklungsumgebung liefern HTTP 403. Ein vollständiger Abgleich mit aktuellen Live-Payloads steht deshalb weiterhin aus. V1 bleibt zugänglich; weitere Sonderfunktionen wie der bisherige Punkte-Rechner bleiben dort bis zu ihrer gesonderten Migration.
+- Browser-QA des weiteren Reviewstands: neun Ansichten bei 320/390/1440 px ohne JavaScript-Fehler oder Seitenüberlauf, mit simulierten Quellantworten. Screenshots und Grenzen siehe `V2_REVIEW.md`.

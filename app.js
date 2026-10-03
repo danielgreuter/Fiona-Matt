@@ -5,7 +5,8 @@
 
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
-  const fmtDate = iso => new Intl.DateTimeFormat("de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(iso));
+  const esc=v=>String(v??" ").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
+  const fmtDate = iso => !iso || !Number.isFinite(new Date(iso).getTime()) ? "Datum fehlt" : new Intl.DateTimeFormat("de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(iso));
   const daysBetween=(a,b)=>Math.ceil((b-a)/86400000);
 
   function legal(r){
@@ -18,7 +19,7 @@
   }
   function bestOf(discipline, year=null){
     let arr=sprintResults(discipline);
-    if(year) arr=arr.filter(r=>r.year===year);
+    if(year) arr=arr.filter(r=>String(r.year)===String(year));
     return arr.sort((a,b)=>a.numResult-b.numResult)[0]||null;
   }
 
@@ -30,16 +31,23 @@
     let lastError=null;
     for(const url of sources){
       try{
-        const res=await fetch(url,{cache:"no-store"});
+        const res=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(15000)});
         if(!res.ok) throw new Error("HTTP "+res.status);
-        const data=await res.json();
+        const raw=await res.json();
+        const data=Array.isArray(raw?.results)?window.FionaModels.normalizeResults(raw):raw;
         if(!data || !Array.isArray(data.results)) throw new Error("Ungültiges Datenformat");
         state.data=data;
+        if(url.startsWith("http")){try{localStorage.setItem("fiona-v2-sa-results",JSON.stringify(data));}catch{}}
         window.dispatchEvent(new CustomEvent("fiona-results",{detail:data}));
         $("#syncStatus").textContent=url.startsWith("http")?"Live-Daten":"Lokale Daten";
         renderAll();
         return;
-      }catch(e){ lastError=e; }
+      }catch(e){
+        lastError=e;
+        if(url.startsWith("http")){
+          try{const data=JSON.parse(localStorage.getItem("fiona-v2-sa-results"));if(Array.isArray(data?.results)){state.data=window.FionaModels.normalizeResults(data);window.dispatchEvent(new CustomEvent("fiona-results",{detail:state.data}));$("#syncStatus").textContent="Gespeicherte Daten";renderAll();return;}}catch{}
+        }
+      }
     }
     $("#syncStatus").textContent="Datenfehler";
     $("#dataWarning").textContent="Athletikdaten konnten nicht geladen werden.";
@@ -47,19 +55,19 @@
   }
 
   function renderCountdown(){
-    const target=new Date(C.target.date);
     const now=new Date();
-    const days=Math.max(0,daysBetween(now,target));
-    $("#countdown").innerHTML=`${days} <small>Tage</small>`;
-    const start=new Date("2026-09-01T00:00:00+02:00");
-    const pct=Math.max(0,Math.min(100,((now-start)/(target-start))*100));
-    $("#progressBar").style.width=pct.toFixed(1)+"%";
-    $("#progressText").textContent=Math.round(pct)+"%";
+    const localDay=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Vaduz",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
+    const difference=Math.round((Date.parse(C.target.date.slice(0,10))-Date.parse(localDay))/86400000);
+    $("#countdown").innerHTML=difference>0?`${difference} <small>Tage</small>`:difference===0?`Race Day`:`Abgeschlossen`;
+    $("#raceDayStatus").textContent=difference>7?"Bis zum Wettkampftag":difference>0?"Wettkampfwoche":difference===0?"Heute · 100 m":"Wettkampftag vergangen";
+    for(const [id,timeZone] of [["#dakarClock","Africa/Dakar"],["#homeClock","Europe/Vaduz"]]){
+      $(id).textContent=new Intl.DateTimeFormat("de-CH",{timeZone,hour:"2-digit",minute:"2-digit"}).format(now);
+    }
   }
 
   function renderDataFreshness(){
     const scraped=state.data?.scraped ? new Date(state.data.scraped) : null;
-    if(!scraped) return;
+    if(!scraped || !Number.isFinite(scraped.getTime())) {$("#dataWarning").textContent="Datenstand nicht angegeben · Aktualität unbestätigt";return;}
     const age=daysBetween(scraped,new Date());
     $("#dataWarning").textContent=`Datenquelle: Swiss Athletics · Stand ${fmtDate(scraped)} · ${age} Tage alt`;
     $("#dataWarning").className="data-note";
@@ -80,12 +88,12 @@
       ["200 m PB",pb200?pb200.result:"—",pb200?fmtDate(pb200.dateISO):"keine Daten"]
     ];
     $("#metrics").innerHTML=metrics.map(m=>`
-      <div class="metric"><div class="metric-label">${m[0]}</div><div class="metric-value">${m[1]}</div><div class="metric-note">${m[2]}</div></div>
+      <div class="metric"><div class="metric-label">${esc(m[0])}</div><div class="metric-value">${esc(m[1])}</div><div class="metric-note">${esc(m[2])}</div></div>
     `).join("");
   }
 
   function chartData(year="Alle"){
-    let arr=sprintResults("100m").filter(r=>r.dateISO);
+    let arr=sprintResults("100m").filter(r=>r.dateISO && Number.isFinite(Date.parse(r.dateISO)));
     if(year!=="Alle") arr=arr.filter(r=>String(r.year)===String(year));
     return arr.sort((a,b)=>new Date(a.dateISO)-new Date(b.dateISO));
   }
@@ -107,9 +115,9 @@
         <defs><linearGradient id="lineGradient" x1="0" x2="1"><stop offset="0%" stop-color="#6ee7ff"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
         ${ticks.map(t=>`<line class="chart-grid" x1="${p.l}" x2="${W-p.r}" y1="${y(t)}" y2="${y(t)}"/><text class="chart-axis" x="2" y="${y(t)+3}">${t.toFixed(2)}</text>`).join("")}
         <path class="chart-line" d="${path}"/>
-        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${r.result}s · ${r.date} · Wind ${r.wind||"n/a"}</title></circle>`).join("")}
-        <text class="chart-axis" x="${p.l}" y="${H-8}">${data[0].date}</text>
-        <text class="chart-axis" text-anchor="end" x="${W-p.r}" y="${H-8}">${data[data.length-1].date}</text>
+        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind||"n/a")}</title></circle>`).join("")}
+        <text class="chart-axis" x="${p.l}" y="${H-8}">${esc(data[0].date)}</text>
+        <text class="chart-axis" text-anchor="end" x="${W-p.r}" y="${H-8}">${esc(data[data.length-1].date)}</text>
       </svg>`;
   }
 
@@ -123,8 +131,8 @@
   function resultHtml(raw){
     const esc=v=>String(v??" ").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
     const r=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,typeof v==="string"?esc(v):v]));
-    return `<div class="result">
-      <div class="result-time">${r.result}<small> s</small></div>
+    return `<div class="result" data-result-index="${state.data.results.indexOf(raw)}">
+      <div class="result-time">${r.result}<small> ${/Jump|Throw|Put|Weitsprung/.test(raw.discipline)?"m":"s"}</small></div>
       <div class="result-main"><strong>${r.disciplineLabel||r.discipline} · ${r.competition}</strong><span>${r.venue||"—"}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind:""} · ${r.place||""}</span></div>
       <div class="result-date">${r.date}</div>
     </div>`;
@@ -149,8 +157,8 @@
     const all=state.data?.results||[];
     const disciplines=["Alle",...new Set(all.map(r=>r.disciplineLabel||r.discipline))];
     const years=["Alle",...new Set(all.map(r=>r.year).filter(Boolean))].sort((a,b)=>String(b).localeCompare(String(a)));
-    $("#disciplineFilter").innerHTML=disciplines.map(x=>`<option ${x===state.discipline?"selected":""}>${x}</option>`).join("");
-    $("#yearFilter").innerHTML=years.map(x=>`<option ${String(x)===String(state.year)?"selected":""}>${x}</option>`).join("");
+    $("#disciplineFilter").innerHTML=disciplines.map(x=>`<option ${x===state.discipline?"selected":""}>${esc(x)}</option>`).join("");
+    $("#yearFilter").innerHTML=years.map(x=>`<option ${String(x)===String(state.year)?"selected":""}>${esc(x)}</option>`).join("");
     $("#disciplineFilter").onchange=e=>{state.discipline=e.target.value;renderAllResults()};
     $("#yearFilter").onchange=e=>{state.year=e.target.value;renderAllResults()};
   }
@@ -166,7 +174,7 @@
     const years=[2024,2025,2026];
     $("#seasonComparison").innerHTML=years.map(y=>{
       const b=bestOf("100m",y);
-      return `<div class="metric"><div class="metric-label">${y} · 100 m</div><div class="metric-value">${b?b.result:"—"}</div><div class="metric-note">${b?((b.wind||"—")+" m/s · "+b.venue):"kein gültiges Resultat"}</div></div>`;
+      return `<div class="metric"><div class="metric-label">${y} · 100 m</div><div class="metric-value">${b?esc(b.result):"—"}</div><div class="metric-note">${b?esc((b.wind||"—")+" m/s · "+b.venue):"kein gültiges Resultat"}</div></div>`;
     }).join("");
   }
 
@@ -175,8 +183,11 @@
     $$("[data-goto]").forEach(btn=>btn.onclick=()=>showView(btn.dataset.goto));
   }
   function showView(name){
+    if(!document.getElementById("view-"+name)) return;
+    history.replaceState(null,"","#"+name);
     $$(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));
-    $$(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.view===name));
+    $$(".nav-btn").forEach(b=>{b.classList.toggle("active",b.dataset.view===name);if(b.dataset.view===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
+    $$("[data-goto]").forEach(b=>{if(b.dataset.goto===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
     window.scrollTo({top:0,behavior:"smooth"});
   }
 
@@ -187,6 +198,8 @@
   }
 
   nav();
+  if(location.hash) showView(location.hash.slice(1));
+  window.addEventListener("hashchange",()=>showView(location.hash.slice(1)||"home"));
   renderCountdown();
   setInterval(renderCountdown,60000);
   if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); }
