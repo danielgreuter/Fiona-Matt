@@ -36,6 +36,13 @@
     steps.forEach((step,i)=>{step.classList.toggle('is-complete',i<index);step.classList.toggle('is-current',i===index);if(i===index)step.setAttribute('aria-current','step');else step.removeAttribute('aria-current');});
     document.querySelector('#roadStatus').textContent=day>'2026-11-08'?'Wettkampftermin: 08. November 2026':index===1?'Jetzt: Vorbereitung · nächste Station: Teamreise am 04. November':index===2?'Teamreise ab 04. November · Wettkampf am 08. November':'Heute: 100 m in Dakar';
   };
-  updateRoad();setInterval(updateRoad,60000);
+  const updateProfile=()=>{
+    const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Vaduz',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),born=window.FIONA_APP_CONFIG.athlete.birthDate,year=Number(date.slice(0,4));
+    const age=year-Number(born.slice(0,4))-(date.slice(5)<born.slice(5)?1:0);
+    document.querySelector('#fionaProfileAge').textContent=age+' Jahre';
+    document.querySelector('#fionaProfileCategory').textContent=window.FionaModels.ageCategory(born,year)+' · Saison '+year;
+  };
+  document.querySelector('#fionaProfileBests').onclick=()=>window.FionaMigrationUI.openAthleteProfile('Fiona Matt');
+  updateProfile();updateRoad();setInterval(()=>{updateRoad();updateProfile();},60000);
   intro();
 })();

@@ -204,5 +204,5 @@
   renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();
   if($('#view-team').classList.contains('active'))loadTeamProfiles();
   fetch('./team-profile-metadata.json').then(r=>r.ok?r.json():{}).then(data=>{profileMetadata=data||{};renderTeam();}).catch(()=>{});
-  window.FionaMigrationUI={state,sources,renderRankings,renderWA,renderTeam,renderCalendar,renderTraining};
+  window.FionaMigrationUI={openAthleteProfile:athleteDetail,state,sources,renderRankings,renderWA,renderTeam,renderCalendar,renderTraining};
 })();

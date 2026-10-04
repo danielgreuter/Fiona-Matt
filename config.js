@@ -6,6 +6,8 @@ window.FIONA_APP_CONFIG = {
     countryCode: "LI",
     club: "TV Eschen-Mauren",
     birthDate: "2009-09-02",
+    licenseNumber: "251392",
+    coach: "Christian Gutgsell",
     focus: "100 m"
   },
   target: {
