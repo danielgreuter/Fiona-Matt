@@ -18,7 +18,7 @@
   function table(parent,headers,rows){const wrap=node('div',null,'table-wrap');const t=node('table',null,'data-table');const head=node('thead');const tr=node('tr');headers.forEach(h=>tr.append(node('th',h)));head.append(tr);t.append(head);const body=node('tbody');for(const item of rows){const r=node('tr');if(item.fiona)r.className='fiona-row';for(const cell of item.cells){const td=node('td');if(cell instanceof Element)td.append(cell);else td.textContent=String(cell??'—');r.append(td);}body.append(r);}t.append(body);wrap.append(t);parent.append(wrap);}
   function dateLabel(e){return e.date||e.start?.dateTime||e.start?.date||'';}
   function details(parent,record){const d=node('details');d.append(node('summary','Vollständige Details'),node('pre',JSON.stringify(record,null,2)));parent.append(d);}
-  function openDetail(title){const dialog=$('#resultDetail');const body=$('#detailContent');body.replaceChildren(node('h2',title));$('#closeDetail').onclick=()=>dialog.close();dialog.showModal();return body;}
+  function openDetail(title){const dialog=$('#resultDetail');const body=$('#detailContent');body.classList.remove('team-result-detail');body.replaceChildren(node('h2',title));$('#closeDetail').onclick=()=>dialog.close();dialog.showModal();return body;}
   function renderRankings(){
     const root=$('#rankingsContent'),c=card('Schweiz / Liechtenstein · U18 Frauen','Historische Listen bleiben separat von aktuellen Saisonlisten.');
     const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.rankDisc,v=>{state.rankDisc=v;renderRankings();}),select('Saison',['2026','2025','2024'],state.rankYear,v=>{state.rankYear=v;renderRankings();}));c.append(controls);status(c,'bestenliste');
@@ -27,7 +27,7 @@
     if(rank.fiona)c.append(node('h3','Fiona · Rang '+(rank.fiona.rank||'nicht verfügbar')+' · '+value(rank.fiona)));
     if(rank.gapAhead)c.append(node('p','Abstand zu '+rank.ahead.name+' (Rang '+rank.ahead.rank+'): '+rank.gapAhead+(state.rankDisc==='Long Jump'?' m':' s')));
     if(rank.gapBehind)c.append(node('p','Vorsprung gegenüber '+rank.behind.name+': '+rank.gapBehind+(state.rankDisc==='Long Jump'?' m':' s')));
-    if(rank.rows.length)table(c,['Rang','Athletin / Verein','Leistung','Wind','Ort / Datum'],rank.rows.map(r=>({fiona:r.name==='Fiona Matt'||r.isFiona||r.fiona,cells:[r.rank,r.name+' · '+(r.club||''),value(r),r.wind??'—',[r.location||r.venue,r.date||r.comp_date].filter(Boolean).join(' · ')]})));
+    if(rank.rows.length)table(c,['Rang','Athletin / Verein','Jahrgang','Leistung','Wind','Ort / Datum'],rank.rows.map(r=>{const isFiona=M.isFionaName(r.name)||r.isFiona||r.fiona;const person=node('div',null,'ranking-person');person.append(node('strong',r.name,'ranking-name'));if(r.club)person.append(node('span',r.club,'ranking-club'));const born=M.birthYear(r.born||r.birthDate||r.birthYear)||(isFiona?M.birthYear(window.FIONA_APP_CONFIG.athlete.birthDate):'');return{fiona:isFiona,cells:[r.rank,person,born||'—',value(r),r.wind??'—',[r.location||r.venue,r.date||r.comp_date].filter(Boolean).join(' · ')]};}));
     else c.append(node('p','Für diese Kombination sind keine Rangdaten vorhanden.'));
     root.replaceChildren(c);
   }
@@ -90,13 +90,26 @@
     })();try{return await teamPending[key];}finally{delete teamPending[key];}
   }
   async function loadTeamProfiles(force=false){
-    if(teamLoading)return;teamLoading=true;
+    if(teamLoading)return;teamLoading=true;renderTeam();
     try{for(let i=0;i<H.team.length;i+=3){await Promise.allSettled(H.team.slice(i,i+3).map(a=>getTeamProfile(a,force)));renderTeam();}}finally{teamLoading=false;renderTeam();}
   }
-  const countryNames={SUI:'Schweiz',LIE:'Liechtenstein',AUT:'Österreich',GER:'Deutschland',ITA:'Italien',SLO:'Slowenien',SEN:'Senegal',MON:'Monaco',FRA:'Frankreich',GIB:'Gibraltar',MKD:'Nordmazedonien',CZE:'Tschechien',SVK:'Slowakei',CRO:'Kroatien',HUN:'Ungarn',ESP:'Spanien',GBR:'Grossbritannien'};
+  const countryNames={SUI:'Schweiz',LIE:'Liechtenstein',AUT:'Österreich',GER:'Deutschland',ITA:'Italien',SLO:'Slowenien',SEN:'Senegal',MON:'Monaco',FRA:'Frankreich',GIB:'Gibraltar',MKD:'Nordmazedonien',CZE:'Tschechien',SVK:'Slowakei',CRO:'Kroatien',HUN:'Ungarn',ESP:'Spanien',GBR:'Grossbritannien',PER:'Peru'};
   const teamDiscLabel=d=>({'Javelin Throw':'Speer','Discus Throw':'Diskus','Shot Put':'Kugel','High Jump':'Hochsprung','Long Jump':'Weitsprung','100m Hurdles':'100 m Hürden','60m Hurdles':'60 m Hürden'}[M.discipline(d)]||M.discipline(d));
+  function teamMatch(r){
+    const match=M.matchTeamPerformance(r,teamProfiles[r.meta.url]?.data);if(!match||match.venue||r.athleteName!=='Fiona Matt')return match;
+    const mark=x=>String(x||'').split(/\s+/)[0].replace(',','.');const supplementary=saResults.find(s=>M.discipline(s.discipline)===M.discipline(r.name||r.discipline)&&M.dateKey(s.dateISO||s.date)===M.dateKey(match.date)&&mark(s.result)===mark(value(r)));
+    return supplementary?{...match,venue:supplementary.venue,competition:supplementary.competition,wind:supplementary.wind,indoor:supplementary.indoor,venueSource:'Swiss Athletics'}:match;
+  }
+  async function teamResultDetail(r){
+    const root=openDetail(r.athleteName+' · '+teamDiscLabel(r.name||r.discipline));root.classList.add('team-result-detail');const hero=node('div',null,'result-detail-hero');hero.append(node('h3',value(r),'team-detail-mark'));root.append(hero,node('p',r.meta.club||'','card-sub'));waBrand(root);
+    const loading=node('p','Lade Wettkampfdetails …','data-note');root.append(loading);await getTeamProfile(r.meta);if(!hero.isConnected||!$('#resultDetail').open)return;loading.remove();const match=teamMatch(r),record=teamProfiles[r.meta.url];
+    if(match){const context=teamContext(r);root.append(context);if(match.variantConfirmed)root.append(node('p','Gelieferte Disziplin: '+match.discipline,'data-note'));}
+    table(root,['Merkmal','Wert'],[['Leistung',value(r)],['WA-Punkte',M.number(r.score)>0?r.score:'nicht geliefert'],['Datum',match?.date||'nicht geliefert'],['Lauf / Rang',M.raceLabel(match?.place)],['Wind',match?windLabel(match):'nicht geliefert'],['Wettkampf',match?.competition||'nicht geliefert'],['Ort',match?.venue||'nicht geliefert']].map(cells=>({cells})));
+    root.append(node('p',match?.venueSource?'Leistung/Punkte: World Athletics · Ort/Wind: passendes Swiss-Athletics-Resultat.':record?.status==='cache'?'World Athletics · gespeicherter Profilabruf.':'World Athletics · abgerufenes Profil.','data-note'));if(!match)root.append(node('p','Kein passender Einzelresultat-Nachweis geliefert. Fehlende Angaben werden nicht ergänzt.','data-note'));
+    if(r.meta.url)root.append(safeLink('World-Athletics-Profil','https://worldathletics.org/athletes/liechtenstein/'+r.meta.url));details(root,{teamResult:r,matchedResult:match||null});
+  }
   function teamContext(r){
-    const record=teamProfiles[r.meta.url],match=M.matchTeamPerformance(r,record?.data);
+    const record=teamProfiles[r.meta.url],match=teamMatch(r);
     const context=node('div',null,'team-meet');
     if(!record){context.append(node('span','Wettkampfdetails werden beim Öffnen geladen.'));return context;}
     if(!match){context.append(node('span',record.status==='unavailable'?'Wettkampfdetails nicht erreichbar':'Kein passender Einzelresultat-Nachweis geliefert'));return context;}
@@ -126,7 +139,7 @@
     for(const r of rows){
       const box=node('article',null,'team-ranking-row'+(r.athleteName==='Fiona Matt'?' fiona-row':''));box.append(node('span',r.rank||'—','team-rank'));
       const info=node('div',null,'team-ranking-info');info.append(button(r.athleteName,()=>athleteDetail(r.athleteName,M.discipline(r.name||r.discipline)),'athlete-link'),node('span',r.meta.club||'','card-sub'));
-      const performance=node('div',null,'team-ranking-performance');performance.append(node('strong',teamDiscLabel(r.name||r.discipline)+(/Short Track|Indoor/i.test(r.name||r.discipline||'')?' (Halle)':'')+' · '+value(r)),teamContext(r));info.append(performance);
+      const performance=node('div',null,'team-ranking-performance');performance.append(button(teamDiscLabel(r.name||r.discipline)+(/Short Track|Indoor/i.test(r.name||r.discipline||'')?' (Halle)':'')+' · '+value(r)+' ↗',()=>teamResultDetail(r),'team-result-button'),teamContext(r));info.append(performance);
       const points=node('strong',M.number(r.score)>0?r.score+' Punkte':'keine Punkte','team-points');box.append(info,points);
       const bar=node('div',null,'comparison-track'),fill=node('span');fill.style.width=Math.max(0,(M.number(r.score)||0)/max*100)+'%';bar.append(fill);box.append(bar);c.append(box);
     }
@@ -137,9 +150,9 @@
   function eventEmblem(e){
     const cantons='ZH BE LU UR SZ OW NW GL ZG FR SO BS BL SH AR AI SG GR AG TG TI VD VS NE GE JU'.split(' ');
     let code=String(e.canton||'').toUpperCase();const loc=[e.venue,e.venueCity,e.location].filter(x=>typeof x==='string').join(' ').toLowerCase();
-    if(!code){for(const [city,canton]of [['zürich','ZH'],['zurich','ZH'],['lausanne','VD'],['luzern','LU'],['aarau','AG'],['meilen','ZH'],['cham','ZG'],['schaffhausen','SH'],['macolin','BE'],['basel','BS'],['thun','BE'],['magglingen','BE'],['langenthal','BE'],['bellinzona','TI'],['freiburg','FR'],['fribourg','FR'],['freienbach','SZ'],['frauenfeld','TG'],['st. gallen','SG'],['winterthur','ZH']])if(loc.includes(city)){code=canton;break;}}
-    let src='',alt='';if(cantons.includes(code)){src='https://fiona-proxy.daniel-greuter.workers.dev?action=wappen&v=3&c='+code;alt='Kantonswappen '+code;}
-    else {const country=String(e.country||'').toUpperCase();if(['LIE','LI'].includes(country)||/schaan|vaduz|mauren|liechtenstein/.test(loc)){src='./assets/liechtenstein-flag.webp';alt='Liechtenstein';}else if(country==='SEN'||loc.includes('dakar')){src='./assets/senegal-flag.svg';alt='Senegal';}else if(['AUT','ITA','GER','MON'].includes(country)){src='https://fiona-proxy.daniel-greuter.workers.dev?action=wappen&v=3&c='+country;alt=country;}}
+    if(!code){for(const [city,canton]of [['zürich','ZH'],['zurich','ZH'],['lausanne','VD'],['luzern','LU'],['aarau','AG'],['meilen','ZH'],['cham','ZG'],['schaffhausen','SH'],['macolin','BE'],['basel','BS'],['thun','BE'],['magglingen','BE'],['langenthal','BE'],['bellinzona','TI'],['freiburg','FR'],['fribourg','FR'],['freienbach','SZ'],['frauenfeld','TG'],['st. gallen','SG'],['winterthur','ZH'],['kreuzlingen','TG'],['bulle','FR'],['zug','ZG'],['zofingen','AG'],['uster','ZH'],['düdingen','FR'],['delémont','JU'],['rapperswil','SG'],['arbon','TG']])if(loc.includes(city)){code=canton;break;}}
+    let src='',alt='';if(cantons.includes(code)){const local={BE:'bern',VD:'vaud',SG:'st-gallen',ZH:'zurich',ZG:'zug',TG:'thurgau',TI:'ticino',FR:'fribourg'};src=local[code]?'./assets/'+local[code]+'-coat.svg':'https://fiona-proxy.daniel-greuter.workers.dev?action=wappen&v=3&c='+code;alt='Kantonswappen '+code;}
+    else {const country=String(e.country||[e.venue,e.venueCity,e.location].filter(x=>typeof x==='string').join(' ').match(/\(([A-Z]{3})\)/)?.[1]||'').toUpperCase();if(['LIE','LI'].includes(country)||/schaan|vaduz|mauren|liechtenstein/.test(loc)){src='./assets/liechtenstein-flag.webp';alt='Liechtenstein';}else if(country==='SEN'||loc.includes('dakar')){src='./assets/senegal-flag.svg';alt='Senegal';}else {const local={AUT:'austria',SLO:'slovenia',PER:'peru',ITA:'italy',MKD:'north-macedonia'};if(local[country]){src='./assets/'+local[country]+'-flag.svg';alt='Flagge '+(countryNames[country]||country);}else {const iso={GER:'de',FRA:'fr',MON:'mc',GIB:'gi',CZE:'cz',SVK:'sk',CRO:'hr',HUN:'hu',ESP:'es',GBR:'gb',SUI:'ch'}[country];if(iso){src='https://flagcdn.com/'+iso+'.svg';alt='Flagge '+(countryNames[country]||country);}}}}
     if(!src)return null;const img=node('img',null,'event-emblem');img.src=src;img.alt=alt;img.width=28;img.height=32;img.loading='lazy';img.onerror=()=>{img.hidden=true;};return img;
   }
   function eventRow(parent,e,editable=false){
@@ -181,7 +194,7 @@
     if(!events.length)root.append(node('p','Keine Kalendereinträge für diese Woche verfügbar. Die Grundstruktur steht darunter.'));
   }
   window.addEventListener('fiona-view',event=>{if(event.detail.view==='team')loadTeamProfiles();});
-  window.addEventListener('fiona-results',event=>{saResults=event.detail.results||[];renderWA();});
+  window.addEventListener('fiona-results',event=>{saResults=event.detail.results||[];renderWA();renderTeam();});
   window.addEventListener('fiona-source',event=>{sources[event.detail.action]=event.detail;renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();});
   renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();
   if($('#view-team').classList.contains('active'))loadTeamProfiles();

@@ -164,3 +164,11 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 
 ## Fiona-Markierung 04.10.2026
 - Eigene Resultatkarten mit dezentem blauem Hintergrund und schmaler Innenlinie. In Wettkampf-Top-5-Tabellen ist Fionas Zeile blau markiert, unabhängig von der Reihenfolge Fiona Matt / Matt Fiona. Falls sie nicht in den gelieferten Top 5 enthalten ist, wird ihre eigene gelieferte Leistung als separate markierte Zeile ergänzt; Rang/Lauf aus eigenem Resultat, keine fremden Resultate überschrieben. V1-Archiv unverändert.
+
+## Team-Resultatzoom und Rankings 04.10.2026
+- Jede Team-Leistung öffnet eigene Details mit Datum, Wettkampf, Ort, Wind, Lauf/Rang und WA-Punkten. Fehlende Quelldaten bleiben ausdrücklich gekennzeichnet. Namen öffnen weiterhin das Athletenprofil.
+- Lokale Kantonswappen und Länderflaggen statt unzuverlässiger Weiterleitungen; zusätzliche Ortszuordnungen. Alle 23 aktuellen Team-Leistungen im Browser mit geladenem Emblem geprüft.
+- Ben Segers 58.49 wird nur anhand exakter Leistung und übereinstimmendem NU18R-Nachweis dem gelieferten 700-g-Speer zugeordnet; diese Disziplin bleibt sichtbar.
+- Fionas 11.82: fehlender WA-Ort wird aus dem exakt passenden Swiss-Athletics-Resultat derselben Disziplin, Leistung und desselben Datums ergänzt. Herkunft von Ort/Wind explizit ausgewiesen; WA-Punkte unverändert.
+- Rankings: Namen fett, Vereine normal, Fiona dezent blau. Jahrgang aus geliefertem Geburtsdatum; fehlende Jahrgänge als Gedankenstrich, Fionas Jahrgang aus ihrer bestehenden Konfiguration.
+- 33 Modell-/UI-Tests und 27 responsive Chromium-Ansichten bestanden; Resultatdialog, Rankings und alle Team-Embleme geprüft. V1-Archiv unverändert.

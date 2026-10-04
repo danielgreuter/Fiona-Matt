@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1"
+	 id="Zurich_COA"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="603px" height="763px"
+	 viewBox="0 0 603 763" enable-background="new 0 0 603 763" xml:space="preserve">
+<path fill="#FFF" d="M1.5,1.5v458.868c0,166.311,134.313,301.132,300,301.132c165.686,0,300-134.821,300-301.132V1.5H1.5z"/>
+<path fill="#2B5DF2" stroke="#000" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" d="M558.69,615.459
+	L1.501,1.5v458.961C1.551,626.729,135.846,761.5,301.5,761.5C410.668,761.5,506.207,702.963,558.69,615.459z"/>
+<radialGradient id="SVGID_1_" cx="756.4211" cy="171.4038" r="299.9998" gradientTransform="matrix(1.215 0 0 -1.2667 -715.7205 461.2038)" gradientUnits="userSpaceOnUse">
+	<stop  offset="0" style="stop-color:#FFF;stop-opacity:0.3137"/>
+	<stop  offset="0.19" style="stop-color:#FFF;stop-opacity:0.251"/>
+	<stop  offset="0.6" style="stop-color:#6B6B6B;stop-opacity:0.1255"/>
+	<stop  offset="1" style="stop-color:#000;stop-opacity:0.1255"/>
+</radialGradient>
+<path fill="url(#SVGID_1_)" d="M1.5,1.5v458.868C1.5,626.679,135.815,761.5,301.499,761.5
+	c165.686,0,300.001-134.821,300.001-301.132V1.5H1.5z"/>
+<path fill="none" stroke="#000" stroke-width="3" d="M1.5,1.5v458.868C1.5,626.679,135.815,761.5,301.499,761.5
+	c165.686,0,300.001-134.821,300.001-301.132V1.5H1.5z"/>
+</svg>
