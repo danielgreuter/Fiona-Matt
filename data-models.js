@@ -47,14 +47,16 @@
     }
     return rows.filter(r=>r.score>0).sort((a,b)=>a.dateISO.localeCompare(b.dateISO));
   }
+  const isFionaName=value=>{const parts=String(value||'').toLowerCase().trim().split(/\s+/);return parts.includes('fiona')&&parts.includes('matt');};
+  function birthYear(value){const d=dateKey(value);if(d)return d.slice(0,4);const text=String(value||'').trim();return /^(19|20)\d{2}$/.test(text)?text:'';}
   function ranking(data,historical,disc,year) {
     const candidates = [data?.disciplines?.[disc+'_'+year],data?.disciplines?.[disc]];
     const live = candidates.find(r=>r&&String(r.year)===String(year)&&Array.isArray(r.top15));
     const rows = (live?.top15 || historical.top10Static?.[disc]?.[year] || []).map(r=>({...r}));
     const fiona = live?.fiona || historical.rankingData?.[disc]?.[year];
-    if (fiona && !rows.some(r=>r.name==='Fiona Matt'||r.isFiona||r.fiona)) rows.push({...fiona,name:'Fiona Matt',club:historical.club});
+    if (fiona && !rows.some(r=>isFionaName(r.name)||r.isFiona||r.fiona)) rows.push({...fiona,name:'Fiona Matt',club:historical.club});
     rows.sort((a,b)=>(number(a.rank)||Infinity)-(number(b.rank)||Infinity));
-    const index = rows.findIndex(r=>r.name==='Fiona Matt'||r.isFiona||r.fiona);
+    const index = rows.findIndex(r=>isFionaName(r.name)||r.isFiona||r.fiona);
     const ahead = index>0 && number(rows[index-1].rank)===number(rows[index].rank)-1 ? rows[index-1] : null;
     const behind = index>=0 && rows[index+1] && number(rows[index+1].rank)===number(rows[index].rank)+1 ? rows[index+1] : null;
     const gap = other => other && Number.isFinite(number(other.result)) && Number.isFinite(number(fiona?.result)) ? Math.abs(number(fiona.result)-number(other.result)).toFixed(2) : null;
@@ -81,7 +83,11 @@
     const same=r=>discipline(r.discipline||r.name)===discipline(row.name||row.discipline)&&mark(r.result||r.mark)===mark(row.result||row.mark)&&(!(number(row.score)>0&&number(r.score)>0)||number(row.score)===number(r.score));
     const results=(data?.results||[]).filter(same).sort((a,b)=>dateKey(a.date).localeCompare(dateKey(b.date)));
     if(results.length)return {...results[0],matchType:'result'};
-    const pb=(data?.pbs||[]).find(same);return pb?{...pb,matchType:'pb'}:null;
+    const pb=(data?.pbs||[]).find(same);if(pb)return {...pb,matchType:'pb'};
+    // A youth implement variant needs a matching record code, not just a similar mark.
+    const target=discipline(row.name||row.discipline),recordCodes=String(row.result||'').split(/\s+/).slice(1);
+    const variants=(data?.pbs||[]).filter(r=>/\(\d+(?:\.\d+)?\s*(?:g|kg)\)/i.test(r.discipline||'')&&discipline(String(r.discipline).replace(/\s*\(\d+(?:\.\d+)?\s*(?:g|kg)\)/i,''))===target&&mark(r.result||r.mark)===mark(row.result)&&r.records?.some(code=>recordCodes.includes(code)));
+    if(variants.length!==1)return null;const variant=variants[0];const result=(data?.results||[]).find(r=>r.discipline===variant.discipline&&mark(r.result||r.mark)===mark(row.result));return {...(result||variant),matchType:result?'result':'pb',variantConfirmed:true};
   }
   function raceLabel(value){
     const raw=String(value??'').trim();if(!raw)return '—';
@@ -109,7 +115,7 @@
       if((a.competition||'')!==(b.competition||''))return 0;const ap=phase(a),bp=phase(b);return ap!=null&&bp!=null?ap-bp:0;
     });
   }
-  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults,raceLabel,resultTableRows};
+  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults,raceLabel,resultTableRows,isFionaName,birthYear};
   api.normalizeResults = data => ({...data,results:data.results.map(raw=>{
     const dateISO=dateKey(raw.dateISO||raw.date);
     return {...raw,discipline:discipline(raw.discipline),numResult:number(raw.numResult??raw.result),dateISO,year:raw.year||dateISO.slice(0,4)};

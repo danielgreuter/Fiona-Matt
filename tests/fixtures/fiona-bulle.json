@@ -1,0 +1,59 @@
+{
+  "discipline": "100m",
+  "indoor": false,
+  "result": "11.82",
+  "numResult": 11.82,
+  "wind": 3.1,
+  "windAssisted": true,
+  "venue": "Bulle",
+  "competition": "Meeting de la Gruyère (WRC)",
+  "date": "11.07.2026",
+  "dateISO": "2026-07-11",
+  "year": 2026,
+  "place": "1f",
+  "source": "swiss-athletics",
+  "top5": [
+    {
+      "rank": 1,
+      "name": "Di Tizio-Frey Géraldine",
+      "club": "LK Zug",
+      "result": "10,91",
+      "wind": 3,
+      "windAssisted": true
+    },
+    {
+      "rank": 2,
+      "name": "Pointet Léonie",
+      "club": "CA Riviera",
+      "result": "11,00",
+      "wind": 3,
+      "windAssisted": true
+    },
+    {
+      "rank": 3,
+      "name": "Kora Salomé",
+      "club": "LC Brühl Leichtathletik",
+      "result": "11,01",
+      "wind": 3,
+      "windAssisted": true
+    },
+    {
+      "rank": 4,
+      "name": "Kouni Natacha",
+      "club": "LC Zürich",
+      "result": "11,04",
+      "wind": 3,
+      "windAssisted": true
+    },
+    {
+      "rank": 5,
+      "name": "Del Ponte Ajla",
+      "club": "US Ascona atletica",
+      "result": "11,17",
+      "wind": 3,
+      "windAssisted": true
+    }
+  ],
+  "fionaRank": 23,
+  "fieldSize": 23
+}

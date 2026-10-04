@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-fiona-highlight-8';
+const CACHE_NAME='fiona-matt-v2-20261004-team-rankings-9';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
@@ -11,6 +11,16 @@ const ASSETS=[
   '/Fiona-Matt/assets/header-track.svg',
   '/Fiona-Matt/assets/north-macedonia-flag.svg',
   '/Fiona-Matt/assets/italy-flag.svg',
+  '/Fiona-Matt/assets/austria-flag.svg',
+  '/Fiona-Matt/assets/slovenia-flag.svg',
+  '/Fiona-Matt/assets/peru-flag.svg',
+  '/Fiona-Matt/assets/st-gallen-coat.svg',
+  '/Fiona-Matt/assets/zurich-coat.svg',
+  '/Fiona-Matt/assets/zug-coat.svg',
+  '/Fiona-Matt/assets/thurgau-coat.svg',
+  '/Fiona-Matt/assets/ticino-coat.svg',
+  '/Fiona-Matt/assets/fribourg-coat.svg',
+
   '/Fiona-Matt/assets/senegal-coat.png',
   '/Fiona-Matt/assets/north-macedonia-coat.png',
   '/Fiona-Matt/assets/italy-coat.png',
