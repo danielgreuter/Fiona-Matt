@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-athlete-profile-13';
+const CACHE_NAME='fiona-matt-v2-20261004-compact-header-14';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
