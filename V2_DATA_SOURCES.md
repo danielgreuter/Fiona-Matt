@@ -133,3 +133,11 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Home-PB-Boxen sind Tastatur-/Touch-Schaltflächen; ausgewählte Box mit aria-pressed und passender 60-/100-/150-/200-m-Kurve, Saisonbestleistung setzt Saisonfilter.
 - Wettkampfkalender startet mit allen gelieferten Terminen; Wappen über unveränderten V1-Worker-Pfad anhand Kanton/Ort. Kalender-Live-Payload: zwölf Wettkämpfe bis September, keine kommenden Wettkämpfe. Keine zukünftigen Termine erfunden.
 - Rot-blauer Hintergrund ausserhalb weisser Karten. V1-Archiv bleibt unverändert. 18 Tests und 27 Chromium-Prüfungen bestanden.
+
+## Feinheiten 04.10.2026
+- Home: eine 100-m-PB-Box; separate Saisonbestleistungsbox entfernt. Resultatzeilen ohne alleinstehendes Sekunden-s, mit klarer Trennung von Leistung, Datum, Disziplin und Wettkampf.
+- Einheitlicher Detaildialog: sichtbares sticky ×, Escape und echter Klick ausserhalb der Box schliessen. Klick oder Textauswahl innerhalb bleibt offen. Native dialog-Semantik nach W3C APG/H102: https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/ .
+- Details: Leistungshero, kompakte Wind-/Rang-/Quellenfelder und tabellarische Top 5; Rohdaten nur aufklappbar.
+- Team LIE: kompakte Zeilen, Einzelprofilabruf erst beim Öffnen des Tabs (drei parallel), Profilcache sechs Stunden; manuelle Aktualisierung verfügbar. Zuordnung nur über identische Disziplin, Leistung und kompatible Punkte. Wettkampfdatum kommt aus passendem Resultat/PB, niemals aus updated. Wenn WA nur PB-Datum ohne Veranstaltungsort liefert, bleibt der Ort als fehlend gekennzeichnet. Kantonswappen anhand bekannter Orte; bei Ausland Landesname aus geliefertem Ländercode.
+- Live-Einzelprofile Fiona/Verling/Insinna geprüft und als Regressionfixtures gespeichert. Beispiel Verling 72.90: 25.06.2025 Maribor, nicht Aktualisierungsdatum 25.04.2026.
+- Hintergrund: feine parallele Tracklinien auf dem rot-blauen Verlauf; V1-Archiv unverändert. 21 Tests und 27 Browser-Layoutprüfungen mit zusätzlichen echten Modalinteraktionen bestanden.

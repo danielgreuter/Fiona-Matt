@@ -79,9 +79,9 @@
   }
 
   function renderMetrics(){
-    const metrics=[['60-pb','60m','60 m PB',bestOf('60m')],['100-pb','100m','100 m PB',bestOf('100m')],['100-sb','100m','100 m SB 2026',bestOf('100m',2026)],['150-pb','150m','150 m PB',bestOf('150m')],['200-pb','200m','200 m PB',bestOf('200m')]];
+    const metrics=[['60-pb','60m','60 m PB',bestOf('60m')],['100-pb','100m','100 m PB',bestOf('100m')],['150-pb','150m','150 m PB',bestOf('150m')],['200-pb','200m','200 m PB',bestOf('200m')]];
     $('#metrics').innerHTML=metrics.map(([key,disc,label,r])=>`<button type="button" class="metric ${state.metricKey===key?'selected':''}" data-metric="${key}" data-disc="${disc}" aria-pressed="${state.metricKey===key}"><div class="metric-label">${label}</div><div class="metric-value">${esc(r?.result||'—')}</div><div class="metric-note">${r?esc(fmtDate(r.dateISO)):'keine Daten'}</div></button>`).join('');
-    $$('[data-metric]').forEach(b=>b.onclick=()=>{state.metricKey=b.dataset.metric;state.chartDisc=b.dataset.disc;state.chartYear=state.metricKey==='100-sb'?'2026':'Alle';renderMetrics();renderChartTabs();renderChart('#progressChart',state.chartYear,state.chartDisc);});
+    $$('[data-metric]').forEach(b=>b.onclick=()=>{state.metricKey=b.dataset.metric;state.chartDisc=b.dataset.disc;state.chartYear='Alle';renderMetrics();renderChartTabs();renderChart('#progressChart',state.chartYear,state.chartDisc);});
   }
   function withExtraResults(data){
     const extra=waExtra.filter(r=>!data.results.some(s=>window.FionaModels.discipline(s.discipline)===r.discipline&&s.dateISO===r.dateISO&&String(s.result)===String(r.result)));
@@ -129,10 +129,9 @@
   function resultHtml(raw){
     const esc=v=>String(v??" ").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
     const r=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,typeof v==="string"?esc(v):v]));
-    return `<div class="result" data-result-index="${state.data.results.indexOf(raw)}">
-      <div class="result-time">${r.result}<small> ${/Jump|Throw|Put|Weitsprung/.test(raw.discipline)?"m":"s"}</small></div>
-      <div class="result-main"><strong>${r.disciplineLabel||r.discipline} · ${r.competition}</strong><span>${r.venue||"—"}${raw.source==="world-athletics"?" · World Athletics":""}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind:""} · ${r.place||""}</span></div>
-      <div class="result-date">${r.date}</div>
+    return `<div class="result result-card" data-result-index="${state.data.results.indexOf(raw)}">
+      <div class="result-time">${r.result}</div>
+      <div class="result-main"><div class="result-heading"><strong class="result-discipline">${r.disciplineLabel||r.discipline}</strong><span class="result-date">${r.date}</span></div><strong class="result-competition">${r.competition||'Wettkampf'}</strong><span class="result-meta">${r.venue||'Ort nicht geliefert'}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind+" m/s":""}${r.place?" · Lauf/Rang "+r.place:""}${raw.source==="world-athletics"?" · World Athletics":""}</span></div><span class="result-chevron" aria-hidden="true">›</span>
     </div>`;
   }
 
@@ -183,6 +182,7 @@
   function showView(name){
     if(!document.getElementById("view-"+name)) return;
     history.replaceState(null,"","#"+name);
+    window.dispatchEvent(new CustomEvent("fiona-view",{detail:{view:name}}));
     $$(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));
     $$(".nav-btn").forEach(b=>{b.classList.toggle("active",b.dataset.view===name);if(b.dataset.view===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
     $$("[data-goto]").forEach(b=>{if(b.dataset.goto===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});

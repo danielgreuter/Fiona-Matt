@@ -43,3 +43,21 @@ html{background:#1e3a8a}body{background:linear-gradient(114deg,#1e3a8a 0%,#2457c
 @media(max-width:600px){#metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#metrics .metric:last-child{grid-column:1/-1}}
 
 #dataWarning.is-stale{color:#8a4b08}
+/* Subtle running lanes above the Liechtenstein gradient. */
+body::before{content:"";position:fixed;inset:-20vh -30vw;pointer-events:none;z-index:0;background:repeating-linear-gradient(114deg,transparent 0,transparent 88px,#ffffff10 88px,#ffffff10 90px,transparent 90px,transparent 180px)}
+.shell,.topbar{position:relative}.topbar{position:sticky}.shell{z-index:1}
+#metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:600px){#metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#metrics .metric:last-child{grid-column:auto}}
+#resultDetail{padding:0;overflow:auto}#detailContent{padding:24px; padding-top:58px}
+.dialog-close{position:sticky;top:10px;margin:10px 12px -48px auto;display:flex;align-items:center;justify-content:center;z-index:5;width:38px;height:38px;border:1px solid #dbe3f1;border-radius:50%;background:#fff;color:#66758c;box-shadow:0 2px 8px #182b4410;font-size:25px;line-height:1}
+.dialog-close:hover{background:#eef4ff;color:#1e3a8a}
+.result-card{display:grid;grid-template-columns:68px minmax(0,1fr) 12px;gap:12px;margin:5px 0;padding:14px 12px;border:1px solid #e7edf6!important;border-radius:12px;background:#fff}
+.result-card:hover{background:#f6f9ff;border-color:#c6d8f7!important}.result-card .result-time{font-size:25px;align-self:center}
+.result-heading{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.result-card .result-discipline{color:#1e3a8a;font-size:12px}.result-card .result-date{margin:0;font-size:10px;white-space:nowrap}
+.result-card .result-competition{font-size:12px;font-weight:600;margin-top:4px}.result-card .result-meta{font-size:10px;line-height:1.5}.result-chevron{color:#a5b3c8;align-self:center;font-size:22px}
+.team-ranking-row{padding:9px 4px;gap:4px 9px;grid-template-columns:26px minmax(0,1fr) auto}.team-rank{font-size:17px}.team-ranking-info{gap:1px}.team-ranking-performance{margin-top:2px;gap:2px;font-size:12px}.team-points{font-size:12px}.team-ranking-info>.card-sub{font-size:10px}.team-ranking-row .comparison-track{height:3px}.team-ranking-row .athlete-link{padding:0;min-height:24px;font-size:12px}
+.team-meet{display:flex;align-items:center;gap:6px;color:#66758c;font-size:10px;line-height:1.4;font-weight:400}.team-meet>div{min-width:0}.team-meet span{display:block;overflow-wrap:anywhere}.team-meet .event-emblem{width:18px;height:21px;flex-shrink:0}
+@media(max-width:600px){#detailContent{padding:18px;padding-top:54px}.result-card{grid-template-columns:53px minmax(0,1fr) 9px;padding:12px 9px;gap:8px}.result-card .result-time{font-size:24px}.result-card .result-discipline,.result-card .result-competition{font-size:10px}.result-card .result-date{font-size:8px}.result-card .result-meta{font-size:9px}.team-ranking-row{grid-template-columns:23px minmax(0,1fr) auto}.team-points{grid-column:auto;font-size:11px}.team-ranking-row .comparison-track{grid-column:2/4}.team-ranking-performance{font-size:11px}}
+.result-detail-hero{text-align:left;border-bottom:1px solid #e3e8f2;padding-bottom:18px;margin-bottom:16px}.result-detail-hero .detail-performance{font-size:46px;color:#1e3a8a;margin:10px 0 5px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.detail-competition{font-weight:600;font-size:14px;margin:5px 0}.detail-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:20px}.detail-facts>div{border-radius:11px;background:#f5f8fd;padding:12px}.detail-facts span{display:block;font-size:10px;color:#66758c;margin-bottom:5px}.detail-facts strong{font-size:13px}.detail-facts~details{margin-top:20px}
+.team-ranking-info>.card-sub{display:none}.team-meet>div{flex:1;min-width:0}.team-meet span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.team-ranking-performance,.team-meet{min-width:0;max-width:100%}.team-ranking-row .athlete-link{max-width:100%;overflow-wrap:anywhere}

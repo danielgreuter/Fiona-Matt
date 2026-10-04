@@ -1,6 +1,6 @@
 /* Pure adapters shared by UI and regression tests. Source objects remain intact. */
 (function(root) {
-  const aliases = {'60 Metres':'60m','100 Metres':'100m','200 Metres':'200m','Long Jump':'Long Jump','Weitsprung':'Long Jump','LJ':'Long Jump'};
+  const aliases = {'60 Metres':'60m','100 Metres':'100m','200 Metres':'200m','Long Jump':'Long Jump','Weitsprung':'Long Jump','LJ':'Long Jump','Speer':'Javelin Throw','Diskus':'Discus Throw','Kugel':'Shot Put','Hoch':'High Jump','100mH':'100m Hurdles','60mH':'60m Hurdles','100 Metres Hurdles':'100m Hurdles','60 Metres Hurdles':'60m Hurdles'};
   const months = {jan:1,feb:2,mar:3,mär:3,apr:4,may:5,mai:5,jun:6,jul:7,aug:8,sep:9,oct:10,okt:10,nov:11,dec:12,dez:12};
   const discipline = value => {
     if (aliases[value]) return aliases[value];
@@ -76,7 +76,14 @@
     rows.forEach((r,i)=>{const score=number(r.score);if(score>0){if(score!==previous)rank=i+1;r.rank=rank;previous=score;}else r.rank=null;});
     return rows;
   }
-  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking};
+  function matchTeamPerformance(row,data){
+    const mark=x=>String(x??'').trim().split(/\s+/)[0].replace(',','.').replace(/[^0-9:.]+$/,'');
+    const same=r=>discipline(r.discipline||r.name)===discipline(row.name||row.discipline)&&mark(r.result||r.mark)===mark(row.result||row.mark)&&(!(number(row.score)>0&&number(r.score)>0)||number(row.score)===number(r.score));
+    const results=(data?.results||[]).filter(same).sort((a,b)=>dateKey(a.date).localeCompare(dateKey(b.date)));
+    if(results.length)return {...results[0],matchType:'result'};
+    const pb=(data?.pbs||[]).find(same);return pb?{...pb,matchType:'pb'}:null;
+  }
+  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance};
   api.normalizeResults = data => ({...data,results:data.results.map(raw=>{
     const dateISO=dateKey(raw.dateISO||raw.date);
     return {...raw,discipline:discipline(raw.discipline),numResult:number(raw.numResult??raw.result),dateISO,year:raw.year||dateISO.slice(0,4)};

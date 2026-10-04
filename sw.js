@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261003-home-calendar-3';
+const CACHE_NAME='fiona-matt-v2-20261004-polish-4';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
