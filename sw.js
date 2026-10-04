@@ -1,5 +1,6 @@
-const CACHE_NAME='fiona-matt-v2-20261004-team-rankings-9';
+const CACHE_NAME='fiona-matt-v2-20261004-team-profiles-10';
 const ASSETS=[
+  '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
