@@ -155,3 +155,9 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Hintergrund: app-eigene SVG-Bahnkurven, sechs Bahnen mit Startmarkierungen und Zahlen, in allen Ansichten hinter den Karten. Reduzierte Deckkraft nach visueller Prüfung.
 - Meilensteine mit lokal gespeicherten echten Wappen für Waadt, Nordmazedonien, Bern, Italien, Senegal. Rieti: internationale 100-m-Limite erreicht, Status verletzt; keine Teilnahme oder Leistung behauptet. Bildnachweise in ASSET_CREDITS.md und Footer verlinkt.
 - Resultatkarten: breitere Zeitspalte, dezente Trennlinie und mehr Abstand zum Veranstaltungstext. 27 Tests sowie 27 responsive Chromium-Layoutprüfungen bestanden; Dakar-Höhe und Chart-/Resultatdialoge zusätzlich geprüft. V1-Archiv unverändert.
+
+## Flaggen und weicher Athletenheader 04.10.2026
+- Internationale Meilensteine zeigen jetzt Nationalflaggen statt der zuvor gewünschten Landeswappen: Nordmazedonien, Italien und Senegal für Dakar. Schweizer Kantonswappen bleiben erhalten. Nordmazedonien als geprüftes Original-SVG, Italien exakte vertikale Trikolore, Senegal vorhandenes korrektes SVG. Quellen in ASSET_CREDITS.md.
+- Dakar: Maskottchen und Titel als gemeinsame zentrierte Gruppe; Flagge rechtsbündig unter dem Titel. Wetter bleibt kompakt. Höhe bei 320/390/1440 px: 278.58/281.58/244.19 px, weiterhin kleiner als vor der Wetterergänzung.
+- Globaler Fiona-Header mit drei app-eigenen Tracklinien. Originalporträt ohne harten Rahmen, CSS-Masken für weiche Seiten- und Unterkanten; Originaldatei und Fotozoom unverändert.
+- 28 Tests und alle 27 Chromium-Layoutprüfungen bestanden, Screenshots von Handy und Desktop visuell geprüft. V1-Archiv unverändert.

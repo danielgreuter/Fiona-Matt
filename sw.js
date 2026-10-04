@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-refinements-6';
+const CACHE_NAME='fiona-matt-v2-20261004-portrait-flags-7';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
@@ -8,6 +8,9 @@ const ASSETS=[
   '/Fiona-Matt/personal-ui.js',
   '/Fiona-Matt/weather.js',
   '/Fiona-Matt/assets/track-lanes.svg',
+  '/Fiona-Matt/assets/header-track.svg',
+  '/Fiona-Matt/assets/north-macedonia-flag.svg',
+  '/Fiona-Matt/assets/italy-flag.svg',
   '/Fiona-Matt/assets/senegal-coat.png',
   '/Fiona-Matt/assets/north-macedonia-coat.png',
   '/Fiona-Matt/assets/italy-coat.png',

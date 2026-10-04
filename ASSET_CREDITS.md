@@ -11,3 +11,9 @@ Die Landeswappen wurden aus den verlinkten Original-SVGs in transparente PNGs mi
 | assets/bern-coat.svg | [CHE Bern COA](https://commons.wikimedia.org/wiki/File:CHE_Bern_COA.svg) | Amtliches Schweizer Wappen / Public Domain |
 
 Tracklinien und Wettersymbole sind app-eigene SVG-Zeichnungen. Wetterdaten: [Open-Meteo](https://open-meteo.com/), als Modellwerte mit Datenzeit gekennzeichnet.
+
+## Flaggen der internationalen Meilensteine
+- Nordmazedonien: [Flag of North Macedonia, SKopp / Gabbe](https://commons.wikimedia.org/wiki/File:Flag_of_North_Macedonia.svg), Public Domain. Unverändertes Original-SVG.
+- Italien: app-eigene Vektorzeichnung der vertikalen grün-weiss-roten Nationalflagge im Verhältnis 3:2.
+- Senegal: vorhandene Vektorflagge mit grün-gelb-roten Streifen und grünem Stern.
+- Die drei Landeswappen bleiben als frühere Assets erhalten; die Meilensteine zeigen nun Landesflaggen.
