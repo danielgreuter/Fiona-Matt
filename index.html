@@ -8,7 +8,7 @@
   <title>Fiona Matt Athletics · V2</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-192-fixed.png">
-  <link rel="stylesheet" href="./styles.css?v=20261004-15">
+  <link rel="stylesheet" href="./styles.css?v=20261004-16">
 </head>
 <body>
   <div id="splash-screen" aria-label="Fiona Matt Athletics Intro">
@@ -52,7 +52,7 @@
                 <text x="24" y="45" text-anchor="middle" font-size="12" fill="#5A2A08" font-family="sans-serif" font-weight="bold">3</text>
               </svg></span><span><strong>SM Halle U18 · Bronze</strong><small>60 m · Magglingen 2026</small></span></div></div>
     </section>
-    <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
+    <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="gallery">Fotos</button><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
     <section id="view-home" class="view active">
       <section class="dakar-card" aria-label="Fionas nächstes Saisonhighlight Dakar">
         <div class="dakar-highlight">
@@ -173,6 +173,8 @@
     </section>
 
     
+    <section id="view-gallery" class="view"><div class="section-title">Fionas Fotogalerie</div><section class="card"><div class="card-head"><div><h2>Momente auf und neben der Bahn</h2><p class="card-sub">Wettkämpfe, Training und Erinnerungen.</p></div><button type="button" class="tab" id="galleryManage">Fotos verwalten</button></div><div class="tabs" id="galleryAlbums"></div><p id="galleryMessage" class="data-note" role="status" aria-live="polite"></p><div id="galleryManagement" hidden><form id="galleryLoginForm" class="gallery-form"><label>Upload-Schlüssel<input id="galleryKey" type="password" autocomplete="off" required></label><button class="tab" type="submit">Anmelden</button><p class="card-sub">Nur berechtigte Personen können Fotos veröffentlichen oder löschen.</p></form><button id="galleryLogout" class="tab" type="button" hidden>Abmelden</button><form id="galleryUploadForm" class="gallery-form" hidden><label>Fotos auswählen<input id="galleryFiles" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple required></label><label>Album<input id="galleryAlbum" type="text" value="Momente" maxlength="40" list="galleryAlbumSuggestions" required></label><datalist id="galleryAlbumSuggestions"><option value="Dakar 2026"><option value="Wettkämpfe"><option value="Training"><option value="Momente"></datalist><label>Titel (optional)<input id="galleryTitle" type="text" maxlength="100"></label><label>Datum (optional)<input id="galleryDate" type="date"></label><label>Beschreibung (optional)<textarea id="galleryCaption" maxlength="300" rows="2"></textarea></label><p class="card-sub">Ausgewählte Fotos werden öffentlich veröffentlicht. Album, Titel und Datum gelten für die ganze Auswahl. Bilder werden vor dem Upload verkleinert.</p><button type="submit" class="tab" id="gallerySend">Fotos veröffentlichen</button></form></div><div class="gallery-grid" id="galleryGrid"></div><div class="tabs"><button class="tab" id="galleryMore" type="button" hidden>Weitere Fotos laden</button><button class="tab" id="galleryRefresh" type="button">Aktualisieren</button></div></section></section>
+
     <section id="view-rankings" class="view"><div class="section-title">Rankings</div><div id="rankingsContent"></div></section>
     <section id="view-wa" class="view"><div class="section-title">World Athletics</div><div id="waContent"></div></section>
     <section id="view-team" class="view"><div class="section-title">Team Liechtenstein</div><div id="teamContent"></div></section>
@@ -199,5 +201,6 @@
   <script src="./app.js"></script>
   <script src="./migration-ui.js"></script>
   <script src="./extensions.js"></script>
+  <script src="./gallery.js"></script>
 </body>
 </html>

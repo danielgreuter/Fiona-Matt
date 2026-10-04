@@ -194,3 +194,7 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Swiss-Athletics-Lizenznummer 251392 direkt vom Nutzer am 04.10.2026 bestätigt; getrennt von WA-ID 15091224. Keine Ableitung aus anderen Registrierungsnummern.
 - Zugang zur vollständigen gelieferten WA-Bestleistungsübersicht auch aus dem eigenen Athletinnenprofil, mit bestehender Cache-/Quellenkennzeichnung.
 - 37 Modell-/UI-Tests und 30 responsive Chromium-Ansichten einschliesslich des eigenen Profil-Tabs geprüft. Die beiden vorhandenen Archiv-Snapshots bleiben unverändert.
+
+## Fotogalerie
+
+Öffentliche Galerie mit vorhandenem Originalfoto. Neue Fotos werden nach Anmeldung über `gallery.js` verkleinert und in einem separaten privaten Cloudflare-R2-Bucket gespeichert. Der Worker gibt Fotos öffentlich aus und prüft Uploads und Löschungen serverseitig. Einrichtung: `gallery-worker/README.md`. Ohne konfigurierte API bleibt der Upload ausdrücklich deaktiviert.
