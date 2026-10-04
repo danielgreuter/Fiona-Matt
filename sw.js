@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-polish-4';
+const CACHE_NAME='fiona-matt-v2-20261004-weather-charts-5';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
@@ -6,6 +6,7 @@ const ASSETS=[
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/personal-ui.js',
+  '/Fiona-Matt/weather.js',
   '/Fiona-Matt/assets/fiona-portrait.jpg',
   '/Fiona-Matt/assets/liechtenstein-flag.webp',
   '/Fiona-Matt/assets/dakar-mascot.png',

@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <div class="track-lane-numbers" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
   <div id="splash-screen" aria-label="Fiona Matt Athletics Intro">
     <img class="splash-logo" src="./icon-192-fixed.png" alt="Fionas FM-Logo" width="192" height="192">
     <div class="splash-name"><span>Fiona</span> Matt</div>
@@ -58,7 +59,7 @@
         <div class="dakar-mascot"><img src="./assets/dakar-mascot.png" alt="Dakar-2026-Maskottchen mit erhobenen Armen" width="387" height="516"></div>
         <div class="dakar-main"><p class="dakar-kicker">Nächstes Saisonhighlight</p><h2>Dakar <span>2026</span></h2><img class="senegal-flag" src="./assets/senegal-flag.svg" alt="Flagge von Senegal" width="60" height="40"><p class="dakar-sub">Youth Olympic Games</p><div class="dakar-date">08. November · 100 m</div><p id="raceDayStatus" class="race-status"></p></div>
         <div class="dakar-count"><span>Bis zum Wettkampftag</span><div class="countdown" id="countdown">— <small>Tage</small></div><div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div></div>
-        <p class="dakar-schedule">Genaue Startzeit und Laufzuteilung noch nicht hinterlegt.</p>
+        <section class="dakar-weather" aria-label="Aktuelles Wetter Dakar"><div class="weather-heading"><h3>Wetter in Dakar</h3><button type="button" id="refreshWeather" class="tab" aria-label="Wetter aktualisieren">↻</button></div><div id="dakarWeather" aria-live="polite"><p class="data-note">Wetter wird geladen …</p></div><a class="weather-source" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Wetterdaten: Open-Meteo · Modellwerte</a></section><p class="dakar-schedule">Genaue Startzeit und Laufzuteilung noch nicht hinterlegt.</p>
       </section>
       <p class="data-note" id="dataWarning">Datenstand wird geprüft …</p>
 
@@ -183,6 +184,7 @@
   <script src="./data-models.js"></script>
   <script src="./data-adapters.js"></script>
   <script src="./personal-ui.js"></script>
+  <script src="./weather.js"></script>
   <script src="./app.js"></script>
   <script src="./migration-ui.js"></script>
   <script src="./extensions.js"></script>

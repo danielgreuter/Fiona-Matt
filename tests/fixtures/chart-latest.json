@@ -1,0 +1,393 @@
+[
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "11.96",
+    "numResult": 11.96,
+    "wind": 0.4,
+    "windAssisted": false,
+    "venue": "Thun",
+    "competition": "SM U16/U18 (WRC)",
+    "date": "05.09.2026",
+    "dateISO": "2026-09-05",
+    "year": 2026,
+    "place": "3qf4",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Brunner Ayana",
+        "club": "LC Luzern",
+        "result": "11,86",
+        "wind": 0.6
+      },
+      {
+        "rank": 2,
+        "name": "Steffen Leonie",
+        "club": "TV Saanen-Gstaad",
+        "result": "11,93",
+        "wind": 0.4
+      },
+      {
+        "rank": 3,
+        "name": "Matt Fiona",
+        "club": "TV Eschen-Mauren",
+        "result": "11,96",
+        "wind": 0.4,
+        "fiona": true
+      },
+      {
+        "rank": 4,
+        "name": "Essola Eka Léonora",
+        "club": "FSG Bassecourt",
+        "result": "11,99",
+        "wind": 0.5
+      },
+      {
+        "rank": 5,
+        "name": "Berger Sarah Maria",
+        "club": "LC Rapperswil-Jona",
+        "result": "12,02",
+        "wind": 0.9
+      }
+    ],
+    "fionaRank": 3,
+    "fieldSize": 23
+  },
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "12.07",
+    "numResult": 12.07,
+    "wind": 1,
+    "windAssisted": false,
+    "venue": "Thun",
+    "competition": "SM U16/U18 (WRC)",
+    "date": "05.09.2026",
+    "dateISO": "2026-09-05",
+    "year": 2026,
+    "place": "4f1",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Brunner Ayana",
+        "club": "LC Luzern",
+        "result": "11,78",
+        "wind": 1
+      },
+      {
+        "rank": 2,
+        "name": "Steffen Leonie",
+        "club": "TV Saanen-Gstaad",
+        "result": "11,97",
+        "wind": 1
+      },
+      {
+        "rank": 3,
+        "name": "Essola Eka Léonora",
+        "club": "FSG Bassecourt",
+        "result": "12,05",
+        "wind": 1
+      },
+      {
+        "rank": 4,
+        "name": "Matt Fiona",
+        "club": "TV Eschen-Mauren",
+        "result": "12,07",
+        "wind": 1,
+        "fiona": true
+      },
+      {
+        "rank": 5,
+        "name": "Berger Sarah Maria",
+        "club": "LC Rapperswil-Jona",
+        "result": "12,08",
+        "wind": 1
+      }
+    ],
+    "fionaRank": 4,
+    "fieldSize": 5
+  },
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "12.26",
+    "numResult": 12.26,
+    "wind": 1,
+    "windAssisted": false,
+    "venue": "Thun",
+    "competition": "SM U16/U18 (WRC)",
+    "date": "05.09.2026",
+    "dateISO": "2026-09-05",
+    "year": 2026,
+    "place": "9h8",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Steffen Leonie",
+        "club": "TV Saanen-Gstaad",
+        "result": "11,86",
+        "wind": 1.1
+      },
+      {
+        "rank": 2,
+        "name": "Brunner Ayana",
+        "club": "LC Luzern",
+        "result": "11,90",
+        "wind": 0.5
+      },
+      {
+        "rank": 3,
+        "name": "Essola Eka Léonora",
+        "club": "FSG Bassecourt",
+        "result": "11,92",
+        "wind": 0.7
+      },
+      {
+        "rank": 4,
+        "name": "Berger Sarah Maria",
+        "club": "LC Rapperswil-Jona",
+        "result": "12,02",
+        "wind": 0.8
+      },
+      {
+        "rank": 5,
+        "name": "Baldi Annukka",
+        "club": "LC Therwil",
+        "result": "12,09",
+        "wind": 1
+      }
+    ],
+    "fionaRank": 9,
+    "fieldSize": 60
+  },
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "11.82",
+    "numResult": 11.82,
+    "wind": 3.1,
+    "windAssisted": true,
+    "venue": "Bulle",
+    "competition": "Meeting de la Gruyère (WRC)",
+    "date": "11.07.2026",
+    "dateISO": "2026-07-11",
+    "year": 2026,
+    "place": "1f",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Di Tizio-Frey Géraldine",
+        "club": "LK Zug",
+        "result": "10,91",
+        "wind": 3,
+        "windAssisted": true
+      },
+      {
+        "rank": 2,
+        "name": "Pointet Léonie",
+        "club": "CA Riviera",
+        "result": "11,00",
+        "wind": 3,
+        "windAssisted": true
+      },
+      {
+        "rank": 3,
+        "name": "Kora Salomé",
+        "club": "LC Brühl Leichtathletik",
+        "result": "11,01",
+        "wind": 3,
+        "windAssisted": true
+      },
+      {
+        "rank": 4,
+        "name": "Kouni Natacha",
+        "club": "LC Zürich",
+        "result": "11,04",
+        "wind": 3,
+        "windAssisted": true
+      },
+      {
+        "rank": 5,
+        "name": "Del Ponte Ajla",
+        "club": "US Ascona atletica",
+        "result": "11,17",
+        "wind": 3,
+        "windAssisted": true
+      }
+    ],
+    "fionaRank": 23,
+    "fieldSize": 23
+  },
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "12.02",
+    "numResult": 12.02,
+    "wind": 1,
+    "windAssisted": false,
+    "venue": "Bulle",
+    "competition": "Meeting de la Gruyère (WRC)",
+    "date": "11.07.2026",
+    "dateISO": "2026-07-11",
+    "year": 2026,
+    "place": "1r5",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Di Tizio-Frey Géraldine",
+        "club": "LK Zug",
+        "result": "10,98",
+        "wind": 1.8
+      },
+      {
+        "rank": 2,
+        "name": "Pointet Léonie",
+        "club": "CA Riviera",
+        "result": "11,11",
+        "wind": 2.3,
+        "windAssisted": true
+      },
+      {
+        "rank": 3,
+        "name": "Kora Salomé",
+        "club": "LC Brühl Leichtathletik",
+        "result": "11,17",
+        "wind": 1.8
+      },
+      {
+        "rank": 3,
+        "name": "Kouni Natacha",
+        "club": "LC Zürich",
+        "result": "11,17",
+        "wind": 2.3,
+        "windAssisted": true
+      },
+      {
+        "rank": 5,
+        "name": "Del Ponte Ajla",
+        "club": "US Ascona atletica",
+        "result": "11,23",
+        "wind": 1.8
+      }
+    ],
+    "fionaRank": 28,
+    "fieldSize": 106
+  },
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "11.91",
+    "numResult": 11.91,
+    "wind": 1.7,
+    "windAssisted": false,
+    "venue": "Fribourg",
+    "competition": "Fribourg International Meeting WRC",
+    "date": "01.07.2026",
+    "dateISO": "2026-07-01",
+    "year": 2026,
+    "place": "2r2",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Brunner Ayana",
+        "club": "LC Luzern",
+        "result": "11,89",
+        "wind": 1.7
+      },
+      {
+        "rank": 2,
+        "name": "Matt Fiona",
+        "club": "TV Eschen-Mauren",
+        "result": "11,91",
+        "wind": 1.7,
+        "fiona": true
+      },
+      {
+        "rank": 3,
+        "name": "Essola Eka Léonora",
+        "club": "FSG Bassecourt",
+        "result": "11,94",
+        "wind": 2.6,
+        "windAssisted": true
+      },
+      {
+        "rank": 4,
+        "name": "Isenegger Lilly",
+        "club": "LAS Old Boys Basel",
+        "result": "12,09",
+        "wind": 2.6,
+        "windAssisted": true
+      },
+      {
+        "rank": 5,
+        "name": "Schilter Lia",
+        "club": "LC Luzern",
+        "result": "12,16",
+        "wind": 1.7
+      }
+    ],
+    "fionaRank": 2,
+    "fieldSize": 14
+  },
+  {
+    "discipline": "100m",
+    "indoor": false,
+    "result": "12.03",
+    "numResult": 12.03,
+    "wind": 0.4,
+    "windAssisted": false,
+    "venue": "Fribourg",
+    "competition": "Fribourg International Meeting WRC",
+    "date": "01.07.2026",
+    "dateISO": "2026-07-01",
+    "year": 2026,
+    "place": "2f1",
+    "source": "swiss-athletics",
+    "top5": [
+      {
+        "rank": 1,
+        "name": "Brunner Ayana",
+        "club": "LC Luzern",
+        "result": "11,85",
+        "wind": 0.4
+      },
+      {
+        "rank": 2,
+        "name": "Matt Fiona",
+        "club": "TV Eschen-Mauren",
+        "result": "12,03",
+        "wind": 0.4,
+        "fiona": true
+      },
+      {
+        "rank": 3,
+        "name": "Isenegger Lilly",
+        "club": "LAS Old Boys Basel",
+        "result": "12,16",
+        "wind": 0.4
+      },
+      {
+        "rank": 4,
+        "name": "Schilter Lia",
+        "club": "LC Luzern",
+        "result": "12,26",
+        "wind": 0.4
+      },
+      {
+        "rank": 5,
+        "name": "Visetti Azzurra",
+        "club": "SAM Massagno",
+        "result": "12,44",
+        "wind": 0.4
+      }
+    ],
+    "fionaRank": 2,
+    "fieldSize": 8
+  }
+]

@@ -1,5 +1,6 @@
 const fs=require('node:fs');
 const fixtures={
+  weather:JSON.parse(fs.readFileSync('tests/fixtures/dakar-weather.json','utf8')),
   'sa-results':JSON.parse(fs.readFileSync('athlete_results.json','utf8')),
   'bestenliste':{disciplines:{'100m':{year:'2026',top15:[{rank:1,name:'Runner A',result:'11.90',venue:'Basel',comp_date:'09.05.2026'}],fiona:{rank:2,result:'12.03'}}}},
   'wa-pbs':{pbs:[{discipline:'100 Metres',result:'12.03',score:986,date:'09 MAY 2026'}]},
