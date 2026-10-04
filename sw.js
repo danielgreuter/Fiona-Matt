@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-gallery-16';
+const CACHE_NAME='fiona-matt-v2-20261004-gallery-connected-17';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',

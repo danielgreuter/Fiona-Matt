@@ -10,7 +10,7 @@ window.FIONA_APP_CONFIG = {
     coach: "Christian Gutgsell",
     focus: "100 m"
   },
-  gallery: { apiBase: "" },
+  gallery: { apiBase: "https://fiona-gallery.daniel-greuter.workers.dev" },
   target: {
     title: "Youth Olympic Games Dakar 2026",
     shortTitle: "Dakar 2026",
