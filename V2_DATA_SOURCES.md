@@ -188,3 +188,9 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Ein echter persönlicher Medaillenmoment aus dem vorhandenen Originalfoto; öffnet denselben Fotozoom. Keine erfundenen Zitate oder zusätzlichen Aufnahmen.
 - Nach dem Scrollen über den Athletenheader reduziert sich die obere Identitätsleiste auf 48 Pixel und wechselt in Liechtenstein-Blau. Reduced-Motion berücksichtigt.
 - 36 Modell-/UI-Tests bestanden, 27 responsive Chromium-Ansichten ohne Seitenüberlauf; Handybild visuell geprüft.
+
+## Fionas eigener Athletinnenbereich 04.10.2026
+- Der eigene Fiona-Tab zeigt vollständiges Geburtsdatum 02.09.2009, dynamisches Alter und aktuelle Alterskategorie/Saison, Verein, Trainer, Disziplinen und Wettkampfnation.
+- Swiss-Athletics-Lizenznummer 251392 direkt vom Nutzer am 04.10.2026 bestätigt; getrennt von WA-ID 15091224. Keine Ableitung aus anderen Registrierungsnummern.
+- Zugang zur vollständigen gelieferten WA-Bestleistungsübersicht auch aus dem eigenen Athletinnenprofil, mit bestehender Cache-/Quellenkennzeichnung.
+- 37 Modell-/UI-Tests und 30 responsive Chromium-Ansichten einschliesslich des eigenen Profil-Tabs geprüft. Die beiden vorhandenen Archiv-Snapshots bleiben unverändert.
