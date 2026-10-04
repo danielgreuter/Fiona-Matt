@@ -41,10 +41,12 @@
     document.onclick=e=>{
       const target=e.target.closest('.result[data-result-index]');if(!target)return;
       const r=results[Number(target.dataset.resultIndex)];if(!r)return;
-      const box=document.querySelector('#detailContent');box.replaceChildren(el('h2',(r.disciplineLabel||r.discipline)+' · '+r.result));
-      const labels={date:'Datum',venue:'Ort',competition:'Wettkampf',place:'Lauf / Rang',fionaRank:'Gesamtrang Fiona',wind:'Wind (m/s)',indoor:'Indoor',source:'Quelle',year:'Saison',score:'WA-Punkte',waScore:'WA-Punkte',windAssisted:'Windunterstützt'};
-      for(const [key,label]of Object.entries(labels))if(r[key]!=null&&r[key]!=='')row(box,label,r[key]);
-      if(r.top5?.length){box.append(el('h3','Laportal · Top 5'));for(const entry of r.top5)row(box,(entry.rank||'—')+'. '+entry.name,entry.result,[entry.club,entry.wind!=null?'Wind '+entry.wind:''].filter(Boolean).join(' · '));}
+      const box=document.querySelector('#detailContent');box.replaceChildren();
+      const hero=el('div',null,'result-detail-hero');hero.append(el('span',r.disciplineLabel||r.discipline,'badge info'),el('h2',r.result,'detail-performance'),el('p',r.competition||'Wettkampf','detail-competition'),el('p',[r.date,r.venue].filter(Boolean).join(' · '),'card-sub'));box.append(hero);
+      const facts=el('div',null,'detail-facts');
+      for(const [label,value]of [['Wind',r.indoor?'Halle':r.wind!=null&&r.wind!==''?r.wind+' m/s':'nicht geliefert'],['Lauf / Rang',r.place??'—'],['WA-Punkte',r.score||r.waScore||'nicht geliefert'],['Quelle',r.source==='world-athletics'?'World Athletics':'Swiss Athletics']]){const cell=el('div');cell.append(el('span',label),el('strong',value));facts.append(cell);}box.append(facts);
+      if(r.windAssisted)box.append(el('p','Windunterstützt · separat von regulären Bestleistungen','data-note'));
+      if(r.top5?.length){box.append(el('h3','Wettkampf · Top 5'));const wrap=el('div',null,'table-wrap'),table=el('table',null,'data-table'),head=el('thead'),hr=el('tr');for(const label of ['Rang','Athlet:in / Verein','Leistung','Wind'])hr.append(el('th',label));head.append(hr);table.append(head);const body=el('tbody');for(const entry of r.top5){const tr=el('tr');for(const value of [entry.rank??'—',[entry.name,entry.club].filter(Boolean).join(' · '),entry.result,entry.wind!=null?entry.wind+' m/s':'—'])tr.append(el('td',value));body.append(tr);}table.append(body);wrap.append(table);box.append(wrap);}
       const raw=el('details');raw.append(el('summary','Vollständige Quelldaten'),el('pre',JSON.stringify(r,null,2)));box.append(raw);detail.showModal();
     };
     const bind=()=>document.querySelectorAll('#latestResults .result,#allResults .result').forEach(node=>{if(node.dataset.resultIndex!=null){node.tabIndex=0;node.setAttribute('role','button');node.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();node.click();}};}});

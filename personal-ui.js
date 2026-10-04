@@ -20,5 +20,12 @@
     const img=document.createElement('img');img.src='./assets/fiona-portrait.jpg';img.alt='Fionas Originalfoto mit ihrer Goldmedaille';img.className='portrait-zoom';
     body.replaceChildren(title,img);document.querySelector('#closeDetail').onclick=()=>dialog.close();dialog.showModal();
   };
+  const dialog=document.querySelector('#resultDetail');
+  document.querySelector('#closeDetail').onclick=()=>dialog.close();
+  let outsideDown=false;
+  const outside=e=>{const rect=dialog.getBoundingClientRect();return e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom;};
+  dialog.addEventListener('pointerdown',e=>{outsideDown=e.target===dialog&&outside(e);});
+  dialog.addEventListener('click',e=>{if(e.target===dialog&&outsideDown&&outside(e))dialog.close();outsideDown=false;});
+  dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();dialog.close();}});
   intro();
 })();
