@@ -47,6 +47,17 @@ export default {async fetch(request,env){
       const meta={title:text(url.searchParams.get('title'),100),caption:text(url.searchParams.get('caption'),300),album:text(url.searchParams.get('album'),40)||'Momente',date};
       await env.PHOTOS.put('photos/'+id,bytes,{httpMetadata:{contentType:type},customMetadata:meta});return cors(json({photo:{id,...meta,url:url.origin+'/photos/'+id}},201));
     }
+    if(path.startsWith('/photos/')&&request.method==='POST'){
+      const id=decodeURIComponent(path.slice(8));if(!/^\d{13}-[a-f0-9-]{36}$/.test(id))return cors(json({error:'Foto nicht gefunden.'},404));
+      const raw=await request.text();if(raw.length>4096)return cors(json({error:'Beschriftung zu lang.'},413));
+      let data;try{data=JSON.parse(raw);}catch{return cors(json({error:'Beschriftung ungültig.'},400));}
+      if(!data||typeof data!=='object'||Array.isArray(data))return cors(json({error:'Beschriftung ungültig.'},400));
+      const date=text(data.date,10);if(date&&(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T00:00:00Z'))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date))return cors(json({error:'Datum ungültig.'},400));
+      const object=await env.PHOTOS.get('photos/'+id);if(!object)return cors(json({error:'Foto nicht gefunden.'},404));
+      const meta={title:text(data.title,100),caption:text(data.caption,300),album:text(data.album,40)||'Momente',date};
+      await env.PHOTOS.put('photos/'+id,object.body,{httpMetadata:object.httpMetadata,customMetadata:meta});
+      return cors(json({photo:{id,...meta,url:url.origin+'/photos/'+id}}));
+    }
     if(path.startsWith('/photos/')&&request.method==='DELETE'){
       const id=decodeURIComponent(path.slice(8));if(!/^\d{13}-[a-f0-9-]{36}$/.test(id))return cors(json({error:'Foto nicht gefunden.'},404));await env.PHOTOS.delete('photos/'+id);return cors(json({ok:true}));
     }

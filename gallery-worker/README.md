@@ -25,3 +25,9 @@ Daten: `/photos` GET listet mit Cursor jeweils 100 Bilder; POST lädt ein Foto h
 Wichtig: Alben und Fotos sind öffentlich. Der Worker entfernt EXIF nicht für direkt per API gesendete Dateien; für manuelle API-Uploads vorher Metadaten entfernen. Keine Schlüssel im URL-Query, in Local Storage, Logs oder Repository speichern. Für Widerruf einen Eintrag im Secret entfernen/ersetzen. R2-/Workers-Kosten und Limits im eigenen Konto prüfen, bevor erstmals aktiviert wird.
 
 Offizielle Dokumentation: https://developers.cloudflare.com/r2/api/workers/workers-api-reference/ und https://developers.cloudflare.com/workers/configuration/secrets/
+
+## Nachträglich beschriften
+
+Nach diesem Update den gesamten aktuellen `worker.mjs`-Inhalt im Cloudflare-Editor ersetzen und Deploy klicken. Bestehende R2-Bindings und Secrets beibehalten. `POST /photos/<id>` aktualisiert Titel, Beschreibung, Album und Aufnahmedatum nach derselben Schlüsselprüfung. Das Bild und seine ID bleiben erhalten. Die App zeigt bei einem alten Worker eine klare Update-Meldung.
+
+Teilen nutzt auf unterstützten Handys die Gerätefreigabe inklusive Bilddatei (WhatsApp als Ziel wählbar); andernfalls wird ein öffentlicher Fotolink über WhatsApp angeboten.
