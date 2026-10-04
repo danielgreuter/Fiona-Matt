@@ -7,7 +7,7 @@
   let saData=null,waExtra=[];
   const $$ = s => [...document.querySelectorAll(s)];
   const esc=v=>String(v??" ").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[c]));
-  const fmtDate = iso => !iso || !Number.isFinite(new Date(iso).getTime()) ? "Datum fehlt" : new Intl.DateTimeFormat("de-CH",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(iso));
+  const fmtDate = iso => !iso || !Number.isFinite(new Date(iso).getTime()) ? "Datum fehlt" : new Intl.DateTimeFormat("de-CH",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"}).format(new Date(iso));
   const daysBetween=(a,b)=>Math.ceil((b-a)/86400000);
 
   function legal(r){
@@ -89,17 +89,22 @@
   }
   window.addEventListener('fiona-source',event=>{if(event.detail.action!=='results'||!event.detail.data)return;const raw=event.detail.data;const rows=Array.isArray(raw)?raw:raw.results||[];waExtra=window.FionaModels.normalizeResults({results:rows.filter(r=>window.FionaModels.discipline(r.discipline)==='150m').map(r=>({...r,source:'world-athletics',sourceStatus:event.detail.status,disciplineLabel:'150m'}))}).results;if(saData){state.data=withExtraResults(saData);window.dispatchEvent(new CustomEvent('fiona-results',{detail:state.data}));renderAll();}});
 
-  function chartData(year="Alle",disc="100m"){
-    let arr=sprintResults(disc).filter(r=>r.dateISO && Number.isFinite(Date.parse(r.dateISO)));
-    if(year!=="Alle") arr=arr.filter(r=>String(r.year)===String(year));
-    return arr.sort((a,b)=>new Date(a.dateISO)-new Date(b.dateISO));
+  function chartData(year='Alle',disc='100m'){
+    return window.FionaModels.chartResults(state.data?.results,disc,year);
+  }
+  function openChartDetail(disc,year){
+    const dialog=$('#resultDetail'),body=$('#detailContent');body.innerHTML=`<h2>${esc(disc.replace('m',' m'))} · Entwicklung</h2><p class="card-sub">Reguläre Resultate · ${esc(year==='Alle'?'alle Jahre':year)}</p><div class="chart chart-large" id="zoomProgressChart"></div><h3>Resultate der Kurve</h3><p class="data-note">Neueste Wettkampftage zuerst. Läufe desselben Wettkampfs nach gelieferten Laufkennungen; ohne Kennung bleibt die Quellenreihenfolge erhalten. Keine angenommene Startzeit.</p>`;
+    renderChart('#zoomProgressChart',year,disc,false);
+    const rows=chartData(year,disc);const dates=[...new Set(rows.map(r=>r.dateISO))].reverse();const ordered=dates.flatMap(date=>rows.filter(r=>r.dateISO===date));
+    const wrap=document.createElement('div');wrap.className='table-wrap';wrap.innerHTML=`<table class="data-table chart-results-table"><thead><tr>${['Datum','Leistung','Lauf / Rang','Wind','Wettkampf / Ort'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${ordered.map(r=>`<tr><td>${esc(r.date)}</td><td><strong>${esc(r.result)}</strong></td><td>${esc(r.place??'—')}</td><td>${r.indoor?'Halle':r.wind!=null&&r.wind!==''?esc(r.wind)+' m/s':'nicht geliefert'}</td><td>${esc([r.competition,r.venue].filter(Boolean).join(' · '))}</td></tr>`).join('')}</tbody></table>`;body.append(wrap);
+    body.insertAdjacentHTML('beforeend',`<p class="data-note">${rows.length} Resultate · Windunterstützte Läufe sind in der regulären Kurve ausgeschlossen. Quellen: Swiss Athletics${disc==='150m'?' / World Athletics':''}.</p>`);dialog.showModal();
   }
 
-  function renderChart(container, year="Alle",disc="100m"){
+  function renderChart(container, year="Alle",disc="100m",interactive=true){
     const el=$(container), data=chartData(year,disc);
     if(container==="#progressChart")$("#progressChartTitle").textContent=disc.replace("m","-m")+"-Entwicklung";
-    if(!data.length){ el.innerHTML=`<div class="empty">Keine ${esc(disc)}-Daten für diesen Zeitraum.</div>`; return; }
-    const W=760,H=250,p={l:42,r:18,t:18,b:34};
+    if(!data.length){ el.removeAttribute('role');el.removeAttribute('tabindex');el.removeAttribute('aria-label');el.onclick=null;el.onkeydown=null;el.innerHTML=`<div class="empty">Keine ${esc(disc)}-Daten für diesen Zeitraum.</div>`; return; }
+    const W=760,H=container==="#zoomProgressChart"?340:250,p={l:42,r:18,t:18,b:34};
     const xs=data.map(r=>new Date(r.dateISO).getTime());
     const ys=data.map(r=>r.numResult);
     const xmin=Math.min(...xs), xmax=Math.max(...xs);
@@ -113,10 +118,11 @@
         <defs><linearGradient id="lineGradient" x1="0" x2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#dc2626"/></linearGradient></defs>
         ${ticks.map(t=>`<line class="chart-grid" x1="${p.l}" x2="${W-p.r}" y1="${y(t)}" y2="${y(t)}"/><text class="chart-axis" x="2" y="${y(t)+3}">${t.toFixed(2)}</text>`).join("")}
         <path class="chart-line" d="${path}"/>
-        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind||"n/a")}</title></circle>`).join("")}
+        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind??"n/a")}</title></circle>`).join("")}
         <text class="chart-axis" x="${p.l}" y="${H-8}">${esc(data[0].date)}</text>
         <text class="chart-axis" text-anchor="end" x="${W-p.r}" y="${H-8}">${esc(data[data.length-1].date)}</text>
       </svg>`;
+    if(interactive){el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',disc+'-Entwicklung vergrössern und Resultate anzeigen');el.onclick=()=>openChartDetail(disc,year);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openChartDetail(disc,year);}};el.insertAdjacentHTML('beforeend','<span class="chart-open-hint">Kurve antippen · Zoom & Resultate ↗</span>');}
   }
 
   function renderChartTabs(){

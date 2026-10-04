@@ -83,7 +83,14 @@
     if(results.length)return {...results[0],matchType:'result'};
     const pb=(data?.pbs||[]).find(same);return pb?{...pb,matchType:'pb'}:null;
   }
-  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance};
+  function chartResults(results,disc,year='Alle'){
+    const phase=r=>{const m=String(r.place||'').match(/^\d+\s*(qf|sf|h|f|r|v)/i);return m?({h:0,v:0,r:0,qf:1,sf:2,f:3}[m[1].toLowerCase()]):null;};
+    return (results||[]).filter(r=>discipline(r.discipline)===disc&&Number.isFinite(number(r.numResult??r.result))&&dateKey(r.dateISO||r.date)&&!r.windAssisted&&(!Number.isFinite(number(r.wind))||number(r.wind)<=2)&&(year==='Alle'||dateKey(r.dateISO||r.date).startsWith(String(year)))).slice().sort((a,b)=>{
+      const byDate=dateKey(a.dateISO||a.date).localeCompare(dateKey(b.dateISO||b.date));if(byDate)return byDate;
+      if((a.competition||'')!==(b.competition||''))return 0;const ap=phase(a),bp=phase(b);return ap!=null&&bp!=null?ap-bp:0;
+    });
+  }
+  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults};
   api.normalizeResults = data => ({...data,results:data.results.map(raw=>{
     const dateISO=dateKey(raw.dateISO||raw.date);
     return {...raw,discipline:discipline(raw.discipline),numResult:number(raw.numResult??raw.result),dateISO,year:raw.year||dateISO.slice(0,4)};
