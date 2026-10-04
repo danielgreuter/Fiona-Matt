@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-weather-charts-5';
+const CACHE_NAME='fiona-matt-v2-20261004-refinements-6';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
@@ -7,6 +7,13 @@ const ASSETS=[
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/personal-ui.js',
   '/Fiona-Matt/weather.js',
+  '/Fiona-Matt/assets/track-lanes.svg',
+  '/Fiona-Matt/assets/senegal-coat.png',
+  '/Fiona-Matt/assets/north-macedonia-coat.png',
+  '/Fiona-Matt/assets/italy-coat.png',
+  '/Fiona-Matt/assets/vaud-coat.svg',
+  '/Fiona-Matt/assets/bern-coat.svg',
+
   '/Fiona-Matt/assets/fiona-portrait.jpg',
   '/Fiona-Matt/assets/liechtenstein-flag.webp',
   '/Fiona-Matt/assets/dakar-mascot.png',

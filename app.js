@@ -93,10 +93,10 @@
     return window.FionaModels.chartResults(state.data?.results,disc,year);
   }
   function openChartDetail(disc,year){
-    const dialog=$('#resultDetail'),body=$('#detailContent');body.innerHTML=`<h2>${esc(disc.replace('m',' m'))} · Entwicklung</h2><p class="card-sub">Reguläre Resultate · ${esc(year==='Alle'?'alle Jahre':year)}</p><div class="chart chart-large" id="zoomProgressChart"></div><h3>Resultate der Kurve</h3><p class="data-note">Neueste Wettkampftage zuerst. Läufe desselben Wettkampfs nach gelieferten Laufkennungen; ohne Kennung bleibt die Quellenreihenfolge erhalten. Keine angenommene Startzeit.</p>`;
+    const dialog=$('#resultDetail'),body=$('#detailContent');body.innerHTML=`<h2>${esc(disc.replace('m',' m'))} · Entwicklung</h2><p class="card-sub">Reguläre Resultate · ${esc(year==='Alle'?'alle Jahre':year)}</p><div class="chart chart-large" id="zoomProgressChart"></div><h3>Resultate der Kurve</h3><p class="data-note">Neueste Wettkampftage zuerst · Am selben Tag die schnellste Zeit zuerst.</p>`;
     renderChart('#zoomProgressChart',year,disc,false);
-    const rows=chartData(year,disc);const dates=[...new Set(rows.map(r=>r.dateISO))].reverse();const ordered=dates.flatMap(date=>rows.filter(r=>r.dateISO===date));
-    const wrap=document.createElement('div');wrap.className='table-wrap';wrap.innerHTML=`<table class="data-table chart-results-table"><thead><tr>${['Datum','Leistung','Lauf / Rang','Wind','Wettkampf / Ort'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${ordered.map(r=>`<tr><td>${esc(r.date)}</td><td><strong>${esc(r.result)}</strong></td><td>${esc(r.place??'—')}</td><td>${r.indoor?'Halle':r.wind!=null&&r.wind!==''?esc(r.wind)+' m/s':'nicht geliefert'}</td><td>${esc([r.competition,r.venue].filter(Boolean).join(' · '))}</td></tr>`).join('')}</tbody></table>`;body.append(wrap);
+    const rows=chartData(year,disc);const ordered=window.FionaModels.resultTableRows(rows);
+    const wrap=document.createElement('div');wrap.className='table-wrap';wrap.innerHTML=`<table class="data-table chart-results-table"><thead><tr>${['Datum','Leistung','Lauf / Rang','Wind','Wettkampf / Ort'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${ordered.map(r=>`<tr><td>${esc(r.date)}</td><td><strong>${esc(r.result)}</strong></td><td>${esc(window.FionaModels.raceLabel(r.place))}</td><td>${r.indoor?'Halle':r.wind!=null&&r.wind!==''?esc(r.wind)+' m/s':'nicht geliefert'}</td><td>${esc([r.competition,r.venue].filter(Boolean).join(' · '))}</td></tr>`).join('')}</tbody></table>`;body.append(wrap);
     body.insertAdjacentHTML('beforeend',`<p class="data-note">${rows.length} Resultate · Windunterstützte Läufe sind in der regulären Kurve ausgeschlossen. Quellen: Swiss Athletics${disc==='150m'?' / World Athletics':''}.</p>`);dialog.showModal();
   }
 
@@ -118,7 +118,7 @@
         <defs><linearGradient id="lineGradient" x1="0" x2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#dc2626"/></linearGradient></defs>
         ${ticks.map(t=>`<line class="chart-grid" x1="${p.l}" x2="${W-p.r}" y1="${y(t)}" y2="${y(t)}"/><text class="chart-axis" x="2" y="${y(t)+3}">${t.toFixed(2)}</text>`).join("")}
         <path class="chart-line" d="${path}"/>
-        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind??"n/a")}</title></circle>`).join("")}
+        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind??"n/a")} · ${esc(window.FionaModels.raceLabel(r.place))}</title></circle>`).join("")}
         <text class="chart-axis" x="${p.l}" y="${H-8}">${esc(data[0].date)}</text>
         <text class="chart-axis" text-anchor="end" x="${W-p.r}" y="${H-8}">${esc(data[data.length-1].date)}</text>
       </svg>`;
@@ -137,7 +137,7 @@
     const r=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,typeof v==="string"?esc(v):v]));
     return `<div class="result result-card" data-result-index="${state.data.results.indexOf(raw)}">
       <div class="result-time">${r.result}</div>
-      <div class="result-main"><div class="result-heading"><strong class="result-discipline">${r.disciplineLabel||r.discipline}</strong><span class="result-date">${r.date}</span></div><strong class="result-competition">${r.competition||'Wettkampf'}</strong><span class="result-meta">${r.venue||'Ort nicht geliefert'}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind+" m/s":""}${r.place?" · Lauf/Rang "+r.place:""}${raw.source==="world-athletics"?" · World Athletics":""}</span></div><span class="result-chevron" aria-hidden="true">›</span>
+      <div class="result-main"><div class="result-heading"><strong class="result-discipline">${r.disciplineLabel||r.discipline}</strong><span class="result-date">${r.date}</span></div><strong class="result-competition">${r.competition||'Wettkampf'}</strong><span class="result-meta">${r.venue||'Ort nicht geliefert'}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind+" m/s":""}${r.place?" · "+esc(window.FionaModels.raceLabel(raw.place)):""}${raw.source==="world-athletics"?" · World Athletics":""}</span></div><span class="result-chevron" aria-hidden="true">›</span>
     </div>`;
   }
 
@@ -153,7 +153,7 @@
   }
 
   function renderMilestones(){
-    $("#milestones").innerHTML=C.milestones.map(m=>`<div class="event"><strong>${m.title}</strong><span>${fmtDate(m.date)} · ${m.detail}</span></div>`).join("");
+    $("#milestones").innerHTML=C.milestones.map(m=>`<div class="event milestone-event"><img class="milestone-emblem" src="${esc(m.emblem)}" alt="${esc(m.emblemAlt)}" width="26" height="30" loading="lazy"><div><strong>${esc(m.title)}</strong><span>${fmtDate(m.date)} · ${esc(m.detail)}</span>${m.status?`<span class="milestone-status">Status: ${esc(m.status)}</span>`:''}</div></div>`).join("");
   }
 
   function renderFilters(){

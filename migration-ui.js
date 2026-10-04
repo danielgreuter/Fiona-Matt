@@ -53,7 +53,7 @@
     const w=M.number(r.wind);return Number.isFinite(w)?(w>0?'+':'')+w.toFixed(1)+' m/s'+(w>2?' · windunterstützt':''):String(r.wind);
   }
   function resultLabel(r){const v=value(r);return v==='—'?v:v+(/Jump|Weitsprung|Throw|Put|Hoch|Speer|Kugel|Diskus/.test(r.discipline||r.name||'')?' m':' s');}
-  function waResultDetail(r){const body=openDetail(state.waDisc+' · '+resultLabel(r));table(body,['Merkmal','Wert'],[['Datum',r.date],['Leistung',resultLabel(r)],['WA-Punkte',r.score>0?r.score:'nicht geliefert'],['Wind',windLabel(r)],['Wettkampf',r.competition||'—'],['Ort',r.venue||'—'],['Quelle',r.origin||'World Athletics']].map(cells=>({cells})));waBrand(body);}
+  function waResultDetail(r){const body=openDetail(state.waDisc+' · '+resultLabel(r));table(body,['Merkmal','Wert'],[['Datum',r.date],['Leistung',resultLabel(r)],['WA-Punkte',r.score>0?r.score:'nicht geliefert'],['Wind',windLabel(r)],['Lauf / Rang',M.raceLabel(r.place)],['Wettkampf',r.competition||'—'],['Ort',r.venue||'—'],['Quelle',r.origin||'World Athletics']].map(cells=>({cells})));waBrand(body);}
   function renderWA(){
     const root=$('#waContent'),c=card('WA-Punkte & Entwicklung','Leistungswerte pro Resultat · Zeit, Wind und Wettkampf im direkten Vergleich.');waBrand(c);
     const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.waDisc,v=>{state.waDisc=v;renderWA();}),select('Zeitraum',['Alle','2026','2025','2024'],state.waYear,v=>{state.waYear=v;renderWA();}));c.append(controls);status(c,'results');
@@ -62,15 +62,15 @@
     const raw=M.scoreRows(live,[],state.waDisc);
     const rows=raw.filter(r=>r.dateISO&&(state.waYear==='Alle'||r.dateISO.startsWith(state.waYear)));
     const filtered=live.filter(r=>M.discipline(r.discipline||r.name)===state.waDisc&&(state.waYear==='Alle'||M.dateKey(r.date).startsWith(state.waYear))).map(r=>({...r,origin:'World Athletics'}));
-    const showTable=(parent,list)=>table(parent,['Datum','Zeit / Leistung','WA-Punkte','Wind','Wettkampf / Ort'],list.map(r=>({cells:[r.date,button(resultLabel(r),()=>waResultDetail(r),'athlete-link'),r.score>0?r.score:'—',windLabel(r),[r.competition,r.venue].filter(Boolean).join(' · ')||'—']})));
-    c.append(button('Chart vergrössern',()=>{const body=openDetail(state.waDisc+' · WA-Punkte');waBrand(body);drawScoreChart(body,rows,true);showTable(body,filtered.slice().sort((a,b)=>M.dateKey(b.date).localeCompare(M.dateKey(a.date))));}));drawScoreChart(c,rows);
+    const showTable=(parent,list)=>table(parent,['Datum','Zeit / Leistung','Lauf / Rang','WA-Punkte','Wind','Wettkampf / Ort'],list.map(r=>({cells:[r.date,button(resultLabel(r),()=>waResultDetail(r),'athlete-link'),M.raceLabel(r.place),r.score>0?r.score:'—',windLabel(r),[r.competition,r.venue].filter(Boolean).join(' · ')||'—']})));
+    c.append(button('Chart vergrössern',()=>{const body=openDetail(state.waDisc+' · WA-Punkte');waBrand(body);drawScoreChart(body,rows,true);showTable(body,M.resultTableRows(filtered));}));drawScoreChart(c,rows);
     c.append(node('h3','Beste 5 Resultate nach WA-Punkten'));
     const top=filtered.filter(r=>M.number(r.score)>0).sort((a,b)=>b.score-a.score||M.dateKey(b.date).localeCompare(M.dateKey(a.date))).slice(0,5);
     if(top.length)showTable(c,top);else c.append(node('p','Keine WA-Einzelresultate mit Punkten für diesen Filter verfügbar.'));
     c.append(node('h3','Alle WA-Einzelresultate · '+state.waDisc));
-    if(filtered.length)showTable(c,filtered.slice().sort((a,b)=>M.dateKey(b.date).localeCompare(M.dateKey(a.date))));else c.append(node('p','Keine Einzelresultate von der Quelle geliefert.'));
+    if(filtered.length)showTable(c,M.resultTableRows(filtered));else c.append(node('p','Keine Einzelresultate von der Quelle geliefert.'));
     const newer=saResults.filter(r=>M.discipline(r.discipline)===state.waDisc&&M.dateKey(r.dateISO||r.date)> (latest||'')&&(state.waYear==='Alle'||M.dateKey(r.dateISO||r.date).startsWith(state.waYear))).sort((a,b)=>M.dateKey(b.dateISO||b.date).localeCompare(M.dateKey(a.dateISO||a.date)));
-    if(newer.length){c.append(node('h3','Neuere Resultate · Swiss Athletics'));c.append(node('p','Diese Resultate sind neuer als die WA-Einzelresultat-Liste. WA-Punkte werden für sie von der WA-Quelle bisher nicht geliefert.','data-note'));showTable(c,newer.map(r=>({...r,score:null,origin:'Swiss Athletics'})));c.append(safeLink('Swiss-Athletics-Quelle','https://www.swiss-athletics.ch/'));}
+    if(newer.length){c.append(node('h3','Neuere Resultate · Swiss Athletics'));c.append(node('p','Diese Resultate sind neuer als die WA-Einzelresultat-Liste. WA-Punkte werden für sie von der WA-Quelle bisher nicht geliefert.','data-note'));showTable(c,M.resultTableRows(newer).map(r=>({...r,score:null,origin:'Swiss Athletics'})));c.append(safeLink('Swiss-Athletics-Quelle','https://www.swiss-athletics.ch/'));}
     c.append(node('p','Punkte werden unverändert aus der Quelle übernommen. Fehlende Punkte oder Windwerte werden nicht geschätzt. Der Chart enthält ausschliesslich abgerufene WA-Einzelresultate.','data-note'));
     const pbs=sources.results?.data?.pbs||sources['wa-pbs']?.data?.pbs;
     if(pbs?.length){c.append(node('h3','Abgerufene Bestleistungen · World Athletics'));table(c,['Disziplin','Leistung','Punkte','Datum','Wind'],pbs.map(r=>({cells:[r.discipline,resultLabel(r),r.score>0?r.score:'—',r.date,windLabel(r)]})));c.append(node('p','Die PB-Liste ist eine separate Quellenliste. Ein PB-Eintrag ohne gelieferten Wind ist kein Nachweis eines regulären Resultats.','data-note'));}
