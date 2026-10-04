@@ -33,7 +33,7 @@
       <div class="athlete-country"><img src="./assets/liechtenstein-flag.webp" alt="Flagge Liechtensteins" width="30" height="18">Liechtenstein <span>SPRINT</span></div>
       <div class="athlete-identity">
         <button id="openPortrait" class="athlete-photo" type="button" aria-label="Fionas Originalfoto vergrössern"><img src="./assets/fiona-portrait.jpg" alt="Fiona Matt mit ihrer Medaille" width="3072" height="4080"><span>Foto ansehen ↗</span></button>
-        <div class="athlete-copy"><p class="athlete-eyebrow">Fiona Matt Athletics</p><h1><span>Fiona</span> Matt<span class="name-dot">.</span></h1><p class="athlete-description">Sprinterin aus Liechtenstein.<br>100 m im Fokus.</p><div class="athlete-meta"><span>TV Eschen-Mauren</span><span>100 m · 60 m · 200 m</span><span>Jahrgang 2009</span></div></div>
+        <div class="athlete-copy"><p class="athlete-eyebrow">Fiona Matt Athletics</p><div class="athlete-bib" aria-label="Persönliche Athletenkarte, Liechtenstein"><span>LIE</span><strong>MATT</strong><small>SPRINT · 100 M</small></div><h1><span>Fiona</span> Matt<span class="name-dot">.</span></h1><p class="athlete-description">Sprinterin aus Liechtenstein.<br>100 m im Fokus.</p><div class="athlete-meta"><span>TV Eschen-Mauren</span><span>100 m · 60 m · 200 m</span><span>Jahrgang 2009</span></div></div>
         <img class="athlete-signature" src="./icon-192-fixed.png" alt="Fionas persönliches FM-Logo" width="80" height="80">
       </div>
       <div class="athlete-achievements"><div><span class="achievement-medal" aria-hidden="true"><svg viewBox="0 0 48 60" width="28" height="35" xmlns="http://www.w3.org/2000/svg">
@@ -62,8 +62,10 @@
         <div class="dakar-count"><span>Bis zum Wettkampftag</span><div class="countdown" id="countdown">— <small>Tage</small></div><div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div></div>
         <section class="dakar-weather" aria-label="Aktuelles Wetter Dakar"><div id="dakarWeather" aria-live="polite"><p class="data-note">Wetter wird geladen …</p></div><button type="button" id="refreshWeather" aria-label="Wetter aktualisieren" title="Wetter aktualisieren">↻</button></section>
       </section>
+      <section class="road-card" aria-labelledby="roadTitle"><div class="road-heading"><div><p class="road-kicker">Fionas nächstes Kapitel</p><h2 id="roadTitle">Road to Dakar</h2></div><span class="road-discipline">100 m · LIE</span></div><ol class="road-stations"><li data-road="qualified"><span class="road-node" aria-hidden="true">✓</span><strong>Qualifiziert</strong><small>Das Ticket steht</small></li><li data-road="prepare"><span class="road-node" aria-hidden="true">02</span><strong>Vorbereitung</strong><small>Auf dem Weg nach Dakar</small></li><li data-road="travel"><span class="road-node" aria-hidden="true">03</span><strong>Teamreise</strong><small>04. November</small></li><li data-road="race"><span class="road-node" aria-hidden="true">04</span><strong>100 m</strong><small>08. November</small></li></ol><p class="road-status" id="roadStatus"></p></section>
       <p class="data-note" id="dataWarning">Datenstand wird geprüft …</p>
 
+      <button class="personal-moment" type="button" id="openMedalMoment" aria-label="Fionas Medaillenfoto ansehen"><span class="moment-photo"><img src="./assets/fiona-portrait.jpg" alt="Fiona mit ihrer Goldmedaille" loading="lazy" width="3072" height="4080"></span><span class="moment-copy"><small>Ein persönlicher Moment</small><strong>Mehr als eine Zeit.</strong><span>Fiona mit ihrer Goldmedaille.<br>Erinnerungen, die bleiben.</span></span><span class="moment-arrow" aria-hidden="true">↗</span></button>
       <div class="section-title">Performance</div>
       <section class="card span-12">
         <div class="card-head">
