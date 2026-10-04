@@ -161,3 +161,6 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Dakar: Maskottchen und Titel als gemeinsame zentrierte Gruppe; Flagge rechtsbündig unter dem Titel. Wetter bleibt kompakt. Höhe bei 320/390/1440 px: 278.58/281.58/244.19 px, weiterhin kleiner als vor der Wetterergänzung.
 - Globaler Fiona-Header mit drei app-eigenen Tracklinien. Originalporträt ohne harten Rahmen, CSS-Masken für weiche Seiten- und Unterkanten; Originaldatei und Fotozoom unverändert.
 - 28 Tests und alle 27 Chromium-Layoutprüfungen bestanden, Screenshots von Handy und Desktop visuell geprüft. V1-Archiv unverändert.
+
+## Fiona-Markierung 04.10.2026
+- Eigene Resultatkarten mit dezentem blauem Hintergrund und schmaler Innenlinie. In Wettkampf-Top-5-Tabellen ist Fionas Zeile blau markiert, unabhängig von der Reihenfolge Fiona Matt / Matt Fiona. Falls sie nicht in den gelieferten Top 5 enthalten ist, wird ihre eigene gelieferte Leistung als separate markierte Zeile ergänzt; Rang/Lauf aus eigenem Resultat, keine fremden Resultate überschrieben. V1-Archiv unverändert.

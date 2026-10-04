@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-portrait-flags-7';
+const CACHE_NAME='fiona-matt-v2-20261004-fiona-highlight-8';
 const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
