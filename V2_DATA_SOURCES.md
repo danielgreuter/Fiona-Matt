@@ -180,3 +180,11 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Profilzoom zeigt die vollständige gelieferte WA-pbs-Liste mit Bestwert, Datum, vorhandenen Punkten, Rekordcodes und exakt zugeordnetem Wind. Alle Hallen-/Hürden-/Wurfvarianten bleiben getrennt. Keine Vollständigkeitsbehauptung über die Quelle hinaus; Top-5-Einzelresultate bleiben zusätzlich aufklappbar.
 - Profilabrufe teilen den bestehenden sechs Stunden gültigen Cache und Aktualisieren-Button. Profilübersicht bleibt bei Datenupdates geöffnet. Offline-Daten werden gekennzeichnet.
 - 35 Modell-/UI-Tests sowie 27 responsive Chromium-Ansichten bestanden; elf gelieferte Bestleistungsdisziplinen bei Matthias Verling und Geburtsangaben im Browser geprüft. V1 unverändert.
+
+## Persönliches Design mit Rückkehr-Snapshot 04.10.2026
+- Zusätzlicher unveränderter Snapshot archive/pre-design-2026-10-04, vor dieser Designrunde. Wiederherstellungshinweise in DESIGN_RESTORE.md; ursprüngliches V1-Archiv separat unverändert.
+- Persönliche Startnummer-Karte mit LIE/MATT, ohne erfundene Startnummer. Rot-blauer Header, Originalporträt, eigenes Logo und Tracklinien bleiben erhalten.
+- Road to Dakar: Qualifikation, Vorbereitung, geplante Teamreise 04.11. und 100-m-Termin 08.11.2026. Aktuelle Station kalenderbasiert und als aria-current markiert; keine behauptete absolvierte Reise oder erfundenes Wettkampfresultat.
+- Ein echter persönlicher Medaillenmoment aus dem vorhandenen Originalfoto; öffnet denselben Fotozoom. Keine erfundenen Zitate oder zusätzlichen Aufnahmen.
+- Nach dem Scrollen über den Athletenheader reduziert sich die obere Identitätsleiste auf 48 Pixel und wechselt in Liechtenstein-Blau. Reduced-Motion berücksichtigt.
+- 36 Modell-/UI-Tests bestanden, 27 responsive Chromium-Ansichten ohne Seitenüberlauf; Handybild visuell geprüft.
