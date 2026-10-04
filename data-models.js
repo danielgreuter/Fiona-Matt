@@ -115,7 +115,12 @@
       if((a.competition||'')!==(b.competition||''))return 0;const ap=phase(a),bp=phase(b);return ap!=null&&bp!=null?ap-bp:0;
     });
   }
-  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults,raceLabel,resultTableRows,isFionaName,birthYear};
+  function ageCategory(born,year){
+    const birth=Number(birthYear(born)),season=Number(year),age=season-birth;
+    if(!birth||!Number.isInteger(season)||age<0)return 'nicht bekannt';
+    if(age<10)return 'U10';if(age<12)return 'U12';if(age<14)return 'U14';if(age<16)return 'U16';if(age<18)return 'U18';if(age<20)return 'U20';if(age<23)return 'U23';return 'Aktive';
+  }
+  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults,raceLabel,resultTableRows,isFionaName,birthYear,ageCategory};
   api.normalizeResults = data => ({...data,results:data.results.map(raw=>{
     const dateISO=dateKey(raw.dateISO||raw.date);
     return {...raw,discipline:discipline(raw.discipline),numResult:number(raw.numResult??raw.result),dateISO,year:raw.year||dateISO.slice(0,4)};

@@ -3,7 +3,7 @@
   const sources={};
   let saResults=[];
   const teamProfiles={},teamPending={};
-  let teamLoading=false;
+  let teamLoading=false,profileMetadata={},rosterOpen=false;
   const state={rankDisc:'100m',rankYear:'2026',waDisc:'100m',waYear:'Alle',teamDisc:'Alle',teamGender:'Alle',calendarSource:'Fiona',calendarSearch:'',calendarPeriod:'Alle',weekOffset:0};
   const $=s=>document.querySelector(s);
   const node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=String(text);if(cls)e.className=cls;return e;};
@@ -121,15 +121,20 @@
     if(record.status==='cache')info.append(node('span','Gespeicherter Profilabruf · '+new Date(record.loadedAt).toLocaleDateString('de-CH')));
     info.title=info.textContent;context.append(info);return context;
   }
-  async function athleteDetail(name,disc){
-    const meta=teamMeta(name),root=openDetail(name+' · '+disc);const data=sources.lieteam?.data?.[name];if(meta.club)root.append(node('p',meta.club));
-    table(root,['Disziplin','Bestleistung','WA-Punkte'],(data?.discs||[]).map(r=>({cells:[r.name,value(r),r.score??'—']})));
-    if(!meta.url){root.append(node('p','Kein World-Athletics-Profil hinterlegt.'));return;}
-    root.append(safeLink('World-Athletics-Profil','https://worldathletics.org/athletes/'+'liechtenstein/'+meta.url));
-    const progress=node('p','Lade individuelle WA-Resultate …','data-note');root.append(progress);let individual;
-    try{const response=await fetch('https://fiona-proxy.daniel-greuter.workers.dev?action=athlete&slug='+encodeURIComponent(meta.url),{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('HTTP '+response.status);individual=await response.json();if(!Array.isArray(individual.results))throw Error('Unbekanntes Datenformat');try{localStorage.setItem('lie_ath_'+meta.url,JSON.stringify({t:Date.now(),d:individual}));}catch{}progress.textContent='World Athletics · neu abgerufen';}
-    catch{try{const cache=JSON.parse(localStorage.getItem('lie_ath_'+meta.url));individual=cache?.d;progress.textContent=cache?'Gespeicherter Stand · '+new Date(cache.t).toLocaleString('de-CH'):'Einzelresultate momentan nicht erreichbar.';}catch{progress.textContent='Einzelresultate momentan nicht erreichbar.';}}
-    if(individual?.results){const field=/Jump|Throw|Put/.test(disc);const rows=individual.results.filter(r=>M.discipline(r.discipline)===disc).sort((a,b)=>{const av=M.number(a.result||a.mark),bv=M.number(b.result||b.mark);if(!Number.isFinite(av))return 1;if(!Number.isFinite(bv))return -1;return field?bv-av:av-bv;}).slice(0,5);root.append(node('h3','Top 5 · '+disc+' · nach Leistung'));table(root,['Datum','Resultat','Punkte','Wind','Ort'],rows.map(r=>({cells:[r.date,value(r),r.score??'—',r.wind??'—',r.venue||r.competition]})));details(root,individual);}
+  function profileBirth(meta){return teamProfiles[meta.url]?.data?.birthDate||profileMetadata[meta.url]?.birthDate||'';}
+  function birthLabel(born){const iso=M.dateKey(born);return iso?iso.split('-').reverse().join('.'):/^\d{4}$/.test(born)?'Jahrgang '+born+' · genaues Datum nicht veröffentlicht':'nicht veröffentlicht';}
+  function profileFacts(root,meta){const born=profileBirth(meta),year=Number(today().slice(0,4));const facts=node('div',null,'team-profile-facts');facts.append(node('span','Geboren: '+birthLabel(born)),node('span','Verein: '+(meta.club||'nicht geliefert')),node('span','Alterskategorie '+year+': '+M.ageCategory(born,year)));root.append(facts);}
+  async function athleteDetail(name,disc='100m'){
+    const meta=teamMeta(name),root=openDetail(name+' · Athletenprofil');root.classList.add('team-result-detail');waBrand(root);profileFacts(root,meta);
+    const progress=node('p','Lade alle Bestleistungen …','data-note');root.append(progress);const record=await getTeamProfile(meta);if(!progress.isConnected||!$('#resultDetail').open)return;const individual=record?.data;
+    progress.textContent=record?.status==='live'?'World Athletics · abgerufenes Profil':record?.status==='cache'?'World Athletics · gespeicherter Profilabruf':'Profil momentan nicht erreichbar.';
+    const pbs=individual?.pbs||individual?.personalBests||[];
+    root.append(node('h3','Alle Bestleistungen · '+pbs.length+' Disziplinen'));
+    if(pbs.length){table(root,['Disziplin','Bestleistung / Datum'],pbs.map(r=>{const cell=node('div');cell.append(node('strong',value(r)),node('span',r.date||'Datum nicht geliefert','pb-date'));const matched=(individual.results||[]).find(x=>x.discipline===r.discipline&&M.dateKey(x.date)===M.dateKey(r.date)&&value(x).split(' ')[0]===value(r).split(' ')[0]);if(matched?.wind)cell.append(node('span','Wind: '+windLabel(matched),'pb-date'));if(M.number(r.score)>0)cell.append(node('span',r.score+' WA-Punkte','pb-date'));if(r.records?.length)cell.append(node('span',r.records.join(' · '),'pb-date'));const label=teamDiscLabel(r.discipline).replace(/^Javelin Throw/,'Speer').replace(/^Discus Throw/,'Diskus').replace(/^Shot Put/,'Kugel').replace(/^High Jump/,'Hochsprung').replace(/^Long Jump/,'Weitsprung').replace(/Hurdles/,'Hürden')+(/Short Track|Indoor/i.test(r.discipline)?' · Halle':'');return {cells:[label,cell]};}));}
+    else root.append(node('p','Keine Bestleistungsübersicht geliefert.'));
+    root.append(node('p','Alle vom WA-Profil gelieferten Disziplinen, inklusive Halle, früherer Altersklassen, Hürdenhöhen und Wurfgewichte. Die Quelle kann unvollständig sein. Alterskategorie nach Jahrgang, nicht nach dem heutigen Geburtstag.','data-note'));
+    if(individual?.results){const field=/Jump|Throw|Put/.test(disc),rows=individual.results.filter(r=>M.discipline(r.discipline)===disc).sort((a,b)=>{const av=M.number(value(a)),bv=M.number(value(b));return field?bv-av:av-bv;}).slice(0,5);const recent=node('details');recent.append(node('summary','Top 5 · '+teamDiscLabel(disc)+' · nach Leistung'));table(recent,['Datum','Resultat','Wind','Ort'],rows.map(r=>({cells:[r.date,value(r),windLabel(r),r.venue||r.competition||'nicht geliefert']})));root.append(recent);}
+    if(meta.url)root.append(safeLink('World-Athletics-Profil','https://worldathletics.org/athletes/liechtenstein/'+meta.url));if(profileMetadata[meta.url])root.append(node('p','Geburtsangabe: WA-Profil · geprüft '+profileMetadata[meta.url].checkedAt,'data-note'));if(individual)details(root,individual);
   }
   function renderTeam(){
     if(!window.document)return;
@@ -145,7 +150,7 @@
     }
     if(!rows.length)c.append(node('p','Keine Teamdaten für diesen Filter verfügbar.'));
     c.append(node('p','Gleiche Punktzahl = gleicher Rang. Ohne Punkte wird kein Rang vergeben. Werden weniger als zwei Disziplinen geliefert, zeigen wir nur die vorhandenen. WA-Leistungspunkte vergleichen einzelne Leistungen, nicht das offizielle World Ranking.','data-note'));
-    const roster=node('details');roster.append(node('summary','Athlet:innen & Profile'));for(const a of H.team){const line=node('p');line.append(button(a.name,()=>athleteDetail(a.name,state.teamDisc==='Alle'?'100m':state.teamDisc),'athlete-link'),node('span',' · '+a.club));roster.append(line);}c.append(roster);root.replaceChildren(c);
+    const roster=node('details',null,'team-roster');roster.open=rosterOpen;roster.ontoggle=()=>{if(roster.isConnected)rosterOpen=roster.open;};roster.append(node('summary','Athlet:innen & Profile'));for(const a of H.team){const line=node('article',null,'team-profile-card'+(a.isMe?' fiona-row':''));line.append(button(a.name,()=>athleteDetail(a.name),'athlete-link'));profileFacts(line,a);const pbs=teamProfiles[a.url]?.data?.pbs;line.append(button('Alle Bestleistungen'+(pbs?' · '+pbs.length+' Disziplinen':'')+' ↗',()=>athleteDetail(a.name),'team-profile-open'));roster.append(line);}c.append(roster);root.replaceChildren(c);
   }
   function eventEmblem(e){
     const cantons='ZH BE LU UR SZ OW NW GL ZG FR SO BS BL SH AR AI SG GR AG TG TI VD VS NE GE JU'.split(' ');
@@ -198,5 +203,6 @@
   window.addEventListener('fiona-source',event=>{sources[event.detail.action]=event.detail;renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();});
   renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();
   if($('#view-team').classList.contains('active'))loadTeamProfiles();
+  fetch('./team-profile-metadata.json').then(r=>r.ok?r.json():{}).then(data=>{profileMetadata=data||{};renderTeam();}).catch(()=>{});
   window.FionaMigrationUI={state,sources,renderRankings,renderWA,renderTeam,renderCalendar,renderTraining};
 })();

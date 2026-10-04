@@ -172,3 +172,11 @@ V2 darf neue Datenadapter hinzufügen, aber keine produktive Quelle entfernen, b
 - Fionas 11.82: fehlender WA-Ort wird aus dem exakt passenden Swiss-Athletics-Resultat derselben Disziplin, Leistung und desselben Datums ergänzt. Herkunft von Ort/Wind explizit ausgewiesen; WA-Punkte unverändert.
 - Rankings: Namen fett, Vereine normal, Fiona dezent blau. Jahrgang aus geliefertem Geburtsdatum; fehlende Jahrgänge als Gedankenstrich, Fionas Jahrgang aus ihrer bestehenden Konfiguration.
 - 33 Modell-/UI-Tests und 27 responsive Chromium-Ansichten bestanden; Resultatdialog, Rankings und alle Team-Embleme geprüft. V1-Archiv unverändert.
+
+## Athletenprofile und grösseres Dakar-Maskottchen 04.10.2026
+- Dakar-Maskottchen optisch mit Faktor 1.2 vergrössert, kompakte Kartenhöhe unverändert.
+- Athlet:innen & Profile: Geburtsangabe, vorhandener Vereinsname und Alterskategorie des aktuellen Jahres. Kalenderjahr minus Geburtsjahr: U18 bis 17, U20 bis 19, U23 bis 22, danach Aktive; jüngere Nachwuchskategorien entsprechend. Jahreswechsel automatisch, auch vor dem Geburtstag.
+- Geburtsangaben am 04.10.2026 direkt aus den zwölf WA-Profilseiten geprüft, mit Profil-URL und Prüfdatum in team-profile-metadata.json. Acht vollständige Daten, vier nur Jahrgänge; keine erfundenen Tage oder Monate. Ein künftig von der Profil-API geliefertes birthDate hat Vorrang. Vereinsnamen aus bestehendem Team-Verzeichnis, keine automatische Vereinswechsel-Erkennung.
+- Profilzoom zeigt die vollständige gelieferte WA-pbs-Liste mit Bestwert, Datum, vorhandenen Punkten, Rekordcodes und exakt zugeordnetem Wind. Alle Hallen-/Hürden-/Wurfvarianten bleiben getrennt. Keine Vollständigkeitsbehauptung über die Quelle hinaus; Top-5-Einzelresultate bleiben zusätzlich aufklappbar.
+- Profilabrufe teilen den bestehenden sechs Stunden gültigen Cache und Aktualisieren-Button. Profilübersicht bleibt bei Datenupdates geöffnet. Offline-Daten werden gekennzeichnet.
+- 35 Modell-/UI-Tests sowie 27 responsive Chromium-Ansichten bestanden; elf gelieferte Bestleistungsdisziplinen bei Matthias Verling und Geburtsangaben im Browser geprüft. V1 unverändert.
