@@ -83,6 +83,25 @@
     if(results.length)return {...results[0],matchType:'result'};
     const pb=(data?.pbs||[]).find(same);return pb?{...pb,matchType:'pb'}:null;
   }
+  function raceLabel(value){
+    const raw=String(value??'').trim();if(!raw)return '—';
+    const codes={h:'Vorlauf',v:'Vorlauf',r:'Serie',qf:'Viertelfinale',sf:'Halbfinale',f:'Finale'};
+    const m=raw.match(/^(\d+)\s*(qf|sf|h|v|r|f)(\d*)$/i);
+    if(m)return codes[m[2].toLowerCase()]+' · Rang '+Number(m[1])+(m[3]?' · Lauf '+Number(m[3]):'');
+    const text=raw.match(/^(\d+)\.\s*(Lauf|Runde|Vorlauf|Halbfinale|Finale?)\s*(\d*)$/i);
+    if(text){const phase=/^final/i.test(text[2])?'Finale':text[2];return /^(Lauf|Runde)$/i.test(phase)?phase+(text[3]?' '+Number(text[3]):'')+' · Rang '+Number(text[1]):phase+' · Rang '+Number(text[1])+(text[3]?' · Lauf '+Number(text[3]):'');}
+    return /^\d+\.?$/.test(raw)?'Rang '+parseInt(raw,10):raw;
+  }
+  function resultTableRows(results){
+    const field=r=>/Jump|Throw|Put|Hoch|Speer|Kugel|Diskus/.test(discipline(r.discipline));
+    return (results||[]).slice().sort((a,b)=>{
+      const date=dateKey(b.dateISO||b.date).localeCompare(dateKey(a.dateISO||a.date));if(date)return date;
+      if(discipline(a.discipline)!==discipline(b.discipline))return 0;
+      const av=number(a.numResult??a.result),bv=number(b.numResult??b.result);
+      if(!Number.isFinite(av))return Number.isFinite(bv)?1:0;if(!Number.isFinite(bv))return -1;
+      return field(a)?bv-av:av-bv;
+    });
+  }
   function chartResults(results,disc,year='Alle'){
     const phase=r=>{const m=String(r.place||'').match(/^\d+\s*(qf|sf|h|f|r|v)/i);return m?({h:0,v:0,r:0,qf:1,sf:2,f:3}[m[1].toLowerCase()]):null;};
     return (results||[]).filter(r=>discipline(r.discipline)===disc&&Number.isFinite(number(r.numResult??r.result))&&dateKey(r.dateISO||r.date)&&!r.windAssisted&&(!Number.isFinite(number(r.wind))||number(r.wind)<=2)&&(year==='Alle'||dateKey(r.dateISO||r.date).startsWith(String(year)))).slice().sort((a,b)=>{
@@ -90,7 +109,7 @@
       if((a.competition||'')!==(b.competition||''))return 0;const ap=phase(a),bp=phase(b);return ap!=null&&bp!=null?ap-bp:0;
     });
   }
-  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults};
+  const api = {discipline,number,dateKey,isCompetition,trainingEvents,scoreRows,ranking,teamRanking,matchTeamPerformance,chartResults,raceLabel,resultTableRows};
   api.normalizeResults = data => ({...data,results:data.results.map(raw=>{
     const dateISO=dateKey(raw.dateISO||raw.date);
     return {...raw,discipline:discipline(raw.discipline),numResult:number(raw.numResult??raw.result),dateISO,year:raw.year||dateISO.slice(0,4)};
