@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261004-team-profiles-10';
+const CACHE_NAME='fiona-matt-v2-20261004-dakar-scale-11';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
