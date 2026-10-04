@@ -92,5 +92,7 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 
 .team-result-detail .data-table{min-width:0;table-layout:fixed}.team-result-detail .data-table th:first-child,.team-result-detail .data-table td:first-child{width:35%}.team-result-detail .data-table td{white-space:normal;overflow-wrap:anywhere}.team-result-detail .team-meet span{white-space:normal;overflow:visible}
 
-.dakar-highlight .dakar-mascot img{transform:scale(1.2);transform-origin:center}
+.dakar-highlight .dakar-mascot img{transform:scale(1.5);transform-origin:center}
 .team-profile-card{padding:15px 12px;border-bottom:1px solid var(--line);border-radius:10px}.team-profile-facts{display:grid;gap:5px;color:var(--muted);font-size:11px;line-height:1.5;margin:7px 0 12px}.team-profile-open{border:0;background:#edf3ff;color:#1e3a8a;border-radius:8px;padding:9px 11px;font-size:11px;font-weight:650}.pb-date{display:block;color:var(--muted);font-size:10px;margin-top:5px}.team-roster>summary{padding:8px 0;color:#1e3a8a}
+
+.dakar-main .senegal-flag{transform:rotate(-12deg) scale(1.15);transform-origin:right center}
