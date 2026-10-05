@@ -8,7 +8,7 @@
   <title>Fiona Matt Athletics · V2</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-192-fixed.png">
-  <link rel="stylesheet" href="./styles.css?v=20261004-18">
+  <link rel="stylesheet" href="./styles.css?v=20261005-19">
 </head>
 <body>
   <div id="splash-screen" aria-label="Fiona Matt Athletics Intro">
@@ -32,7 +32,7 @@
     <section class="athlete-banner" aria-label="Fiona Matt Athletenheader">
       <div class="athlete-country"><img src="./assets/liechtenstein-flag.webp" alt="Flagge Liechtensteins" width="30" height="18">Liechtenstein <span>SPRINT</span></div>
       <div class="athlete-identity">
-        <button id="openPortrait" class="athlete-photo" type="button" aria-label="Fionas Originalfoto vergrössern"><img src="./assets/fiona-portrait.jpg" alt="Fiona Matt mit ihrer Medaille" width="3072" height="4080"><span>Foto ansehen ↗</span></button>
+        <div class="profile-photo-wrap"><button id="openPortrait" class="athlete-photo" type="button" aria-label="Fionas Originalfoto vergrössern"><img src="./assets/fiona-portrait.jpg" alt="Fiona Matt mit ihrer Medaille" width="3072" height="4080"><span>Foto ansehen ↗</span></button><button id="changeProfilePhoto" class="profile-camera" type="button" aria-label="Profilfoto ändern"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h4l2-3h4l2 3h4v13H4z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
         <div class="athlete-copy"><p class="athlete-eyebrow">Fiona Matt Athletics</p><div class="athlete-bib" aria-label="Persönliche Athletenkarte, Liechtenstein"><span>LIE</span><strong>MATT</strong><small>SPRINT · 100 M</small></div><h1>Fiona Matt<span class="name-dot">.</span></h1><p class="athlete-description">100 m im Fokus.</p><div class="athlete-meta"><span>TV Eschen-Mauren</span><span>100 m · 60 m · 200 m</span><span>Jahrgang 2009</span></div></div>
         <img class="athlete-signature" src="./icon-192-fixed.png" alt="Fionas persönliches FM-Logo" width="80" height="80">
       </div>
@@ -202,5 +202,6 @@
   <script src="./migration-ui.js"></script>
   <script src="./extensions.js"></script>
   <script src="./gallery.js"></script>
+  <script src="./profile-photo.js"></script>
 </body>
 </html>

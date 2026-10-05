@@ -24,6 +24,14 @@ export default {async fetch(request,env){
   if(!env.PHOTOS)return cors(json({error:'Fotospeicher noch nicht eingerichtet.'},503));
   const url=new URL(request.url),path=url.pathname;
   try{
+    if(path==='/profile'&&request.method==='GET'){
+      const object=await env.PHOTOS.get('profile/current');
+      return cors(json(object?{url:url.origin+'/profile/image?v='+encodeURIComponent(object.customMetadata.version),x:Number(object.customMetadata.x),y:Number(object.customMetadata.y)}:{url:null}));
+    }
+    if(path==='/profile/image'&&request.method==='GET'){
+      const object=await env.PHOTOS.get('profile/current');if(!object)return cors(json({error:'Profilfoto nicht gefunden.'},404));
+      return cors(new Response(object.body,{headers:{'Content-Type':object.httpMetadata.contentType,'Cache-Control':'no-cache','ETag':object.httpEtag}}));
+    }
     if(path==='/photos'&&request.method==='GET'){
       const page=await env.PHOTOS.list({prefix:'photos/',limit:100,cursor:url.searchParams.get('cursor')||undefined,include:['customMetadata']});
       return cors(json({photos:page.objects.map(o=>({id:o.key.slice(7),...o.customMetadata,url:url.origin+'/photos/'+encodeURIComponent(o.key.slice(7)),uploadedAt:o.uploaded.toISOString()})),cursor:page.truncated?page.cursor:null}));
@@ -35,6 +43,15 @@ export default {async fetch(request,env){
     }
     if(!['POST','DELETE'].includes(request.method))return cors(json({error:'Nicht gefunden.'},404));
     const uploader=await owner(request,env);if(!uploader)return cors(json({error:'Upload-Schlüssel ungültig.'},401));
+    if(path==='/profile'&&request.method==='POST'){
+      if(Number(request.headers.get('Content-Length'))>1024)return cors(json({error:'Auswahl zu lang.'},413));
+      const raw=await request.text();if(raw.length>1024)return cors(json({error:'Auswahl zu lang.'},413));
+      let data;try{data=JSON.parse(raw);}catch{return cors(json({error:'Auswahl ungültig.'},400));}
+      if(!data||!/^\d{13}-[a-f0-9-]{36}$/.test(data.id)||!Number.isFinite(data.x)||!Number.isFinite(data.y)||data.x<0||data.x>100||data.y<0||data.y>100)return cors(json({error:'Bildausschnitt ungültig.'},400));
+      const source=await env.PHOTOS.get('photos/'+data.id);if(!source)return cors(json({error:'Foto nicht gefunden.'},404));
+      const version=crypto.randomUUID();await env.PHOTOS.put('profile/current',source.body,{httpMetadata:source.httpMetadata,customMetadata:{x:String(data.x),y:String(data.y),version}});
+      return cors(json({url:url.origin+'/profile/image?v='+version,x:data.x,y:data.y}));
+    }
     if(path==='/auth'&&request.method==='POST')return cors(json({name:uploader}));
     if(path==='/photos'&&request.method==='POST'){
       const declared=Number(request.headers.get('Content-Length'));if(declared>MAX)return cors(json({error:'Foto ist zu gross (max. 8 MB).'},413));

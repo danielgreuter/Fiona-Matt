@@ -31,3 +31,7 @@ Offizielle Dokumentation: https://developers.cloudflare.com/r2/api/workers/worke
 Nach diesem Update den gesamten aktuellen `worker.mjs`-Inhalt im Cloudflare-Editor ersetzen und Deploy klicken. Bestehende R2-Bindings und Secrets beibehalten. `POST /photos/<id>` aktualisiert Titel, Beschreibung, Album und Aufnahmedatum nach derselben Schlüsselprüfung. Das Bild und seine ID bleiben erhalten. Die App zeigt bei einem alten Worker eine klare Update-Meldung.
 
 Teilen nutzt auf unterstützten Handys die Gerätefreigabe inklusive Bilddatei (WhatsApp als Ziel wählbar); andernfalls wird ein öffentlicher Fotolink über WhatsApp angeboten.
+
+## Profilfoto
+
+Mit dem aktuellen Worker kann das Kamera-Symbol am Profilbild ein Handyfoto hochladen oder ein Galeriefoto auswählen. Upload-Code und Bildausschnitt werden im Dialog eingegeben. `GET /profile` liefert das aktuelle Bild und seine Ausschnittposition, `GET /profile/image` das Bild. `POST /profile` prüft den bestehenden Upload-Code und kopiert ein vorhandenes Galeriefoto nach `profile/current`. Dadurch bleibt das Profilfoto auch nach Löschen des Galeriefotos erhalten. Der Bildausschnitt wird öffentlich gespeichert; weder Schlüssel noch private lokale Pfade werden gespeichert. Für diese Funktion muss der aktuelle Worker-Code nochmals bereitgestellt werden; Bindings und Secrets bleiben unverändert.

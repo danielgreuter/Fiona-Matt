@@ -1,13 +1,14 @@
-const CACHE_NAME='fiona-matt-v2-20261004-gallery-edit-share-18';
+const CACHE_NAME='fiona-matt-v2-20261005-profile-photo-19';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261004-18',
+  '/Fiona-Matt/styles.css?v=20261005-19',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
+  '/Fiona-Matt/profile-photo.js',
   '/Fiona-Matt/personal-ui.js',
   '/Fiona-Matt/weather.js',
   '/Fiona-Matt/assets/track-lanes.svg',
