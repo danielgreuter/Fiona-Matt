@@ -4,8 +4,6 @@
  async function read(path){const r=await fetch(api+path,{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error(r.status===404?'Bitte den aktuellen Galerie-Code in Cloudflare bereitstellen.':'Fotos momentan nicht erreichbar.');return r.json();}
  function apply(data){if(!data?.url)return;const u=new URL(data.url);if(u.origin!==new URL(api).origin||u.pathname!='/profile/image')return;current=data;for(const img of document.querySelectorAll('#openPortrait img,.topbar-portrait')){img.src=data.url;img.alt='Fiona Matt';img.style.objectPosition=data.x+'% '+data.y+'%';img.onerror=()=>{img.onerror=null;img.src=original;img.style.objectPosition='';};}}
  const originalZoom=$('#openPortrait').onclick;$('#openPortrait').onclick=()=>{originalZoom();if(current){const img=$('#detailContent img');img.src=current.url;img.alt='Fionas Profilfoto';}};
- // The medal milestone always retains its historic original photograph.
- $('#openMedalMoment').onclick=originalZoom;
  $('#changeProfilePhoto').onclick=()=>{
   const dialog=$('#resultDetail'),root=$('#detailContent');root.classList.remove('team-result-detail');root.replaceChildren(node('h2','Profilfoto ändern'));
   const form=node('form');form.className='gallery-form profile-form';const status=node('p');status.className='data-note profile-status';status.setAttribute('role','status');
