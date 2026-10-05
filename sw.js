@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261005-calendar-refresh-21';
+const CACHE_NAME='fiona-matt-v2-20261005-training-tags-22';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
