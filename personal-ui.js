@@ -27,7 +27,6 @@
   dialog.addEventListener('pointerdown',e=>{outsideDown=e.target===dialog&&outside(e);});
   dialog.addEventListener('click',e=>{if(e.target===dialog&&outsideDown&&outside(e))dialog.close();outsideDown=false;});
   dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();dialog.close();}});
-  document.querySelector('#openMedalMoment').onclick=()=>document.querySelector('#openPortrait').click();
   const banner=document.querySelector('.athlete-banner'),topbar=document.querySelector('.topbar');
   if(window.IntersectionObserver){const observer=new IntersectionObserver(entries=>{topbar.classList.toggle('is-compact',!entries[0].isIntersecting&&banner.getBoundingClientRect().bottom<0);},{threshold:0});observer.observe(banner);}
   const updateRoad=()=>{
