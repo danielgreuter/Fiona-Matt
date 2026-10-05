@@ -164,7 +164,7 @@
   function eventRow(parent,e,editable=false){
     const box=node('article',null,'calendar-event');const heading=node('div',null,'event-heading');const emblem=eventEmblem(e);if(emblem)heading.append(emblem);const title=node('div');title.append(node('div',dateLabel(e),'event-date'),node('h3',e.name||e.title||e.summary||'Termin'));heading.append(title);box.append(heading);const location=e.venue||(typeof e.location==='string'?e.location:'');if(location)box.append(node('p',location));
     const comment=e.comment||e.description||e.details||e.note;if(comment)box.append(node('p',comment,'event-comment'));
-    const tags=[...(e.disciplines||[]),e.fionaStarting?'Fiona startet':'',e.deadline?'Meldeschluss: '+e.deadline:'',e.time||e.startTime||''].filter(Boolean);if(tags.length)box.append(node('p',tags.join(' · '),'data-note'));
+    const tags=[...(M.isCompetition(e)?e.disciplines||[]:[]),e.fionaStarting?'Fiona startet':'',e.deadline?'Meldeschluss: '+e.deadline:'',e.time||e.startTime||''].filter(Boolean);if(tags.length)box.append(node('p',tags.join(' · '),'data-note'));
     const actions=node('div',null,'tabs');actions.append(button('Details',()=>{const root=openDetail(e.name||e.title||'Termin');eventRow(root,e,false);details(root,e);}));if(editable&&e.id!=null)actions.append(button('Bearbeiten',()=>eventEditor(e)),button('Löschen',()=>deleteEvent(e)));box.append(actions);parent.append(box);
   }
   function renderCalendar(){
