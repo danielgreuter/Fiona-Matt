@@ -1,6 +1,7 @@
 (() => {
   const M=window.FionaModels,H=window.FIONA_HISTORICAL;
   const sources={};
+  let calendarRefresh=null;
   let saResults=[];
   const teamProfiles={},teamPending={};
   let teamLoading=false,profileMetadata={},rosterOpen=false;
@@ -14,7 +15,7 @@
   const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Vaduz',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const safeLink=(label,url)=>{const a=node('a',label,'tab');try{const u=new URL(url);if(u.protocol!=='https:')return node('span',label);a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';}catch{return node('span',label);}return a;};
   const card=(title,sub)=>{const c=node('section',null,'card');c.append(node('h2',title));if(sub)c.append(node('p',sub,'card-sub'));return c;};
-  function status(parent,action){const r=sources[action];parent.append(button('↻ Aktualisieren',async()=>{await window.FionaSources.loadOne(action,{force:true});}));parent.append(node('p',!r?'Quelle wird geladen …':r.status==='live'?'Quelle erreichbar · Abruf '+new Date(r.loadedAt).toLocaleString('de-CH'):r.status==='cache'?'Gespeicherter Abruf '+new Date(r.loadedAt).toLocaleString('de-CH')+' · Live-Quelle nicht erreichbar':'Live-Quelle nicht erreichbar · kein aktueller Abruf','data-note'));}
+  function status(parent,action){const r=sources[action];const refresh=button('↻ Aktualisieren',async()=>{if(action==='calendar')await refreshCalendar();else await window.FionaSources.loadOne(action,{force:true});});refresh.disabled=action==='calendar'&&!!calendarRefresh;parent.append(refresh);if(action==='calendar'&&calendarRefresh)parent.append(node('p','Kalender wird aktualisiert …','data-note')); parent.append(node('p',!r?'Quelle wird geladen …':r.status==='live'?'Quelle erreichbar · Abruf '+new Date(r.loadedAt).toLocaleString('de-CH'):r.status==='cache'?'Gespeicherter Abruf '+new Date(r.loadedAt).toLocaleString('de-CH')+' · Live-Quelle nicht erreichbar':'Live-Quelle nicht erreichbar · kein aktueller Abruf','data-note'));}
   function table(parent,headers,rows){const wrap=node('div',null,'table-wrap');const t=node('table',null,'data-table');const head=node('thead');const tr=node('tr');headers.forEach(h=>tr.append(node('th',h)));head.append(tr);t.append(head);const body=node('tbody');for(const item of rows){const r=node('tr');if(item.fiona)r.className='fiona-row';for(const cell of item.cells){const td=node('td');if(cell instanceof Element)td.append(cell);else td.textContent=String(cell??'—');r.append(td);}body.append(r);}t.append(body);wrap.append(t);parent.append(wrap);}
   function dateLabel(e){return e.date||e.start?.dateTime||e.start?.date||'';}
   function details(parent,record){const d=node('details');d.append(node('summary','Vollständige Details'),node('pre',JSON.stringify(record,null,2)));parent.append(d);}
@@ -181,7 +182,7 @@
     const response=await fetch('https://fiona-proxy.daniel-greuter.workers.dev?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
     if(!response.ok)throw Error('HTTP '+response.status);const result=await response.json();if(!result.ok)throw Error(result.error||'Speichern fehlgeschlagen');
     // Reload only after confirmed save. Failed writes never alter displayed source data.
-    await window.FionaSources.loadOne("calendar");return result;
+    await refreshCalendar();return result;
   }
   function eventEditor(event){
     const root=openDetail(event?'Wettkampf bearbeiten':'Wettkampf hinzufügen');const form=node('form',null,'event-form');const fields={};
@@ -198,7 +199,23 @@
     for(const e of events){const text=(e.name+' '+(e.comment||e.description||'')).toLowerCase();const type=/wicket/.test(text)?'Wickets':/max.?v|velocity|max.?speed/.test(text)?'Max Velocity':/accel|beschleunig|block/.test(text)?'Acceleration':/speed endurance|schnelligkeitsausdauer/.test(text)?'Speed Endurance':/kraft|gym|strength/.test(text)?'Kraft':/recovery|erholung|pause/.test(text)?'Recovery':'Training';const badge=node('p',type+' · aus Kalendertext erkannt','badge info');root.append(badge);eventRow(root,e);}
     if(!events.length)root.append(node('p','Keine Kalendereinträge für diese Woche verfügbar. Die Grundstruktur steht darunter.'));
   }
-  window.addEventListener('fiona-view',event=>{if(event.detail.view==='team')loadTeamProfiles();});
+
+  async function refreshCalendar(){
+    if(calendarRefresh)return calendarRefresh;
+    calendarRefresh=window.FionaSources.loadOne('calendar',{force:true});
+    renderTraining();renderCalendar();
+    try{return await calendarRefresh;}finally{calendarRefresh=null;renderTraining();renderCalendar();}
+  }
+  const calendarVisible=()=>['training','calendar'].some(view=>$('#view-'+view).classList.contains('active'));
+  const calendarStale=()=>!sources.calendar || sources.calendar.status!=='live' || Date.now()-Date.parse(sources.calendar.loadedAt)>60000;
+  window.addEventListener('fiona-view',event=>{
+    if(event.detail.view==='team')loadTeamProfiles();
+    if(['training','calendar'].includes(event.detail.view))refreshCalendar();
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&calendarVisible()&&calendarStale())refreshCalendar();});
+  window.addEventListener('pageshow',event=>{if(event.persisted&&calendarVisible())refreshCalendar();});
+  window.addEventListener('online',()=>{if(calendarVisible())refreshCalendar();});
+  setInterval(()=>{if(document.visibilityState==='visible'&&calendarVisible())refreshCalendar();},300000);
   window.addEventListener('fiona-results',event=>{saResults=event.detail.results||[];renderWA();renderTeam();});
   window.addEventListener('fiona-source',event=>{sources[event.detail.action]=event.detail;renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();});
   renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();

@@ -13,7 +13,8 @@ window.FionaSources = (() => {
   async function load([action, title, validate], force=false) {
     const key = 'fiona-v2-source:' + action;
     try {
-      const response = await fetch(base + '?action=' + action + (action==='results' && force ? '&force=1' : ''), {cache:'no-store', signal:AbortSignal.timeout(15000)});
+      const fresh = action==='calendar' || force;
+      const response = await fetch(base + '?action=' + action + (fresh ? '&force=1&_t='+Date.now() : ''), {cache:'no-store', signal:AbortSignal.timeout(action==='calendar'?60000:15000)});
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const data = await response.json();
       if (!validate(data)) throw new Error('Unbekanntes Datenformat');
