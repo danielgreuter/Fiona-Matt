@@ -157,7 +157,7 @@
   }
 
   function renderMilestones(){
-    $("#milestones").innerHTML=C.milestones.map(m=>`<div class="event milestone-event"><img class="milestone-emblem" src="${esc(m.emblem)}" alt="${esc(m.emblemAlt)}" width="26" height="30" loading="lazy"><div><strong>${esc(m.title)}</strong><span>${fmtDate(m.date)} · ${esc(m.detail)}</span>${m.status?`<span class="milestone-status">Status: ${esc(m.status)}</span>`:''}</div></div>`).join("");
+    $("#milestones").innerHTML=C.milestones.map(m=>`<div class="event milestone-event"><img class="milestone-emblem" src="${esc(m.emblem)}" alt="${esc(m.emblemAlt)}" width="26" height="30" loading="lazy"><div><strong>${esc(m.title)}</strong><span>${fmtDate(m.date)} · ${esc(m.detail)}</span>${m.status?`<span class="milestone-status">Status: ${esc(m.status)}</span>`:''}${m.source?`<a class="milestone-source" href="${esc(m.source)}" target="_blank" rel="noopener noreferrer">Quelle ↗</a>`:''}</div></div>`).join("");
   }
 
   function renderFilters(){
