@@ -137,7 +137,7 @@
     const r=Object.fromEntries(Object.entries(raw).map(([k,v])=>[k,typeof v==="string"?esc(v):v]));
     return `<div class="result result-card fiona-result" data-result-index="${state.data.results.indexOf(raw)}">
       <div class="result-time">${r.result}</div>
-      <div class="result-main"><div class="result-heading"><strong class="result-discipline">${r.disciplineLabel||r.discipline}</strong><span class="result-date">${r.date}</span></div><strong class="result-competition">${r.competition||'Wettkampf'}</strong><span class="result-meta">${r.venue||'Ort nicht geliefert'}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind+" m/s":""}${r.place?" · "+esc(window.FionaModels.raceLabel(raw.place)):""}${raw.source==="world-athletics"?" · World Athletics":""}</span></div><span class="result-chevron" aria-hidden="true">›</span>
+      <div class="result-main"><div class="result-heading"><strong class="result-discipline">${r.disciplineLabel||r.discipline}</strong><span class="result-date">${r.date}</span></div><strong class="result-competition">${r.competition||'Wettkampf'}</strong><span class="result-meta">${r.venue||'Ort nicht geliefert'}${r.wind!==""&&r.wind!=null?" · Wind "+r.wind+" m/s":""}${raw.source==="world-athletics"?" · World Athletics":""}</span>${r.place?'<span class="result-rank">'+esc(window.FionaModels.raceLabel(raw.place))+'</span>':''}</div><span class="result-chevron" aria-hidden="true">›</span>
     </div>`;
   }
 

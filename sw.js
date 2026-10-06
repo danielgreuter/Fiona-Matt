@@ -1,10 +1,10 @@
-const CACHE_NAME='fiona-matt-v2-20261006-latest-emblems-26';
+const CACHE_NAME='fiona-matt-v2-20261006-result-rank-line-27';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261006-26',
+  '/Fiona-Matt/styles.css?v=20261006-27',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
