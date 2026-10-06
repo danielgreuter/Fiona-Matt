@@ -127,3 +127,5 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 .splash-track{position:absolute;inset:0;width:100%;height:100%;opacity:1;pointer-events:none}.splash-track~*{position:relative;z-index:1}
 
 #latestResults .result-location-emblem{display:inline-block;width:18px;height:21px;vertical-align:middle;margin:0 6px 2px 0;object-fit:contain}
+
+.result-card .result-rank{display:block;color:var(--muted);font-size:10px;line-height:1.5;margin-top:3px}@media(max-width:600px){.result-card .result-rank{font-size:9px}}
