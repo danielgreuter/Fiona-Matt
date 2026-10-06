@@ -9,8 +9,7 @@
   const intro=()=>{
     clearTimeout(closeTimer);clearTimeout(hideTimer);
     splash.hidden=false;splash.classList.remove('exiting');
-    const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    closeTimer=setTimeout(dismiss,reduced?400:1600);
+    closeTimer=setTimeout(dismiss,3000);
   };
   document.querySelector('#skipIntro').onclick=dismiss;
   document.querySelector('#replayIntro').onclick=intro;

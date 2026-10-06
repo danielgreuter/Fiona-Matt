@@ -122,3 +122,6 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 .profile-photo-wrap{position:relative;min-width:0}.profile-photo-wrap .athlete-photo{width:100%;display:block}.profile-camera{position:absolute;right:3px;bottom:20px;z-index:2;border:1px solid #ffffff65;border-radius:50%;background:#173b88d9;color:white;width:32px;height:32px;font-size:15px;padding:0}.profile-preview{display:block;width:100%;max-width:220px;aspect-ratio:2/3;object-fit:cover;border-radius:10px;margin:auto}.profile-picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:220px;overflow:auto}.profile-picks button{padding:3px;background:white;border:1px solid #dbe3ef;border-radius:8px}.profile-picks img{width:100%;height:80px;object-fit:cover}.profile-picks button:focus{outline:3px solid #1e3a8a}.profile-form input[type=range]{padding:0}.profile-status{white-space:pre-wrap}
 
 .profile-camera{display:grid;place-items:center}.profile-camera svg{display:block}
+
+/* Eight numbered lanes behind the personal intro. */
+.splash-track{position:absolute;inset:0;width:100%;height:100%;opacity:.22;pointer-events:none}.splash-track~*{position:relative;z-index:1}
