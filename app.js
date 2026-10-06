@@ -144,6 +144,10 @@
   function renderLatest(){
     const arr=(state.data?.results||[]).slice().sort(byDateDesc).slice(0,6);
     $("#latestResults").innerHTML=arr.map(resultHtml).join("")||'<div class="empty">Keine Resultate.</div>';
+    $$('#latestResults .result').forEach((row,i)=>{
+      const emblem=window.FionaMigrationUI?.eventEmblem(arr[i]);
+      if(emblem){emblem.classList.add('result-location-emblem');row.querySelector('.result-meta').prepend(emblem);}
+    });
   }
 
   function renderTraining(){
