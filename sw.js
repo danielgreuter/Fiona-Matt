@@ -1,10 +1,10 @@
-const CACHE_NAME='fiona-matt-v2-20261006-intro-track-23';
+const CACHE_NAME='fiona-matt-v2-20261006-intro-start-24';
 const ASSETS=[
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261006-23',
+  '/Fiona-Matt/styles.css?v=20261006-24',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
