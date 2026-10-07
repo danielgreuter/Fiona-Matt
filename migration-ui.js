@@ -63,7 +63,7 @@
     const raw=M.scoreRows(live,[],state.waDisc);
     const rows=raw.filter(r=>r.dateISO&&(state.waYear==='Alle'||r.dateISO.startsWith(state.waYear)));
     const filtered=live.filter(r=>M.discipline(r.discipline||r.name)===state.waDisc&&(state.waYear==='Alle'||M.dateKey(r.date).startsWith(state.waYear))).map(r=>({...r,origin:'World Athletics'}));
-    const showTable=(parent,list)=>table(parent,['Datum','Zeit / Leistung','Lauf / Rang','WA-Punkte','Wind','Wettkampf / Ort'],list.map(r=>({cells:[r.date,button(resultLabel(r),()=>waResultDetail(r),'athlete-link'),M.raceLabel(r.place),r.score>0?r.score:'—',windLabel(r),[r.competition,r.venue].filter(Boolean).join(' · ')||'—']})));
+    const showTable=(parent,list)=>table(parent,['Wettkampfdatum','Ort','Zeit / Leistung','WA-Punkte','Wind','Wettkampf'],list.map(r=>({cells:[r.date,r.venue||'—',button(resultLabel(r),()=>waResultDetail(r),'athlete-link'),r.score>0?r.score:'—',windLabel(r),r.competition||'—']})));
     c.append(button('Chart vergrössern',()=>{const body=openDetail(state.waDisc+' · WA-Punkte');waBrand(body);drawScoreChart(body,rows,true);showTable(body,M.resultTableRows(filtered));}));drawScoreChart(c,rows);
     c.append(node('h3','Beste 5 Resultate nach WA-Punkten'));
     const top=filtered.filter(r=>M.number(r.score)>0).sort((a,b)=>b.score-a.score||M.dateKey(b.date).localeCompare(M.dateKey(a.date))).slice(0,5);
