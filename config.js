@@ -29,11 +29,11 @@ window.FIONA_APP_CONFIG = {
     {date:"2026-11-08", title:"Youth Olympic Games", detail:"100 m · Dakar", emblem:"./assets/senegal-flag.svg", emblemAlt:"Flagge Senegal"}
   ],
   trainingWeek: [
-    {day:"Mo", title:"St. Gallen", detail:"Sprinttraining · Christian Gutgsell", type:"Track"},
-    {day:"Di", title:"Dornbirn", detail:"Sprint / Technik", type:"Track"},
-    {day:"Mi", title:"Kraft", detail:"Sportgymnasium Dornbirn", type:"Gym"},
-    {day:"Do", title:"St. Gallen", detail:"Sprinttraining · Christian Gutgsell", type:"Track"},
-    {day:"Fr", title:"Kraft", detail:"Sportgymnasium Dornbirn", type:"Gym"},
-    {day:"Sa", title:"St. Gallen / Balgach", detail:"Track nach Wochenplan", type:"Track"}
+    {day:"Mo", title:"17:00 Uhr · Athletikzentrum, St. Gallen", detail:"Gutsi", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
+    {day:"Di", title:"15:00 Uhr · Leichtathletikhalle Dornbirn", detail:"Gutsi", type:"Track", country:"Österreich", flag:"./assets/austria-flag.svg"},
+    {day:"Mi", title:"07:45 Uhr · Olympiazentrum Dornbirn", detail:"Jule & Theresa", type:"Kraft", country:"Österreich", flag:"./assets/austria-flag.svg"},
+    {day:"Do", title:"18:00 Uhr · Athletikzentrum, St. Gallen", detail:"Yves", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
+    {day:"Fr", title:"13:30 Uhr · Olympiazentrum Dornbirn", detail:"Jule & Theresa", type:"Kraft", country:"Österreich", flag:"./assets/austria-flag.svg"},
+    {day:"Sa", title:"13:00 Uhr · Athletikzentrum, St. Gallen", detail:"Gutsi", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"}
   ]
 };

@@ -137,3 +137,5 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 #fionaCareerStats>.tabs{margin-bottom:12px;flex-wrap:wrap}
 
 .milestone-event>div>span{white-space:pre-line}
+
+.training-flag{display:inline-block;width:18px;height:14px;object-fit:contain;vertical-align:middle;margin-right:6px}.training>div:nth-child(2){min-width:0}.training-type{flex-shrink:0}

@@ -155,7 +155,7 @@
   }
 
   function renderTraining(){
-    const html=C.trainingWeek.map(t=>`<div class="training"><div class="training-day">${t.day}</div><div><strong>${t.title}</strong><span>${t.detail}</span></div><div class="training-type">${t.type}</div></div>`).join("");
+    const html=C.trainingWeek.map(t=>`<div class="training"><div class="training-day">${t.day}</div><div><strong>${t.flag?`<img class="training-flag" src="${esc(t.flag)}" alt="${esc(t.country)}" width="18" height="14">`:""}${esc(t.title)}</strong><span>${esc(t.detail)}</span></div><div class="training-type">${t.type}</div></div>`).join("");
     $("#trainingWeek").innerHTML=html;
     $("#trainingFull").innerHTML=html;
   }
