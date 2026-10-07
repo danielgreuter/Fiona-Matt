@@ -3,9 +3,9 @@
   const panels=document.querySelector('#sourcePanels');
   const records={};
   let resultObserver;
-  function row(parent,label,value,note='') {
+  function row(parent,label,value,note='',performance=null) {
     const n=el('div',null,'result');const main=el('div',null,'result-main');
-    main.append(el('strong',label),el('span',note));n.append(main,el('strong',value));parent.append(n);
+    const heading=el('strong',label);const emblem=performance&&window.FionaMigrationUI?.eventEmblem(performance);if(emblem){emblem.classList.add('result-location-emblem');heading.prepend(emblem);}main.append(heading,el('span',note));n.append(main,el('strong',value));parent.append(n);
   }
   function render(record){
     records[record.action]=record;
@@ -30,11 +30,11 @@
     const section=el('section',null,'card span-12');section.append(el('h2','100 m · Performance Center'));
     if(last.length){const mean=last.reduce((s,r)=>s+r.numResult,0)/last.length;row(section,'Letzte '+last.length+' reguläre Läufe · Mittelwert',mean.toFixed(2)+' s');row(section,'Spanne der letzten Läufe',(Math.max(...last.map(r=>r.numResult))-Math.min(...last.map(r=>r.numResult))).toFixed(2)+' s');}
     section.append(el('h3','Top 5 · reguläre Zeiten'));
-    top.forEach(r=>row(section,r.date+' · '+r.venue,r.result+' s','Wind '+(r.wind||'nicht angegeben')));
+    top.forEach(r=>row(section,r.date+' · '+r.venue,r.result+' s','Wind '+(r.wind||'nicht angegeben'),r));
     const assisted=results.filter(r=>r.discipline==='100m'&&!legal(r)).sort((a,b)=>a.numResult-b.numResult);
-    if(assisted.length){section.append(el('h3','Windunterstützt · separat'));assisted.forEach(r=>row(section,r.date+' · '+r.venue,r.result+' s','Wind '+r.wind));}
+    if(assisted.length){section.append(el('h3','Windunterstützt · separat'));assisted.forEach(r=>row(section,r.date+' · '+r.venue,r.result+' s','Wind '+r.wind,r));}
     section.append(el('h3','PB-Historie · 100 m'));let best=Infinity;
-    sprint.slice().sort((a,b)=>String(a.dateISO).localeCompare(String(b.dateISO))).forEach(r=>{if(r.numResult<best){best=r.numResult;row(section,r.date,r.result+' s',r.venue);}});
+    sprint.slice().sort((a,b)=>String(a.dateISO).localeCompare(String(b.dateISO))).forEach(r=>{if(r.numResult<best){best=r.numResult;row(section,r.date,r.result+' s',r.venue,r);}});
     section.id='performanceCenter';const previous=document.querySelector('#performanceCenter');if(previous)previous.replaceWith(section);else document.querySelector('#view-analysis .grid').append(section);
     const detail=document.querySelector('#resultDetail');
     document.querySelector('#closeDetail').onclick=()=>detail.close();

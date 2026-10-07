@@ -34,3 +34,5 @@ Unveränderte SVGs aus Wikimedia Commons; amtliche Nationalflaggen und Schweizer
 | assets/fribourg-coat.svg | [Freiburg](https://commons.wikimedia.org/wiki/File:Fribourg-coat_of_arms.svg) |
 
 Österreich: app-eigene rot-weiss-rote SVG-Zeichnung der Nationalflagge im Verhältnis 3:2.
+
+- Swiss-Athletics-Logo: offizielles Website-Logo, https://www.swiss-athletics.ch/_assets/9936fbff2fa9683e2f00411c767453f4/Images/logo.1741088642.svg . Verwendung als Datenquellenhinweis.

@@ -1,10 +1,11 @@
-const CACHE_NAME='fiona-matt-v2-20261006-record-milestones-28';
+const CACHE_NAME='fiona-matt-v2-20261007-source-emblems-29';
 const ASSETS=[
+  '/Fiona-Matt/assets/swiss-athletics-logo.svg',
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261006-28',
+  '/Fiona-Matt/styles.css?v=20261007-29',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
