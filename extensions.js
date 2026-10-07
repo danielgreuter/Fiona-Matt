@@ -39,7 +39,7 @@
       for(const year of ['2026','2025','2024','Alle']){const button=el('button',year,'tab'+(year===statsYear?' active':''));button.type='button';button.setAttribute('aria-pressed',String(year===statsYear));button.onclick=()=>{statsYear=year;renderStats();};filters.append(button);}
       stats.append(filters);
       const grid=el('div',null,'profile-grid');
-      for(const [label,count]of [['Wettkämpfe',meetingCount],['Läufe · 100 m',performances.filter(r=>r.discipline==='100m').length],['Läufe · 150 m',performances.filter(r=>r.discipline==='150m').length],['Läufe · 200 m',performances.filter(r=>r.discipline==='200m').length],['Weitsprung · Wettkampfresultate',performances.filter(r=>/long jump|weitsprung/i.test(r.discipline)).length]]){
+      for(const [label,count]of [['Wettkämpfe',meetingCount],['Läufe · 60 m',performances.filter(r=>r.discipline==='60m').length],['Läufe · 100 m',performances.filter(r=>r.discipline==='100m').length],['Läufe · 150 m',performances.filter(r=>r.discipline==='150m').length],['Läufe · 200 m',performances.filter(r=>r.discipline==='200m').length],['Weitsprung · Wettkampfresultate',performances.filter(r=>/long jump|weitsprung/i.test(r.discipline)).length]]){
         const item=el('div',null,'profile-item');item.append(el('span',label),el('strong',String(count)));grid.append(item);
       }
       stats.append(grid,el('p',(statsYear==='Alle'?'Alle verfügbaren Jahre':'Saison '+statsYear)+' · automatisch aus den geladenen Resultaten. Gleichnamige Veranstaltungen an aufeinanderfolgenden Tagen zählen einmal; Vorläufe und Finals zählen als einzelne Läufe. Weitsprung zählt Wettkampfresultate, nicht einzelne Versuche.','data-note'));
