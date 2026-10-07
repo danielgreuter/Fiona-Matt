@@ -20,6 +20,7 @@ window.FIONA_APP_CONFIG = {
   },
   milestones: [
     {date:"2024-08-31", title:"Schweizer Meisterin U16", detail:"80 m · 9.97 s · Lausanne", emblem:"./assets/vaud-coat.svg", emblemAlt:"Kantonswappen Waadt"},
+    {date:"2024-09-22", title:"Zweimal Silber im Schweizerfinal · W15", detail:"UBS Kids Cup: Gesamtzweite · 2’426 Punkte · Zürich, Letzigrund · 07.09.2024. Visana Sprint: Gesamtzweite · 80 m in 9.99 s · Bern, Bundesplatz · 22.09.2024.", emblem:"./assets/switzerland-flag.svg", emblemAlt:"Flagge Schweiz", source:"https://www.ostschweiz-athletics.ch/post/schweizerfinals-2024"},
     {date:"2025-06-21", title:"Erster U20-Landesrekord", detail:"100 m · 12.24 s · Bellinzona · Regionenmeisterschaften Ostschweiz · Finale, Rang 2 · Wind +1.4 m/s", emblem:"./assets/ticino-coat.svg", emblemAlt:"Kantonswappen Tessin", source:"https://www.swiss-athletics.ch/fileadmin/user_upload/www.swiss-athletics.ch/wettkaempfe/Veranstaltungen/Meisterschaften_SVM/Ranglisten_SM/Resultate_RMOst_2025.pdf"},
     {date:"2025-07-21", title:"EYOF Skopje", detail:"100 m · internationale Bühne", emblem:"./assets/north-macedonia-flag.svg", emblemAlt:"Flagge Nordmazedonien"},
     {date:"2026-02-21", title:"SM Halle Nachwuchs", detail:"60 m · 7.60 s · Bronze", emblem:"./assets/bern-coat.svg", emblemAlt:"Kantonswappen Bern"},
