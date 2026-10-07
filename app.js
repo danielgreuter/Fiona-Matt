@@ -144,8 +144,12 @@
   function renderLatest(){
     const arr=(state.data?.results||[]).slice().sort(byDateDesc).slice(0,6);
     $("#latestResults").innerHTML=arr.map(resultHtml).join("")||'<div class="empty">Keine Resultate.</div>';
-    $$('#latestResults .result').forEach((row,i)=>{
-      const emblem=window.FionaMigrationUI?.eventEmblem(arr[i]);
+    decorateResultLocations('#latestResults',arr);
+  }
+
+  function decorateResultLocations(container,results){
+    $$(container+' .result').forEach((row,i)=>{
+      const emblem=window.FionaMigrationUI?.eventEmblem(results[i]);
       if(emblem){emblem.classList.add('result-location-emblem');row.querySelector('.result-meta').prepend(emblem);}
     });
   }
@@ -175,6 +179,7 @@
     if(state.discipline!=="Alle") arr=arr.filter(r=>(r.disciplineLabel||r.discipline)===state.discipline);
     if(state.year!=="Alle") arr=arr.filter(r=>String(r.year)===String(state.year));
     $("#allResults").innerHTML=arr.map(resultHtml).join("")||'<div class="empty">Keine Resultate für diesen Filter.</div>';
+    decorateResultLocations('#allResults',arr);
   }
 
   function renderSeasonComparison(){
