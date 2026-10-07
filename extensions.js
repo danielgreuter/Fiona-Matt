@@ -23,6 +23,18 @@
   window.FionaSources.loadAll(()=>{});
   window.addEventListener('fiona-results',event=>{
     const data=event.detail;const results=data.results||[];
+    const stats=document.querySelector('#fionaCareerStats');
+    if(stats){
+      const performances=results.filter(r=>Number.isFinite(r.numResult));
+      const meetings=new Set(performances.map(r=>[r.dateISO||r.date,String(r.venue||r.competition||'').trim().toLowerCase()].join('|')));
+      stats.replaceChildren(el('h3','Wettkampfstatistik'));
+      const grid=el('div',null,'profile-grid');
+      for(const [label,count]of [['Wettkämpfe',meetings.size],['Läufe · 100 m',performances.filter(r=>r.discipline==='100m').length],['Läufe · 150 m',performances.filter(r=>r.discipline==='150m').length],['Läufe · 200 m',performances.filter(r=>r.discipline==='200m').length],['Weitsprung · Wettkampfresultate',performances.filter(r=>/long jump|weitsprung/i.test(r.discipline)).length]]){
+        const item=el('div',null,'profile-item');item.append(el('span',label),el('strong',String(count)));grid.append(item);
+      }
+      stats.append(grid,el('p','Alle verfügbaren Jahre · automatisch aus den geladenen Resultaten. Pro Datum und Ort ein Wettkampf; Vorläufe und Finals zählen als einzelne Läufe. Weitsprung zählt Wettkampfresultate, nicht einzelne Versuche.','data-note'));
+    }
+
     const legal=r=>!r.windAssisted&&(!Number.isFinite(parseFloat(String(r.wind).replace(',','.')))||parseFloat(String(r.wind).replace(',','.'))<=2);
     const sprint=results.filter(r=>r.discipline==='100m'&&legal(r)&&Number.isFinite(r.numResult));
     const last=sprint.slice().sort((a,b)=>String(b.dateISO).localeCompare(String(a.dateISO))).slice(0,5);
