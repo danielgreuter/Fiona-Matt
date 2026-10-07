@@ -1,11 +1,11 @@
-const CACHE_NAME='fiona-matt-v2-20261007-statistics-years-33';
+const CACHE_NAME='fiona-matt-v2-20261007-event-counts-34';
 const ASSETS=[
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
   '/Fiona-Matt/team-profile-metadata.json',
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261007-33',
+  '/Fiona-Matt/styles.css?v=20261007-34',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
