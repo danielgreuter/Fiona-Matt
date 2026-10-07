@@ -3,6 +3,7 @@
   const panels=document.querySelector('#sourcePanels');
   const records={};
   let resultObserver;
+  let statsYear="2026";
   function row(parent,label,value,note='',performance=null) {
     const n=el('div',null,'result');const main=el('div',null,'result-main');
     const heading=el('strong',label);const emblem=performance&&window.FionaMigrationUI?.eventEmblem(performance);if(emblem){emblem.classList.add('result-location-emblem');heading.prepend(emblem);}main.append(heading,el('span',note));n.append(main,el('strong',value));parent.append(n);
@@ -25,14 +26,19 @@
     const data=event.detail;const results=data.results||[];
     const stats=document.querySelector('#fionaCareerStats');
     if(stats){
-      const performances=results.filter(r=>Number.isFinite(r.numResult));
+      const renderStats=()=>{
+      const performances=results.filter(r=>Number.isFinite(r.numResult)&&(statsYear==='Alle'||String(r.year||String(r.dateISO||window.FionaModels.dateKey(r.date)).slice(0,4))===statsYear));
       const meetings=new Set(performances.map(r=>[r.dateISO||r.date,String(r.venue||r.competition||'').trim().toLowerCase()].join('|')));
       stats.replaceChildren(el('h3','Wettkampfstatistik'));
+      const filters=el('div',null,'tabs');filters.setAttribute('aria-label','Zeitraum der Wettkampfstatistik');
+      for(const year of ['2026','2025','2024','Alle']){const button=el('button',year,'tab'+(year===statsYear?' active':''));button.type='button';button.setAttribute('aria-pressed',String(year===statsYear));button.onclick=()=>{statsYear=year;renderStats();};filters.append(button);}
+      stats.append(filters);
       const grid=el('div',null,'profile-grid');
       for(const [label,count]of [['Wettkämpfe',meetings.size],['Läufe · 100 m',performances.filter(r=>r.discipline==='100m').length],['Läufe · 150 m',performances.filter(r=>r.discipline==='150m').length],['Läufe · 200 m',performances.filter(r=>r.discipline==='200m').length],['Weitsprung · Wettkampfresultate',performances.filter(r=>/long jump|weitsprung/i.test(r.discipline)).length]]){
         const item=el('div',null,'profile-item');item.append(el('span',label),el('strong',String(count)));grid.append(item);
       }
-      stats.append(grid,el('p','Alle verfügbaren Jahre · automatisch aus den geladenen Resultaten. Pro Datum und Ort ein Wettkampf; Vorläufe und Finals zählen als einzelne Läufe. Weitsprung zählt Wettkampfresultate, nicht einzelne Versuche.','data-note'));
+      stats.append(grid,el('p',(statsYear==='Alle'?'Alle verfügbaren Jahre':'Saison '+statsYear)+' · automatisch aus den geladenen Resultaten. Pro Datum und Ort ein Wettkampf; Vorläufe und Finals zählen als einzelne Läufe. Weitsprung zählt Wettkampfresultate, nicht einzelne Versuche.','data-note'));
+      };renderStats();
     }
 
     const legal=r=>!r.windAssisted&&(!Number.isFinite(parseFloat(String(r.wind).replace(',','.')))||parseFloat(String(r.wind).replace(',','.'))<=2);
