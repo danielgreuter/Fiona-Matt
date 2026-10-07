@@ -133,3 +133,5 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 .milestone-source{display:inline-block;margin-top:4px;font-size:10px;color:#2459bf;text-decoration:none}.milestone-source:hover{text-decoration:underline}
 
 .card-head.progress-header{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.progress-heading{min-width:0}.progress-header #chartTabs{justify-content:flex-end;flex-wrap:wrap}.progress-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.progress-title-row h2{margin:0}.chart-source{display:block;flex:0 0 76px;line-height:0}.chart-source img{display:block;width:76px;height:30px;object-fit:contain}#performanceCenter .result-location-emblem{width:18px;height:21px}
+
+#fionaCareerStats>.tabs{margin-bottom:12px;flex-wrap:wrap}
