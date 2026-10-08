@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261007-trim-training-40';
+const CACHE_NAME='fiona-matt-v2-20261008-remove-road-41';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
