@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261011-exact-times-43';
+const CACHE_NAME='fiona-matt-v2-20261011-fold-training-44';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
@@ -6,7 +6,7 @@ const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261011-43',
+  '/Fiona-Matt/styles.css?v=20261011-44',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
