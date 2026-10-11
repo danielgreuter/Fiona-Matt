@@ -29,13 +29,13 @@ window.FIONA_APP_CONFIG = {
     {date:"2026-11-08", title:"Youth Olympic Games", detail:"100 m · Dakar", emblem:"./assets/senegal-flag.svg", emblemAlt:"Flagge Senegal"}
   ],
   trainingWeek: [
-    {day:"Mo", title:"Ab ca. 17:00 Uhr · Athletikzentrum, St. Gallen", detail:"Leitung: Gutsi", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
-    {day:"Di", title:"Ab ca. 15:00 Uhr · Leichtathletikhalle Dornbirn", detail:"Leitung: Gutsi", type:"Track", country:"Österreich", flag:"./assets/austria-flag.svg"},
+    {day:"Mo", title:"17:00 Uhr · Athletikzentrum, St. Gallen", detail:"Leitung: Gutsi", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
+    {day:"Di", title:"15:00 Uhr · Leichtathletikhalle Dornbirn", detail:"Leitung: Gutsi", type:"Track", country:"Österreich", flag:"./assets/austria-flag.svg"},
     {day:"Mi", title:"07:45 Uhr · Olympiazentrum Dornbirn", detail:"Jule & Theresa", type:"Kraft", country:"Österreich", flag:"./assets/austria-flag.svg"},
     {day:"Mi", title:"16:00–18:00 Uhr · Athletikzentrum, St. Gallen", detail:"Selbständig · AZSG-Slot unserer Gruppe · Nutzung je nach Programm", type:"Optional", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
-    {day:"Do", title:"Ab 18:00 Uhr · Athletikzentrum, St. Gallen", detail:"Leitung: Yves / Gian-Luca", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
+    {day:"Do", title:"18:00 Uhr · Athletikzentrum, St. Gallen", detail:"Leitung: Yves / Gian-Luca", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
     {day:"Fr", title:"13:30 Uhr · Olympiazentrum Dornbirn", detail:"Jule & Theresa", type:"Kraft", country:"Österreich", flag:"./assets/austria-flag.svg"},
-    {day:"Sa", title:"Ab ca. 13:00 Uhr · Balgach / Athletikzentrum, St. Gallen", detail:"Leitung: Gutsi · Anfangs und bei guter Witterung vorläufig in Balgach", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
-    {day:"So", title:"Ab 09:30 Uhr · Athletikzentrum, St. Gallen", detail:"Gelegentlich · Ausweichtermin, insbesondere wenn das AZSG am Samstag belegt ist oder ein Wechsel gewünscht ist", type:"Optional", country:"Schweiz", flag:"./assets/switzerland-flag.svg"}
+    {day:"Sa", title:"13:00 Uhr · Balgach / Athletikzentrum, St. Gallen", detail:"Leitung: Gutsi · Anfangs und bei guter Witterung vorläufig in Balgach", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
+    {day:"So", title:"09:30 Uhr · Athletikzentrum, St. Gallen", detail:"Gelegentlich · Ausweichtermin, insbesondere wenn das AZSG am Samstag belegt ist oder ein Wechsel gewünscht ist", type:"Optional", country:"Schweiz", flag:"./assets/switzerland-flag.svg"}
   ]
 };

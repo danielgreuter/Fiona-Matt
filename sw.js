@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261011-training-week-42';
+const CACHE_NAME='fiona-matt-v2-20261011-exact-times-43';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
@@ -6,7 +6,7 @@ const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261007-40',
+  '/Fiona-Matt/styles.css?v=20261011-43',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
   '/Fiona-Matt/gallery.js',
