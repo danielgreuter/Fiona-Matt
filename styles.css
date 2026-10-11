@@ -139,3 +139,15 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 .milestone-event>div>span{white-space:pre-line}
 
 .training-flag{display:inline-block;width:18px;height:14px;object-fit:contain;vertical-align:middle;margin-right:6px}.training>div:nth-child(2){min-width:0}.training-type{flex-shrink:0}
+
+/* Compact training calendar cards, with details available on demand. */
+#liveTraining .calendar-event{padding:8px 0 10px}
+#liveTraining .event-heading{gap:8px}
+#liveTraining .event-heading h3{margin:2px 0 3px;font-size:14px;line-height:1.3}
+#liveTraining .event-emblem{width:22px;height:25px}
+#liveTraining .calendar-event p{margin:4px 0;line-height:1.4}
+#liveTraining .training-details{padding:4px 0}
+#liveTraining .training-details summary{line-height:1.5}
+#liveTraining .calendar-event .tabs{margin-top:4px}
+#liveTraining .calendar-event .tab{min-height:32px;padding:5px 10px}
+#liveTraining>.badge{margin:8px 0 0;padding:3px 7px}
