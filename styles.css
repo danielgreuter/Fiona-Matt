@@ -155,3 +155,6 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 #liveTraining .training-details-toggle{display:block;min-height:40px;padding:7px 0;border:0;background:transparent;color:#1e3a8a;font:inherit;font-size:12px;font-weight:650;text-align:left;cursor:pointer;touch-action:manipulation}
 #liveTraining .training-details-toggle:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 #liveTraining .event-comment[hidden]{display:none}
+
+#liveTraining .training-event-clickable{cursor:pointer;border-radius:10px}
+#liveTraining .training-event-clickable:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
