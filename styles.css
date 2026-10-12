@@ -151,3 +151,7 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 #liveTraining .calendar-event .tabs{margin-top:4px}
 #liveTraining .calendar-event .tab{min-height:32px;padding:5px 10px}
 #liveTraining>.badge{margin:8px 0 0;padding:3px 7px}
+
+#liveTraining .training-details-toggle{display:block;min-height:40px;padding:7px 0;border:0;background:transparent;color:#1e3a8a;font:inherit;font-size:12px;font-weight:650;text-align:left;cursor:pointer;touch-action:manipulation}
+#liveTraining .training-details-toggle:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+#liveTraining .event-comment[hidden]{display:none}
