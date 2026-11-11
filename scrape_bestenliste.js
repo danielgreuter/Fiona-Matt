@@ -222,7 +222,7 @@ async function scrapeDiscipline(page, disc, year) {
     } catch(e) {}
   }
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, channel: process.env.FIONA_BROWSER_CHANNEL || undefined });
   const page    = await (await browser.newContext()).newPage();
 
   // 2026
