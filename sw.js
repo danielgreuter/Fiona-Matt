@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261111-dakar-results';
+const CACHE_NAME='fiona-matt-v2-20261111-dakar-milestone';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
