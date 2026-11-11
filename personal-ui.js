@@ -16,7 +16,7 @@
   document.querySelector('#openPortrait').onclick=()=>{
     const dialog=document.querySelector('#resultDetail'),body=document.querySelector('#detailContent');
     const title=document.createElement('h2');title.textContent='Fiona Matt';
-    const img=document.createElement('img');img.src='./assets/fiona-portrait.jpg';img.alt='Fionas Originalfoto mit ihrer Goldmedaille';img.className='portrait-zoom';
+    const img=document.createElement('img');img.src='./assets/fiona-portrait.jpg';img.alt='Fiona Matt mit dem Dakar-2026-Maskottchen';img.className='portrait-zoom';
     body.replaceChildren(title,img);document.querySelector('#closeDetail').onclick=()=>dialog.close();dialog.showModal();
   };
   const dialog=document.querySelector('#resultDetail');
