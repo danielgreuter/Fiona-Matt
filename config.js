@@ -26,7 +26,7 @@ window.FIONA_APP_CONFIG = {
     {date:"2026-02-21", title:"SM Halle Nachwuchs", detail:"60 m · 7.60 s · Bronze", emblem:"./assets/bern-coat.svg", emblemAlt:"Kantonswappen Bern"},
     {date:"2026-07-01", title:"U23-Landesrekord", detail:"100 m · 11.91 s · Fribourg International Meeting / EM-Trials · Vorlauf, Rang 2 · Wind +1.7 m/s", emblem:"./assets/fribourg-coat.svg", emblemAlt:"Kantonswappen Freiburg", source:"https://athletics.li/records-women-u23/"},
     {date:"2026-07-16", title:"U18-EM Rieti · qualifiziert", detail:"100 m · internationale Limite erreicht", status:"verletzt", emblem:"./assets/italy-flag.svg", emblemAlt:"Flagge Italien"},
-    {date:"2026-11-08", title:"Youth Olympic Games", detail:"100 m · Dakar", emblem:"./assets/senegal-flag.svg", emblemAlt:"Flagge Senegal"}
+    {date:"2026-11-08", title:"6. Platz an den Youth Olympic Games", detail:"100 m · Dakar · Halbfinale: 3. Platz in 12.15 s (−1.1 m/s) · Finale: 11.93 s (+2.4 m/s)", source:"https://worldathletics.org/results/youth-olympic-games/2026/youth-olympic-games-7147638/women/100-metres/final/result", emblem:"./assets/senegal-flag.svg", emblemAlt:"Flagge Senegal"}
   ],
   trainingWeek: [
     {day:"Mo", title:"17:00 Uhr · Athletikzentrum, St. Gallen", detail:"Leitung: Gutsi", type:"Track", country:"Schweiz", flag:"./assets/switzerland-flag.svg"},
