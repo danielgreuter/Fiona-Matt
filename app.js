@@ -56,12 +56,8 @@
     console.error(lastError);
   }
 
-  function renderCountdown(){
+  function renderDakarClocks(){
     const now=new Date();
-    const localDay=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Vaduz",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
-    const difference=Math.round((Date.parse(C.target.date.slice(0,10))-Date.parse(localDay))/86400000);
-    $("#countdown").innerHTML=difference>0?`${difference} <small>Tage</small>`:difference===0?`Race Day`:`Abgeschlossen`;
-    $("#raceDayStatus").textContent=difference>7?"Bis zum Wettkampftag":difference>0?"Wettkampfwoche":difference===0?"Heute · 100 m":"Wettkampftag vergangen";
     for(const [id,timeZone] of [["#dakarClock","Africa/Dakar"],["#homeClock","Europe/Vaduz"]]){
       $(id).textContent=new Intl.DateTimeFormat("de-CH",{timeZone,hour:"2-digit",minute:"2-digit"}).format(now);
     }
@@ -204,7 +200,7 @@
   }
 
   function renderAll(){
-    renderCountdown();renderDataFreshness();renderMetrics();renderChartTabs();
+    renderDakarClocks();renderDataFreshness();renderMetrics();renderChartTabs();
     renderChart("#progressChart",state.chartYear,state.chartDisc);renderChart("#analysisChart","Alle");
     renderLatest();renderTraining();renderMilestones();renderFilters();renderAllResults();renderSeasonComparison();
   }
@@ -212,8 +208,8 @@
   nav();
   if(location.hash) showView(location.hash.slice(1));
   window.addEventListener("hashchange",()=>showView(location.hash.slice(1)||"home"));
-  renderCountdown();
-  setInterval(renderCountdown,60000);
+  renderDakarClocks();
+  setInterval(renderDakarClocks,60000);
   if("serviceWorker" in navigator){ navigator.serviceWorker.register("./sw.js").catch(()=>{}); }
   load();
 })();

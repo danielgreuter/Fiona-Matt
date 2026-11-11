@@ -158,3 +158,5 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 
 #liveTraining .training-event-clickable{cursor:pointer;border-radius:10px}
 #liveTraining .training-event-clickable:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+
+.dakar-results{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;list-style:none;padding:0;margin:0}.dakar-results li{display:grid;gap:3px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.dakar-results a,.dakar-results small{font-size:11px;color:inherit}.dakar-results strong{font-size:17px;font-variant-numeric:tabular-nums}
