@@ -8,7 +8,7 @@
   <title>Fiona Matt Athletics · V2</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-192-fixed.png">
-  <link rel="stylesheet" href="./styles.css?v=20261012-47">
+  <link rel="stylesheet" href="./styles.css?v=20261111-dakar-results">
 </head>
 <body>
   <div id="splash-screen" aria-label="Fiona Matt Athletics Intro">
@@ -55,12 +55,16 @@
     </section>
     <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="gallery">Fotos</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
     <section id="view-home" class="view active">
-      <section class="dakar-card" aria-label="Fionas nächstes Saisonhighlight Dakar">
+      <section class="dakar-card" aria-label="Fionas Resultate in Dakar">
         <div class="dakar-highlight">
         <div class="dakar-mascot"><img src="./assets/dakar-mascot.png" alt="Dakar-2026-Maskottchen mit erhobenen Armen" width="387" height="516"></div>
-        <div class="dakar-main"><p class="dakar-kicker">Nächstes Saisonhighlight</p><h2>Dakar <span>2026</span></h2><img class="senegal-flag" src="./assets/senegal-flag.svg" alt="Flagge von Senegal" width="60" height="40"><p class="dakar-sub">Youth Olympic Games</p><div class="dakar-date">08. November · 100 m</div><p id="raceDayStatus" class="race-status"></p></div>
+        <div class="dakar-main"><p class="dakar-kicker">Fionas Olympiaresultat</p><h2>Dakar <span>2026</span></h2><img class="senegal-flag" src="./assets/senegal-flag.svg" alt="Flagge von Senegal" width="60" height="40"><p class="dakar-sub">Youth Olympic Games</p><div class="dakar-date">08. November · 100 m</div></div>
         </div>
-        <div class="dakar-count"><span>Bis zum Wettkampftag</span><div class="countdown" id="countdown">— <small>Tage</small></div><div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div></div>
+        <div class="dakar-count"><span>Schlussrang · 100 m</span><div class="countdown">6. <small>Platz</small></div><div class="dakar-clocks"><div><span>Dakar</span><strong id="dakarClock">—</strong></div><div><span>Liechtenstein</span><strong id="homeClock">—</strong></div></div></div>
+        <ul class="dakar-results" aria-label="Fionas 100-m-Läufe vom 8. November">
+          <li><a href="https://worldathletics.org/competitions/youth-olympic-games/youth-olympic-games-7147638/results/women/100-metres/semi-finals/result">Halbfinale 1</a><strong>12,15 s</strong><small>3. Platz · −1,1 m/s</small></li>
+          <li><a href="https://worldathletics.org/results/youth-olympic-games/2026/youth-olympic-games-7147638/women/100-metres/final/result">Finale</a><strong>11,93 s</strong><small>6. Platz · +2,4 m/s</small></li>
+        </ul>
         <section class="dakar-weather" aria-label="Aktuelles Wetter Dakar"><div id="dakarWeather" aria-live="polite"><p class="data-note">Wetter wird geladen …</p></div><button type="button" id="refreshWeather" aria-label="Wetter aktualisieren" title="Wetter aktualisieren">↻</button></section>
       </section>
       <p class="data-note" id="dataWarning">Datenstand wird geprüft …</p>
