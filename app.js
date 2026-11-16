@@ -79,9 +79,20 @@
     $('#metrics').innerHTML=metrics.map(([key,disc,label,r])=>`<button type="button" class="metric ${state.metricKey===key?'selected':''}" data-metric="${key}" data-disc="${disc}" aria-pressed="${state.metricKey===key}"><div class="metric-label">${label}</div><div class="metric-value">${esc(r?.result||'—')}</div><div class="metric-note">${r?esc(fmtDate(r.dateISO)):'keine Daten'}</div></button>`).join('');
     $$('[data-metric]').forEach(b=>b.onclick=()=>{state.metricKey=b.dataset.metric;state.chartDisc=b.dataset.disc;state.chartYear='Alle';renderMetrics();renderChartTabs();renderChart('#progressChart',state.chartYear,state.chartDisc);});
   }
+  // Official Dakar results: retain these when the Swiss feed omits international meets.
+  const dakarResults=window.FionaModels.normalizeResults({results:[
+    {result:'12.15',place:'3sf1',wind:-1.1,windAssisted:false},
+    {result:'11.93',place:'6f',wind:2.4,windAssisted:true}
+  ].map(r=>({...r,discipline:'100m',disciplineLabel:'100 m',date:'08.11.2026',
+    competition:'Youth Olympic Games',venue:'Dakar',country:'SEN',source:'world-athletics',indoor:false}))}).results;
   function withExtraResults(data){
-    const extra=waExtra.filter(r=>!data.results.some(s=>window.FionaModels.discipline(s.discipline)===r.discipline&&s.dateISO===r.dateISO&&String(s.result)===String(r.result)));
-    return {...data,results:[...data.results,...extra]};
+    const same=(s,r)=>s.discipline===r.discipline&&s.dateISO===r.dateISO&&s.numResult===r.numResult;
+    const results=data.results.map(row=>{
+      const official=dakarResults.find(r=>same(row,r));
+      return official?{...row,...official}:row;
+    });
+    for(const r of [...dakarResults,...waExtra])if(!results.some(s=>same(s,r)))results.push(r);
+    return {...data,results};
   }
   window.addEventListener('fiona-source',event=>{if(event.detail.action!=='results'||!event.detail.data)return;const raw=event.detail.data;const rows=Array.isArray(raw)?raw:raw.results||[];waExtra=window.FionaModels.normalizeResults({results:rows.filter(r=>window.FionaModels.discipline(r.discipline)==='150m').map(r=>({...r,source:'world-athletics',sourceStatus:event.detail.status,disciplineLabel:'150m'}))}).results;if(saData){state.data=withExtraResults(saData);window.dispatchEvent(new CustomEvent('fiona-results',{detail:state.data}));renderAll();}});
 
