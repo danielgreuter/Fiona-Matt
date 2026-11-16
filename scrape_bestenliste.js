@@ -108,8 +108,9 @@ async function scrapeDiscipline(page, disc, year) {
   const yr = String(year);
   console.log(`\n📋 ${disc.label} (${disc.season} ${yr})`);
 
-  await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 });
-  await page.waitForTimeout(1000);
+  const response = await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  if (!response?.ok()) throw new Error(`Bestenlisten-Seite: HTTP ${response?.status() ?? 'ohne Antwort'}`);
+  await page.locator('[id="form_anonym:bestlistSeason"]').waitFor({ state: 'visible', timeout: 25000 });
 
   await selectPF(page, 'form_anonym:bestlistSeason', disc.season);
   console.log(`  ✓ Saison: ${disc.season}`);
@@ -151,7 +152,7 @@ async function scrapeDiscipline(page, disc, year) {
     const el = await page.$('iframe');
     if (el) iframeFrame = await el.contentFrame();
   }
-  if (!iframeFrame) { console.warn('  ✗ Kein iFrame'); return null; }
+  if (!iframeFrame) throw new Error('Ergebnisansicht nicht gefunden');
   await iframeFrame.waitForTimeout(3000);
 
   const scraped = await iframeFrame.evaluate(() => {
@@ -174,7 +175,7 @@ async function scrapeDiscipline(page, disc, year) {
   const rows = scraped.result;
   console.log(`  → ${rows.length} Zeilen | [0]: ${JSON.stringify(scraped.first3[0])}`);
 
-  if (rows.length === 0) return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona: null, top15: [] };
+  if (rows.length === 0) throw new Error('Keine Bestenlisten-Zeilen gefunden');
 
   const parseRow = cols => {
     const windLike = /^[+-]?\d+\.\d+$/.test(cols[2]);
@@ -213,6 +214,23 @@ async function scrapeDiscipline(page, disc, year) {
   return { discipline: disc.label, year: yr, scraped: new Date().toISOString(), fiona, top15 };
 }
 
+async function scrapeWithRetry(browser, disc, year) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const page = await browser.newPage();
+    try {
+      return await scrapeDiscipline(page, disc, year);
+    } catch (err) {
+      const url = new URL(page.url());
+      const title = await page.title().catch(() => '');
+      console.warn(`  ⚠ ${disc.label} ${year}: Versuch ${attempt}/3 fehlgeschlagen: ${err.message.split('\n')[0]} (${url.origin}${url.pathname}; Titel: ${title || '—'})`);
+      if (attempt === 3) throw new Error(`Swiss Athletics: ${disc.label} ${year} nach drei Versuchen nicht abrufbar; keine unvollständige Bestenliste gespeichert.`, { cause: err });
+    } finally {
+      await page.close();
+    }
+    await new Promise(resolve => setTimeout(resolve, attempt * 3000));
+  }
+}
+
 (async () => {
   let skip2025 = false;
   if (UPLOAD) {
@@ -223,34 +241,38 @@ async function scrapeDiscipline(page, disc, year) {
   }
 
   const browser = await chromium.launch({ headless: true, channel: process.env.FIONA_BROWSER_CHANNEL || undefined });
-  const page    = await (await browser.newContext()).newPage();
-
-  // 2026
-  console.log('\n══ SAISON 2026 ══');
-  const disc2026 = {};
-  for (const disc of DISCIPLINES) {
-    const r = await scrapeDiscipline(page, disc, 2026);
-    if (r) disc2026[disc.label] = r;
-  }
-  const json2026 = { updated: new Date().toISOString(), disciplines: disc2026 };
-  fs.writeFileSync('bestenliste.json', JSON.stringify(json2026, null, 2));
-  console.log('\n✅ bestenliste.json');
-  if (UPLOAD) { await kvPut('bestenliste:fiona', json2026); console.log('✅ KV (2026)'); }
-
-  // 2025
-  if (!skip2025) {
-    console.log('\n══ SAISON 2025 ══');
-    const disc2025 = {};
+  try {
+    // 2026
+    console.log('\n══ SAISON 2026 ══');
+    const disc2026 = {};
     for (const disc of DISCIPLINES) {
-      const r = await scrapeDiscipline(page, disc, 2025);
-      if (r) disc2025[disc.label] = r;
+      const r = await scrapeWithRetry(browser, disc, 2026);
+      if (r) disc2026[disc.label] = r;
     }
-    const json2025 = { updated: new Date().toISOString(), frozen: true, disciplines: disc2025 };
-    fs.writeFileSync('bestenliste_2025.json', JSON.stringify(json2025, null, 2));
-    console.log('\n✅ bestenliste_2025.json');
-    if (UPLOAD) { await kvPut('bestenliste_2025:fiona', json2025); console.log('✅ KV (2025)'); }
-  }
+    const json2026 = { updated: new Date().toISOString(), disciplines: disc2026 };
+    fs.writeFileSync('bestenliste.json', JSON.stringify(json2026, null, 2));
+    console.log('\n✅ bestenliste.json');
+    if (UPLOAD) { await kvPut('bestenliste:fiona', json2026); console.log('✅ KV (2026)'); }
 
-  await browser.close();
-  console.log('\n✅ Fertig');
-})();
+    // 2025
+    if (!skip2025) {
+      console.log('\n══ SAISON 2025 ══');
+      const disc2025 = {};
+      for (const disc of DISCIPLINES) {
+        const r = await scrapeWithRetry(browser, disc, 2025);
+        if (r) disc2025[disc.label] = r;
+      }
+      const json2025 = { updated: new Date().toISOString(), frozen: true, disciplines: disc2025 };
+      fs.writeFileSync('bestenliste_2025.json', JSON.stringify(json2025, null, 2));
+      console.log('\n✅ bestenliste_2025.json');
+      if (UPLOAD) { await kvPut('bestenliste_2025:fiona', json2025); console.log('✅ KV (2025)'); }
+    }
+
+    console.log('\n✅ Fertig');
+  } finally {
+    await browser.close();
+  }
+})().catch(err => {
+  console.error(err);
+  process.exitCode = 1;
+});
