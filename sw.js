@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261116-wa-points-wind';
+const CACHE_NAME='fiona-matt-v2-20261116-wa-100m-table';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
