@@ -99,21 +99,26 @@
   function chartData(year='Alle',disc='100m'){
     return window.FionaModels.chartResults(state.data?.results,disc,year);
   }
+  function dakarFinalMarkers(year,disc){
+    return disc==='100m'&&(year==='Alle'||String(year)==='2026')
+      ? (state.data?.results||[]).filter(r=>r.discipline==='100m'&&r.dateISO==='2026-11-08'&&r.place==='6f'&&r.windAssisted&&r.venue==='Dakar')
+      : [];
+  }
   function openChartDetail(disc,year){
     const dialog=$('#resultDetail'),body=$('#detailContent');body.innerHTML=`<h2>${esc(disc.replace('m',' m'))} · Entwicklung</h2><p class="card-sub">Reguläre Resultate · ${esc(year==='Alle'?'alle Jahre':year)}</p><div class="chart chart-large" id="zoomProgressChart"></div><h3>Resultate der Kurve</h3><p class="data-note">Neueste Wettkampftage zuerst · Am selben Tag die schnellste Zeit zuerst.</p>`;
     renderChart('#zoomProgressChart',year,disc,false);
-    const rows=chartData(year,disc);const ordered=window.FionaModels.resultTableRows(rows);
-    const wrap=document.createElement('div');wrap.className='table-wrap';wrap.innerHTML=`<table class="data-table chart-results-table"><thead><tr>${['Datum','Leistung','Lauf / Rang','Wind','Wettkampf / Ort'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${ordered.map(r=>`<tr><td>${esc(r.date)}</td><td><strong>${esc(r.result)}</strong></td><td>${esc(window.FionaModels.raceLabel(r.place))}</td><td>${r.indoor?'Halle':r.wind!=null&&r.wind!==''?esc(r.wind)+' m/s':'nicht geliefert'}</td><td>${esc([r.competition,r.venue].filter(Boolean).join(' · '))}</td></tr>`).join('')}</tbody></table>`;body.append(wrap);
-    body.insertAdjacentHTML('beforeend',`<p class="data-note">${rows.length} Resultate · Windunterstützte Läufe sind in der regulären Kurve ausgeschlossen. Quellen: Swiss Athletics${disc==='150m'?' / World Athletics':''}.</p>`);dialog.showModal();
+    const rows=[...chartData(year,disc),...dakarFinalMarkers(year,disc)];const ordered=window.FionaModels.resultTableRows(rows);
+    const wrap=document.createElement('div');wrap.className='table-wrap';wrap.innerHTML=`<table class="data-table chart-results-table"><thead><tr>${['Datum','Leistung','Lauf / Rang','Wind','Wettkampf / Ort'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${ordered.map(r=>`<tr><td>${esc(r.date)}</td><td><strong>${esc(r.result)}${r.windAssisted?' (windunterstützt)':''}</strong></td><td>${esc(window.FionaModels.raceLabel(r.place))}</td><td>${r.indoor?'Halle':r.wind!=null&&r.wind!==''?esc(r.wind)+' m/s':'nicht geliefert'}</td><td>${esc([r.competition,r.venue].filter(Boolean).join(' · '))}</td></tr>`).join('')}</tbody></table>`;body.append(wrap);
+    body.insertAdjacentHTML('beforeend',`<p class="data-note">${rows.length} Resultate · Windunterstützte Läufe sind in der regulären Kurve ausgeschlossen. Quellen: Swiss Athletics${['100m','150m'].includes(disc)?' / World Athletics':''}.</p>`);dialog.showModal();
   }
 
   function renderChart(container, year="Alle",disc="100m",interactive=true){
-    const el=$(container), data=chartData(year,disc);
+    const el=$(container), data=chartData(year,disc), markers=dakarFinalMarkers(year,disc), plotted=[...data,...markers];
     if(container==="#progressChart")$("#progressChartTitle").textContent=disc.replace("m","-m")+"-Entwicklung";
-    if(!data.length){ el.removeAttribute('role');el.removeAttribute('tabindex');el.removeAttribute('aria-label');el.onclick=null;el.onkeydown=null;el.innerHTML=`<div class="empty">Keine ${esc(disc)}-Daten für diesen Zeitraum.</div>`; return; }
+    if(!plotted.length){ el.removeAttribute('role');el.removeAttribute('tabindex');el.removeAttribute('aria-label');el.onclick=null;el.onkeydown=null;el.innerHTML=`<div class="empty">Keine ${esc(disc)}-Daten für diesen Zeitraum.</div>`; return; }
     const W=760,H=container==="#zoomProgressChart"?340:250,p={l:42,r:18,t:18,b:34};
-    const xs=data.map(r=>new Date(r.dateISO).getTime());
-    const ys=data.map(r=>r.numResult);
+    const xs=plotted.map(r=>new Date(r.dateISO).getTime());
+    const ys=plotted.map(r=>r.numResult);
     const xmin=Math.min(...xs), xmax=Math.max(...xs);
     const ymin=Math.min(...ys)-.08, ymax=Math.max(...ys)+.08;
     const x=v=>p.l+(xmax===xmin?(W-p.l-p.r)/2:(v-xmin)/(xmax-xmin)*(W-p.l-p.r));
@@ -125,10 +130,12 @@
         <defs><linearGradient id="lineGradient" x1="0" x2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#dc2626"/></linearGradient></defs>
         ${ticks.map(t=>`<line class="chart-grid" x1="${p.l}" x2="${W-p.r}" y1="${y(t)}" y2="${y(t)}"/><text class="chart-axis" x="2" y="${y(t)+3}">${t.toFixed(2)}</text>`).join("")}
         <path class="chart-line" d="${path}"/>
-        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...ys)?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind??"n/a")} · ${esc(window.FionaModels.raceLabel(r.place))}</title></circle>`).join("")}
-        <text class="chart-axis" x="${p.l}" y="${H-8}">${esc(data[0].date)}</text>
-        <text class="chart-axis" text-anchor="end" x="${W-p.r}" y="${H-8}">${esc(data[data.length-1].date)}</text>
+        ${data.map(r=>`<circle class="chart-dot ${r.numResult===Math.min(...data.map(item=>item.numResult))?"best":""}" cx="${x(new Date(r.dateISO).getTime())}" cy="${y(r.numResult)}" r="5"><title>${esc(r.result)}s · ${esc(r.date)} · Wind ${esc(r.wind??"n/a")} · ${esc(window.FionaModels.raceLabel(r.place))}</title></circle>`).join("")}
+        ${markers.map(r=>`<rect class="dakar-final-marker" x="-5" y="-5" width="10" height="10" transform="translate(${x(Date.parse(r.dateISO))} ${y(r.numResult)}) rotate(45)" fill="#d97706" stroke="white" stroke-width="1.5"><title>Dakar-Finale · 6. Platz · 11,93 s · +2,4 m/s Rückenwind</title></rect>`).join("")}
+        <text class="chart-axis" x="${p.l}" y="${H-8}">${esc(new Date(xmin).toISOString().slice(0,10).split('-').reverse().join('.'))}</text>
+        <text class="chart-axis" text-anchor="end" x="${W-p.r}" y="${H-8}">${esc(new Date(xmax).toISOString().slice(0,10).split('-').reverse().join('.'))}</text>
       </svg>`;
+    if(markers.length)el.insertAdjacentHTML('beforeend','<p class="data-note"><span style="color:#b45309" aria-hidden="true">◆</span> Dakar-Finale · 6. Platz · 11,93 s · +2,4 m/s Rückenwind</p>');
     if(interactive){el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',disc+'-Entwicklung vergrössern und Resultate anzeigen');el.onclick=()=>openChartDetail(disc,year);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openChartDetail(disc,year);}};el.insertAdjacentHTML('beforeend','<span class="chart-open-hint">Kurve antippen · Zoom & Resultate ↗</span>');}
   }
 
