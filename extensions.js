@@ -65,7 +65,10 @@
       const target=e.target.closest('.result[data-result-index]');if(!target)return;
       const r=results[Number(target.dataset.resultIndex)];if(!r)return;
       const box=document.querySelector('#detailContent');box.replaceChildren();
-      const hero=el('div',null,'result-detail-hero');hero.append(el('span',r.disciplineLabel||r.discipline,'badge info'),el('h2',r.result,'detail-performance'),el('p',r.competition||'Wettkampf','detail-competition'),el('p',[r.date,r.venue].filter(Boolean).join(' · '),'card-sub'));box.append(hero);
+      const location=el('p',[r.date,r.venue].filter(Boolean).join(' · '),'card-sub');
+      const emblem=window.FionaMigrationUI?.eventEmblem(r);
+      if(emblem){emblem.classList.add('result-location-emblem');location.prepend(emblem);}
+      const hero=el('div',null,'result-detail-hero');hero.append(el('span',r.disciplineLabel||r.discipline,'badge info'),el('h2',r.result,'detail-performance'),el('p',r.competition||'Wettkampf','detail-competition'),location);box.append(hero);
       const facts=el('div',null,'detail-facts');
       for(const [label,value]of [['Wind',r.indoor?'Halle':r.wind!=null&&r.wind!==''?r.wind+' m/s':'nicht geliefert'],['Lauf / Rang',window.FionaModels.raceLabel(r.place)],['WA-Punkte',r.score||r.waScore||'nicht geliefert'],['Quelle',r.source==='world-athletics'?'World Athletics':'Swiss Athletics']]){const cell=el('div');cell.append(el('span',label),el('strong',value));facts.append(cell);}box.append(facts);
       if(r.windAssisted)box.append(el('p','Windunterstützt · separat von regulären Bestleistungen','data-note'));
