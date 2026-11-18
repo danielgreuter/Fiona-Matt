@@ -176,3 +176,20 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 .sprint-event-body{padding:0 8px 10px}
 .sprint-event-body .calendar-event{border:0;margin:0;padding:8px 0}
 @media(max-width:600px){.sprint-event>summary{flex-wrap:wrap}.sprint-badges{max-width:100%;width:100%;justify-content:flex-start;padding-left:38px}.sprint-calendar-body{padding:0 10px 10px}}
+
+/* Compact competition rows; full context stays in the detail dialog. */
+#calendarContent .calendar-event-compact{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:11px 0}
+#calendarContent .calendar-event-compact .event-heading{width:100%;gap:8px}
+#calendarContent .calendar-event-compact .event-heading>div{min-width:0;flex:1}
+#calendarContent .calendar-event-compact .event-heading h3{font-size:14px;line-height:1.3;margin:1px 0 2px}
+#calendarContent .calendar-event-compact .event-date{font-size:10px}
+#calendarContent .calendar-event-compact .event-emblem{width:23px;height:26px}
+#calendarContent .calendar-event-compact p{margin:0;font-size:11px;line-height:1.4}
+#calendarContent .calendar-event-compact .event-location{width:100%;color:#64748b}
+#calendarContent .calendar-event-compact .tabs{margin:3px 0 0 auto;gap:5px;flex-wrap:wrap}
+#calendarContent .calendar-event-compact .tab{padding:5px 9px;min-height:32px;font-size:11px}
+#calendarContent .sprint-event>summary{padding:9px 0;gap:7px}
+#calendarContent .sprint-event>summary>div:first-of-type{gap:2px}
+#calendarContent .sprint-event .event-emblem{width:23px;height:26px}
+#calendarContent .sprint-event .badge{font-size:10px;padding:3px 6px}
+@media(max-width:600px){#calendarContent .sprint-badges{width:auto;max-width:100%;padding-left:30px;gap:3px}#calendarContent .sprint-event strong{font-size:12px}}
