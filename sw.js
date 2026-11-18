@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261118-compact-competitions';
+const CACHE_NAME='fiona-matt-v2-20261118-canton-boundaries';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
