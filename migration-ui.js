@@ -6,7 +6,7 @@
   let saResults=[];
   const teamProfiles={},teamPending={};
   let teamLoading=false,profileMetadata={},rosterOpen=false;
-  const state={rankDisc:'100m',rankYear:'2026',waDisc:'100m',waYear:'Alle',teamDisc:'Alle',teamGender:'Alle',calendarSource:'Fiona',calendarSearch:'',calendarPeriod:'Alle',weekOffset:0};
+  const state={rankDisc:'100m',rankYear:'2026',waDisc:'100m',waYear:'Alle',teamDisc:'Alle',teamGender:'Alle',calendarSource:'Fiona',calendarSearch:'',calendarPeriod:'Kommende',sprintOpen:false,sprintDiscipline:'Alle',sprintSearch:'',weekOffset:0};
   const $=s=>document.querySelector(s);
   const node=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=String(text);if(cls)e.className=cls;return e;};
   const button=(label,callback,cls='tab')=>{const b=node('button',label,cls);b.type='button';b.onclick=callback;return b;};
@@ -298,19 +298,82 @@
   function eventRow(parent,e,editable=false,collapseComment=false){
     const box=node('article',null,'calendar-event');const heading=node('div',null,'event-heading');const emblem=eventEmblem(e);if(emblem)heading.append(emblem);const title=node('div');title.append(node('div',dateLabel(e),'event-date'),node('h3',e.name||e.title||e.summary||'Termin'));heading.append(title);box.append(heading);const location=e.venue||(typeof e.location==='string'?e.location:'');if(location)box.append(node('p',location));
     const comment=e.comment||e.description||e.details||e.note;if(comment){const content=node('p',comment,'event-comment');if(collapseComment){const disclosure=node('div',null,'training-details'),key=String(e.id||'')+'|'+dateLabel(e)+'|'+(e.name||e.title||e.summary||'');const toggle=button('Trainingsdetails anzeigen',()=>{const open=content.hidden;content.hidden=!open;toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'Trainingsdetails zuklappen':'Trainingsdetails anzeigen';if(open)openTrainingDetails.add(key);else openTrainingDetails.delete(key);},'training-details-toggle');const open=openTrainingDetails.has(key);content.hidden=!open;toggle.setAttribute('aria-expanded',String(open));if(open)toggle.textContent='Trainingsdetails zuklappen';disclosure.append(toggle,content);box.append(disclosure);}else box.append(content);}
-    const tags=[...(M.isCompetition(e)?e.disciplines||[]:[]),e.fionaStarting?'Fiona startet':'',e.deadline?'Meldeschluss: '+e.deadline:'',e.time||e.startTime||''].filter(Boolean);if(tags.length)box.append(node('p',tags.join(' · '),'data-note'));
+    if(M.isCompetition(e)){
+      const statusText=[eventName(e),e.registrationStatus,e.status,e.comment].filter(x=>typeof x==='string').join(' ');
+      const notRegistered=/nicht\s+angemeldet/i.test(statusText)||e.fionaStarting===false;
+      if(notRegistered)box.append(node('p','✕ Nicht angemeldet','registration-status not-registered'));
+      else if(e.fionaStarting)box.append(node('p','✓ Fiona startet','registration-status registered'));
+      if(e.stadium)box.append(node('p','Wettkampfstätte: '+e.stadium,'event-stadium'));
+      if(e.organizer)box.append(node('p','Veranstalter: '+e.organizer,'data-note'));
+      box.append(node('p',e.deadline?'Anmeldefrist: '+e.deadline+(e.deadlineSource?' · '+e.deadlineSource:''):'Anmeldefrist: noch nicht veröffentlicht','data-note'));
+      if(e.deadline&&M.dateKey(e.deadline)&&M.dateKey(e.deadline)<today())box.append(node('span','Meldeschluss vorbei','badge'));
+      if(e.detailsUrl)box.append(safeLink('Ausschreibung / Quelle ↗',e.detailsUrl));
+    }
+    const disciplines=Array.isArray(e.disciplines)?e.disciplines:[e.disciplines].filter(Boolean);
+    const tags=[...(M.isCompetition(e)?disciplines:[]),e.time||e.startTime||''].filter(Boolean);if(tags.length)box.append(node('p',tags.join(' · '),'data-note'));
     const actions=node('div',null,'tabs');actions.append(button('Details',()=>{const root=openDetail(e.name||e.title||'Termin');eventRow(root,e,false);details(root,e);}));if(editable&&e.id!=null)actions.append(button('Bearbeiten',()=>eventEditor(e)),button('Löschen',()=>deleteEvent(e)));box.append(actions);if(collapseComment){box.classList.add('training-event-clickable');box.tabIndex=0;box.setAttribute('aria-label',(e.name||e.title||e.summary||'Training')+' · Details öffnen');const activate=()=>{const toggle=box.querySelector('.training-details-toggle');if(toggle)toggle.click();else actions.querySelector('button').click();};box.addEventListener('click',event=>{if(event.target.closest('button,a,input,select,textarea'))return;activate();});box.addEventListener('keydown',event=>{if(event.target===box&&(event.key==='Enter'||event.key===' ')){event.preventDefault();activate();}});}parent.append(box);
   }
+  const calendarUrl='https://www.swiss-athletics.ch/wettkaempfe/veranstaltungen/wettkampfkalender/';
+  const eventName=e=>String(e.name||e.title||e.summary||'');
+  const eventWords=text=>String(text||'').toLocaleLowerCase('de').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(?:wk|wrc|wact)\b/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  function calendarEnrich(e){
+    const day=M.dateKey(e.date||e.start);
+    const candidates=(sources.chcalendar?.data?.events||[]).filter(x=>M.dateKey(x.date||x.start)===day&&(e.sourceId&&x.sourceId===e.sourceId||eventWords(eventName(x))===eventWords(eventName(e))));
+    if(candidates.length!==1)return e;
+    const match=candidates[0];
+    const venue=e.venue||(typeof e.location==='string'?e.location:'');
+    if(venue&&match.venue&&eventWords(venue)!==eventWords(match.venue))return e;
+    return {...match,...e,venue:venue||match.venue,stadium:e.stadium||match.stadium,organizer:e.organizer||match.organizer,deadline:e.deadline||match.deadline,deadlineSource:!e.deadline&&match.deadline?'Swiss Athletics':e.deadlineSource,detailsUrl:e.detailsUrl||match.detailsUrl};
+  }
+  function sprintInfo(e){
+    const program=Array.isArray(e.disciplines)?e.disciplines.join(' '):String(e.disciplines||'');
+    const text=program||eventName(e);
+    const matches=[...text.matchAll(/(?:^|[^0-9x])((?:50|55|60|75|80|100|150|200|300|400))\s*m(?![a-z]|\s*(?:H|Hürden))/gi)].map(m=>m[1]+'m');
+    const disciplines=[...new Set(matches)];
+    const fieldOnly=/stab|perche|javelin|wurf|werfer|sprung|techniker|mehrkampf|cross|marathon|strasse/i.test(text)&&!disciplines.length&&!/sprint/i.test(text);
+    if(fieldOnly||program&&!disciplines.length)return null;
+    const possible=/meeting|meisterschaft|championnat|sprint|courses|gala|sm\b|national/i.test(eventName(e));
+    return disciplines.length?{disciplines,confirmed:!!program}:possible?{disciplines:[],confirmed:false}:null;
+  }
+  function renderSprintCalendar(parent){
+    const disclosure=node('details',null,'sprint-calendar');disclosure.open=state.sprintOpen;
+    disclosure.ontoggle=()=>{if(disclosure.isConnected)state.sprintOpen=disclosure.open;};
+    disclosure.append(node('summary','Alle verfügbaren Wettkämpfe Sprint'));
+    const body=node('div',null,'sprint-calendar-body');disclosure.append(body);
+    body.append(node('p','Swiss Athletics · 60 / 100 / 150 / 200 m und weitere Sprintstrecken. Ausschreibungen und Kategorien vor der Anmeldung prüfen.','data-note'));
+    body.append(safeLink('Swiss-Athletics-Wettkampfkalender ↗',calendarUrl));status(body,'chcalendar');
+    const controls=node('div',null,'filters');
+    controls.append(select('Sprintstrecke',['Alle','60m','100m','150m','200m','Weitere'],state.sprintDiscipline,v=>{state.sprintDiscipline=v;state.sprintOpen=true;renderCalendar();}));
+    const search=node('input',null,'select');search.type='search';search.placeholder='Ort, Stadion oder Wettkampf';search.setAttribute('aria-label','Sprint-Wettkämpfe suchen');search.value=state.sprintSearch;search.onchange=()=>{state.sprintSearch=search.value;state.sprintOpen=true;renderCalendar();};controls.append(search);body.append(controls);
+    const events=(sources.chcalendar?.data?.events||[]).map(e=>({e,info:sprintInfo(e)})).filter(({e,info})=>{
+      if(!info)return false;const d=M.dateKey(e.date||e.start);
+      if(state.calendarPeriod!=='Alle'&&(!d||(state.calendarPeriod==='Kommende'?d<today():d>=today())))return false;
+      if(state.sprintDiscipline!=='Alle'&&(state.sprintDiscipline==='Weitere'?!info.disciplines.some(x=>!['60m','100m','150m','200m'].includes(x)):!info.disciplines.includes(state.sprintDiscipline)))return false;
+      return JSON.stringify(e).toLocaleLowerCase('de').includes(state.sprintSearch.toLocaleLowerCase('de'));
+    }).sort((a,b)=>M.dateKey(a.e.date).localeCompare(M.dateKey(b.e.date)));
+    body.append(node('p',events.length+' verfügbare Einträge im geladenen Quellenstand · Zeitraum: '+state.calendarPeriod,'data-note'));
+    for(const {e,info}of events){
+      const item=node('details',null,'sprint-event');const summary=node('summary');
+      const emblem=eventEmblem(e);if(emblem)summary.append(emblem);
+      const label=node('div');label.append(node('span',dateLabel(e),'event-date'),node('strong',eventName(e)),node('span',[e.venue,e.stadium].filter(Boolean).join(' · ')||'Wettkampfstätte noch nicht veröffentlicht','sprint-venue'));summary.append(label);
+      const badges=node('div',null,'sprint-badges');badges.append(node('span',info.disciplines.join(' · ')||'Sprintangebot offen','badge info'));if(!info.confirmed)badges.append(node('span','Programm prüfen','badge'));
+      if(e.deadline)badges.append(node('span','Meldeschluss '+e.deadline,'badge'));summary.append(badges);item.append(summary);
+      const content=node('div',null,'sprint-event-body');eventRow(content,{...e,isWettkampf:true},false);item.append(content);body.append(item);
+    }
+    if(!events.length)body.append(node('p','Keine passenden Einträge im geladenen Quellenstand. Der vollständige Kalender ist oben verlinkt.','data-note'));
+    parent.append(disclosure);
+  }
   function renderCalendar(){
-    const root=$('#calendarContent'),c=card('Wettkämpfe','Fionas Kalender und Schweizer Veranstaltungen bleiben getrennt.');const controls=node('div',null,'filters');controls.append(select('Quelle',['Fiona','Schweiz'],state.calendarSource,v=>{state.calendarSource=v;renderCalendar();}),select('Zeitraum',['Kommende','Alle','Vergangene'],state.calendarPeriod,v=>{state.calendarPeriod=v;renderCalendar();}));
+    const root=$('#calendarContent'),c=card('Wettkämpfe','Fionas Wettkampfplanung · Termine, Anmeldung und Wettkampfstätten.');const controls=node('div',null,'filters');controls.append(select('Quelle',['Fiona','Schweiz'],state.calendarSource,v=>{state.calendarSource=v;renderCalendar();}),select('Zeitraum',['Kommende','Alle','Vergangene'],state.calendarPeriod,v=>{state.calendarPeriod=v;renderCalendar();}));
     const search=node('input',null,'select');search.type='search';search.placeholder='Ort oder Wettkampf suchen';search.setAttribute('aria-label','Ort oder Wettkampf suchen');search.value=state.calendarSearch;search.onchange=()=>{state.calendarSearch=search.value;renderCalendar();};controls.append(search,button('Wettkampf hinzufügen',()=>eventEditor()));c.append(controls);
     const action=state.calendarSource==='Fiona'?'calendar':'chcalendar';status(c,action);
     let events=state.calendarSource==='Fiona'?(sources.calendar?.data||H.athlete.upcoming||[]):(sources.chcalendar?.data?.events||[]);
     if(state.calendarSource==='Fiona'&&sources.calendar?.data)events=events.filter(M.isCompetition);
     if(state.calendarSource==='Fiona'&&!sources.calendar?.data)c.append(node('p','Historischer V1-Kalender · Termine und Teilnahmestatus können überholt sein.','data-note'));
     events=events.filter(e=>{const d=M.dateKey(e.date||e.start);return state.calendarPeriod==='Alle'||d&&(state.calendarPeriod==='Kommende'?d>=today():d<today());}).filter(e=>JSON.stringify(e).toLocaleLowerCase('de').includes(state.calendarSearch.toLocaleLowerCase('de'))).slice().sort((a,b)=>M.dateKey(a.date||a.start).localeCompare(M.dateKey(b.date||b.start)));
-    const future=events.filter(e=>M.dateKey(e.date||e.start)>=today());c.append(node('p',events.length+' Wettkämpfe in dieser Ansicht · '+future.length+' kommende. Der Kalender zeigt den gelieferten Quellenstand.','data-note'));
-    const liveEditable=state.calendarSource==='Fiona'&&sources.calendar?.status==='live';for(const e of events)eventRow(c,e,liveEditable);if(!events.length)c.append(node('p','Keine Wettkämpfe für diesen Filter.'));root.replaceChildren(c);
+    const future=events.filter(e=>M.dateKey(e.date||e.start)>=today());c.append(node('p',events.length+' Wettkämpfe in dieser Ansicht · '+future.length+' kommende.','data-note'));
+    const liveEditable=state.calendarSource==='Fiona'&&sources.calendar?.status==='live';for(const e of events)eventRow(c,state.calendarSource==='Fiona'?calendarEnrich(e):{...e,isWettkampf:true},liveEditable);if(!events.length)c.append(node('p','Keine Wettkämpfe für diesen Filter.'));
+    renderSprintCalendar(c);root.replaceChildren(c);
   }
   async function mutation(action,body){
     const response=await fetch('https://fiona-proxy.daniel-greuter.workers.dev?action='+action,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});

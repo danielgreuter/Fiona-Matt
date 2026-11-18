@@ -24,7 +24,8 @@ async function uploadKV(data) {
     headers: { Authorization: `Bearer ${CF_API_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  console.log(res.ok ? '✅ KV OK' : `❌ KV ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`KV-Upload fehlgeschlagen: HTTP ${res.status}`);
+  console.log('✅ KV OK');
 }
 
 // Robust goto: Retry bei transienten Netzwerkfehlern
@@ -152,9 +153,11 @@ async function readRows(ctx) {
   for (const sel of ['tbody tr', 'table tr']) {
     try {
       const rows = await ctx.$$eval(sel, trs =>
-        trs.map(tr => [...tr.querySelectorAll('td')].map(td =>
-          (td.innerText || '').replace(/\s+/g, ' ').trim()
-        )).filter(c => c.length >= 3)
+        trs.map(tr => ({
+          cells:[...tr.querySelectorAll('td')].map(td => (td.innerText || '').replace(/\s+/g,' ').trim()),
+          headers:[...(tr.closest('table')?.querySelectorAll('thead th')||[])].map(th=>(th.innerText||'').replace(/\s+/g,' ').trim()),
+          links:[...tr.querySelectorAll('a[href]')].map(a=>({label:[a.textContent,a.title,a.getAttribute('aria-label')].filter(Boolean).join(' '),href:a.href}))
+        })).filter(row => row.cells.length >= 3)
       );
       if (rows.length) return rows;
     } catch (e) { /* naechste Stufe */ }
@@ -191,43 +194,7 @@ async function diagnose(ctx, page) {
   } catch (e) { console.log('   Diagnose fehlgeschlagen: ' + e.message); }
 }
 
-function rowToEvent(cells) {
-  const dm = (cells[0] || '').match(/(\d{2})\.(\d{2})\.(\d{4})/);
-  if (!dm) return null;
-  const date = `${dm[1]}.${dm[2]}.${dm[3]}`;
-  const name  = cells[1] || '';
-  const venue = cells[2] || '';
-  if (name.length < 3) return null;
-
-  let canton = '';
-  for (let i = 3; i < cells.length; i++) {
-    if (/^[A-Z]{2}$/.test(cells[i])) { canton = cells[i]; break; }
-  }
-
-  let deadline = '';
-  for (let i = cells.length - 1; i >= 3; i--) {
-    const m = (cells[i] || '').match(/(\d{2}\.\d{2}\.\d{4})/);
-    if (m) { deadline = m[1]; break; }
-  }
-
-  let disciplines = '';
-  for (let i = 3; i < cells.length; i++) {
-    const cell = cells[i] || '';
-    if (/^[A-Z]{2}$/.test(cell)) continue;
-    if (/^\d{2}\.\d{2}\.\d{4}$/.test(cell)) continue;
-    if (!disciplines && /\d+\s*m\b|sprung|wurf|stoss|mehrkampf|hürden/i.test(cell)) disciplines = cell;
-  }
-  const has100m = disciplines
-    ? /\b100\s*m\b/i.test(disciplines)
-    : /WRC|national|nachwuchs|meeting/i.test(name);
-  if (!has100m) return null;
-
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const evDate = new Date(+dm[3], +dm[2] - 1, +dm[1]);
-  if (evDate < today) return null;
-
-  return { date, name, venue, canton, deadline, past: false };
-}
+const { rowToEvent } = require('./calendar-parser');
 
 async function main() {
   console.log('🚀 chcalendar v6\n');
@@ -277,7 +244,7 @@ async function main() {
   for (let pg = 1; pg <= 60; pg++) {
     const rows = await readRows(ctx);
     if (pg === 1 && !rows.length) await diagnose(ctx, page);
-    const sig = rows.length ? rows[0].join('|') : '';
+    const sig = rows.length ? (Array.isArray(rows[0])?rows[0]:rows[0].cells).join('|') : '';
     if (sig && sig === lastSig) { console.log(`   Seite ${pg}: identisch zur vorherigen - Ende`); break; }
     lastSig = sig;
 
@@ -308,8 +275,8 @@ async function main() {
     return new Date(+pa[2], +pa[1] - 1, +pa[0]) - new Date(+pb[2], +pb[1] - 1, +pb[0]);
   });
 
-  const output = { events, updated: new Date().toISOString(), source: 'scraper' };
-  console.log(`\n📊 ${events.length} kommende 100m-relevante Wettkaempfe`);
+  const output = { events, updated: new Date().toISOString(), source: WRAPPER_URL };
+  console.log(`\n📊 ${events.length} Wettkaempfe im Swiss-Athletics-Quellenstand`);
   events.slice(0, 8).forEach(e => console.log(`   ${e.date}  ${e.name} (${e.venue} ${e.canton})  MS: ${e.deadline || '-'}`));
 
   require('fs').writeFileSync('ch_calendar.json', JSON.stringify(output, null, 2));
