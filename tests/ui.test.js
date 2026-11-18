@@ -92,3 +92,15 @@ test('Calendar does not infer deadlines from ambiguous Swiss Athletics matches',
     assert.deepEqual(b.errors,[]);
   }finally{b.close();}
 });
+
+test('Canton matching uses complete place names and recognises Biel/Bienne as Bern',async()=>{
+ const b=await boot();try{
+  const emblem=b.w.FionaMigrationUI.eventEmblem;
+  for(const e of [{venue:'Biel/Bienne'},{venue:'Biel'},{venue:'Bienne'},{name:'Championnats suisses Magglingen'},{name:'Championnat en salle Biel / Macolin'}]){
+   const img=emblem(e);assert.equal(img?.alt,'Kantonswappen BE');assert(img.src.endsWith('/assets/bern-coat.svg'));
+  }
+  assert.equal(emblem({venue:'Cham'})?.alt,'Kantonswappen ZG');
+  assert.equal(emblem({name:'Championnats suisses'}),null);
+  assert.deepEqual(b.errors,[]);
+ }finally{b.close();}
+});
