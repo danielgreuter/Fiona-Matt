@@ -289,6 +289,8 @@
     const location=[e.venue,e.venueCity,e.location].filter(x=>typeof x==='string').join(' ');
     // Calendar entries can carry the venue only in the event title.
     const loc=(location||[e.name,e.title,e.summary].filter(x=>typeof x==='string').join(' ')).toLowerCase();
+    // Google Calendar geocoding may mislabel Leubringen as NE; the venue is in Bern.
+    if(/(?:^|[^a-z])(?:magglingen|macolin|leubringen|evilard)(?:$|[^a-z])/i.test(location))code='BE';
     if(!cantons.includes(code))code='';
     if(!code){for(const [city,canton]of [['zürich','ZH'],['zurich','ZH'],['lausanne','VD'],['luzern','LU'],['aarau','AG'],['meilen','ZH'],['cham','ZG'],['schaffhausen','SH'],['macolin','BE'],['biel','BE'],['bienne','BE'],['basel','BS'],['thun','BE'],['magglingen','BE'],['langenthal','BE'],['bellinzona','TI'],['freiburg','FR'],['fribourg','FR'],['freienbach','SZ'],['frauenfeld','TG'],['st. gallen','SG'],['winterthur','ZH'],['wetzikon','ZH'],['regensdorf','ZH'],['kreuzlingen','TG'],['bulle','FR'],['zug','ZG'],['zofingen','AG'],['uster','ZH'],['düdingen','FR'],['delémont','JU'],['rapperswil','SG'],['arbon','TG']])if((' '+loc.replace(/[^a-zäöüéèà]+/gi,' ')+' ').includes(' '+city.replace(/[^a-zäöüéèà]+/gi,' ')+' ')){code=canton;break;}}
     let src='',alt='';if(cantons.includes(code)){const local={BE:'bern',VD:'vaud',SG:'st-gallen',ZH:'zurich',ZG:'zug',TG:'thurgau',TI:'ticino',FR:'fribourg'};src=local[code]?'./assets/'+local[code]+'-coat.svg':'https://fiona-proxy.daniel-greuter.workers.dev?action=wappen&v=3&c='+code;alt='Kantonswappen '+code;}
@@ -316,17 +318,20 @@
   const calendarUrl='https://www.swiss-athletics.ch/wettkaempfe/veranstaltungen/wettkampfkalender/';
   const eventName=e=>String(e.name||e.title||e.summary||'');
   const eventWords=text=>String(text||'').toLocaleLowerCase('de').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(?:wk|wrc|wact)\b/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  function calendarIdentity(e){
+    return [...new Set(eventWords(eventName(e)).split(' ').map(word=>word==='bienne'?'biel':word).filter(word=>word&&word!=='athletics'))].sort().join(' ');
+  }
   function calendarEnrich(e){
     const day=M.dateKey(e.date||e.start);
     const candidates=(sources.chcalendar?.data?.events||[]).filter(x=>{
       const first=M.dateKey(x.date||x.start),last=M.dateKey(x.endDate)||first;
-      return day&&first&&day>=first&&day<=last&&(e.sourceId&&x.sourceId===e.sourceId||eventWords(eventName(x))===eventWords(eventName(e)));
+      return day&&first&&day>=first&&day<=last&&(e.sourceId&&x.sourceId===e.sourceId||calendarIdentity(x)===calendarIdentity(e));
     });
     if(candidates.length!==1)return e;
     const match=candidates[0],venue=e.venue||(typeof e.location==='string'?e.location:'');
-    const placeholders=['','k a','ka','n a','na','offen','unbekannt','nicht angegeben','noch nicht veröffentlicht'];
+    const placeholders=['','k a','ka','n a','na','tbd','offen','unbekannt','nicht angegeben','noch nicht veröffentlicht'];
     const ownDeadline=e.deadline&&!placeholders.includes(eventWords(e.deadline))?e.deadline:'';
-    return {...match,...e,venue:venue||match.venue,stadium:e.stadium||match.stadium,organizer:e.organizer||match.organizer,deadline:ownDeadline||match.deadline,deadlineSource:!ownDeadline&&match.deadline?'Swiss Athletics':e.deadlineSource,detailsUrl:e.detailsUrl||match.detailsUrl};
+    return {...match,...e,canton:match.canton||e.canton,venue:venue||match.venue,stadium:e.stadium||match.stadium,organizer:e.organizer||match.organizer,deadline:ownDeadline||match.deadline,deadlineSource:!ownDeadline&&match.deadline?'Swiss Athletics':e.deadlineSource,detailsUrl:e.detailsUrl||match.detailsUrl};
   }
   function sprintInfo(e){
     const program=Array.isArray(e.disciplines)?e.disciplines.join(' '):String(e.disciplines||'');
