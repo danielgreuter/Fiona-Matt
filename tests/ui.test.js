@@ -113,7 +113,7 @@ test('Two-day Biel meeting supplies the deadline despite different venue spellin
   emit('chcalendar',{updated:'2026-11-18T13:45:00Z',events:[{name,date:'30.01.2027',endDate:'31.01.2027',venue:'Magglingen/Macolin',deadline:'24.01.2027',stadium:'End der Welt'}]});
   emit('calendar',[{id:1,name:'WK: '+name,date:'31.01.2027',venue:'Magglingen/Macolin (SUI)',deadline:'k.A.',isWettkampf:true},{id:2,name:'WK: '+name,date:'30.01.2027',venue:'Biel',deadline:'20.01.2027',isWettkampf:true},{id:3,name:'WK: '+name,date:'01.02.2027',venue:'Biel',isWettkampf:true}]);
   const rows=[...d.querySelectorAll('#calendarContent .calendar-event-compact')];
-  assert(rows.find(r=>r.textContent.includes('31.01.2027')).textContent.includes('24.01.2027'));
+  assert(rows.find(r=>r.querySelector('.event-date').textContent.startsWith('31.01.2027')).textContent.includes('24.01.2027'));
   assert(rows.find(r=>r.textContent.includes('30.01.2027')).textContent.includes('20.01.2027'));
   assert(rows.find(r=>r.textContent.includes('01.02.2027')).textContent.includes('noch nicht veröffentlicht'));
   assert(d.querySelector('#calendarContent').textContent.includes('18.11.26'));assert(d.querySelector('#calendarContent').textContent.includes('06:15 Winter / 07:15 Sommer'));
