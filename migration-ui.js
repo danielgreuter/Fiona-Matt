@@ -18,7 +18,7 @@
   const card=(title,sub)=>{const c=node('section',null,'card');c.append(node('h2',title));if(sub)c.append(node('p',sub,'card-sub'));return c;};
   function status(parent,action){const r=sources[action];const refresh=button('↻ Aktualisieren',async()=>{if(action==='calendar')await refreshCalendar();else await window.FionaSources.loadOne(action,{force:true});});refresh.disabled=action==='calendar'&&!!calendarRefresh;parent.append(refresh);if(action==='calendar'&&calendarRefresh)parent.append(node('p','Kalender wird aktualisiert …','data-note')); parent.append(node('p',!r?'Quelle wird geladen …':r.status==='live'?'Quelle erreichbar · Abruf '+new Date(r.loadedAt).toLocaleString('de-CH'):r.status==='cache'?'Gespeicherter Abruf '+new Date(r.loadedAt).toLocaleString('de-CH')+' · Live-Quelle nicht erreichbar':'Live-Quelle nicht erreichbar · kein aktueller Abruf','data-note'));}
   function table(parent,headers,rows){const wrap=node('div',null,'table-wrap');const t=node('table',null,'data-table');const head=node('thead');const tr=node('tr');headers.forEach(h=>tr.append(node('th',h)));head.append(tr);t.append(head);const body=node('tbody');for(const item of rows){const r=node('tr');if(item.fiona)r.className='fiona-row';for(const cell of item.cells){const td=node('td');if(cell instanceof Element)td.append(cell);else td.textContent=String(cell??'—');r.append(td);}body.append(r);}t.append(body);wrap.append(t);parent.append(wrap);}
-  function dateLabel(e){return e.date||e.start?.dateTime||e.start?.date||'';}
+  function dateLabel(e){const first=e.date||e.start?.dateTime||e.start?.date||'';return e.endDate&&e.endDate!==first?first+' – '+e.endDate:first;}
   function details(parent,record){const d=node('details');d.append(node('summary','Vollständige Details'),node('pre',JSON.stringify(record,null,2)));parent.append(d);}
   function openDetail(title){const dialog=$('#resultDetail');const body=$('#detailContent');body.classList.remove('team-result-detail');body.replaceChildren(node('h2',title));$('#closeDetail').onclick=()=>dialog.close();dialog.showModal();return body;}
   function renderRankings(){
@@ -318,12 +318,15 @@
   const eventWords=text=>String(text||'').toLocaleLowerCase('de').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(?:wk|wrc|wact)\b/g,'').replace(/[^a-z0-9]+/g,' ').trim();
   function calendarEnrich(e){
     const day=M.dateKey(e.date||e.start);
-    const candidates=(sources.chcalendar?.data?.events||[]).filter(x=>M.dateKey(x.date||x.start)===day&&(e.sourceId&&x.sourceId===e.sourceId||eventWords(eventName(x))===eventWords(eventName(e))));
+    const candidates=(sources.chcalendar?.data?.events||[]).filter(x=>{
+      const first=M.dateKey(x.date||x.start),last=M.dateKey(x.endDate)||first;
+      return day&&first&&day>=first&&day<=last&&(e.sourceId&&x.sourceId===e.sourceId||eventWords(eventName(x))===eventWords(eventName(e)));
+    });
     if(candidates.length!==1)return e;
-    const match=candidates[0];
-    const venue=e.venue||(typeof e.location==='string'?e.location:'');
-    if(venue&&match.venue&&eventWords(venue)!==eventWords(match.venue))return e;
-    return {...match,...e,venue:venue||match.venue,stadium:e.stadium||match.stadium,organizer:e.organizer||match.organizer,deadline:e.deadline||match.deadline,deadlineSource:!e.deadline&&match.deadline?'Swiss Athletics':e.deadlineSource,detailsUrl:e.detailsUrl||match.detailsUrl};
+    const match=candidates[0],venue=e.venue||(typeof e.location==='string'?e.location:'');
+    const placeholders=['','k a','ka','n a','na','offen','unbekannt','nicht angegeben','noch nicht veröffentlicht'];
+    const ownDeadline=e.deadline&&!placeholders.includes(eventWords(e.deadline))?e.deadline:'';
+    return {...match,...e,venue:venue||match.venue,stadium:e.stadium||match.stadium,organizer:e.organizer||match.organizer,deadline:ownDeadline||match.deadline,deadlineSource:!ownDeadline&&match.deadline?'Swiss Athletics':e.deadlineSource,detailsUrl:e.detailsUrl||match.detailsUrl};
   }
   function sprintInfo(e){
     const program=Array.isArray(e.disciplines)?e.disciplines.join(' '):String(e.disciplines||'');
@@ -367,6 +370,12 @@
     const root=$('#calendarContent'),c=card('Wettkämpfe','Fionas Wettkampfplanung · Termine, Anmeldung und Wettkampfstätten.');const controls=node('div',null,'filters');controls.append(select('Quelle',['Fiona','Schweiz'],state.calendarSource,v=>{state.calendarSource=v;renderCalendar();}),select('Zeitraum',['Kommende','Alle','Vergangene'],state.calendarPeriod,v=>{state.calendarPeriod=v;renderCalendar();}));
     const search=node('input',null,'select');search.type='search';search.placeholder='Ort oder Wettkampf suchen';search.setAttribute('aria-label','Ort oder Wettkampf suchen');search.value=state.calendarSearch;search.onchange=()=>{state.calendarSearch=search.value;renderCalendar();};controls.append(search,button('Wettkampf hinzufügen',()=>eventEditor()));c.append(controls);
     const action=state.calendarSource==='Fiona'?'calendar':'chcalendar';status(c,action);
+    const sourceUpdated=sources.chcalendar?.data?.updated;
+    if(sourceUpdated&&Number.isFinite(Date.parse(sourceUpdated)))c.append(node('p','Swiss Athletics · Datenstand: '+new Date(sourceUpdated).toLocaleString('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'})+' · Automatischer Abruf täglich 05:15 UTC (06:15 Winter / 07:15 Sommer).','data-note'));
+    else c.append(node('p','Swiss Athletics · Datenstand nicht verfügbar. Automatischer Abruf täglich 05:15 UTC (06:15 Winter / 07:15 Sommer).','data-note'));
+    const reload=button('Kalenderdaten neu laden',async()=>{reload.disabled=true;await refreshSwissCalendar();},'tab');
+    c.append(reload,node('p','Lädt den letzten gespeicherten Swiss-Athletics-Abruf. Die Quelle selbst wird täglich automatisch geprüft.','data-note'));
+
     let events=state.calendarSource==='Fiona'?(sources.calendar?.data||H.athlete.upcoming||[]):(sources.chcalendar?.data?.events||[]);
     if(state.calendarSource==='Fiona'&&sources.calendar?.data)events=events.filter(M.isCompetition);
     if(state.calendarSource==='Fiona'&&!sources.calendar?.data)c.append(node('p','Historischer V1-Kalender · Termine und Teilnahmestatus können überholt sein.','data-note'));
@@ -397,6 +406,12 @@
     if(!events.length)root.append(node('p','Keine Kalendereinträge für diese Woche verfügbar. Die Grundstruktur steht darunter.'));
   }
 
+  let swissCalendarRefresh=null;
+  async function refreshSwissCalendar(){
+    if(swissCalendarRefresh)return swissCalendarRefresh;
+    swissCalendarRefresh=window.FionaSources.loadOne('chcalendar',{force:true});
+    try{return await swissCalendarRefresh;}finally{swissCalendarRefresh=null;renderCalendar();}
+  }
   async function refreshCalendar(){
     if(calendarRefresh)return calendarRefresh;
     calendarRefresh=window.FionaSources.loadOne('calendar',{force:true});
@@ -408,11 +423,12 @@
   window.addEventListener('fiona-view',event=>{
     if(event.detail.view==='team')loadTeamProfiles();
     if(['training','calendar'].includes(event.detail.view))refreshCalendar();
+    if(event.detail.view==='calendar')refreshSwissCalendar();
   });
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&calendarVisible()&&calendarStale())refreshCalendar();});
   window.addEventListener('pageshow',event=>{if(event.persisted&&calendarVisible())refreshCalendar();});
   window.addEventListener('online',()=>{if(calendarVisible())refreshCalendar();});
-  setInterval(()=>{if(document.visibilityState==='visible'&&calendarVisible())refreshCalendar();},300000);
+  setInterval(()=>{if(document.visibilityState==='visible'&&calendarVisible())refreshCalendar();if(document.visibilityState==='visible'&&$('#view-calendar').classList.contains('active'))refreshSwissCalendar();},300000);
   window.addEventListener('fiona-results',event=>{saResults=event.detail.results||[];renderWA();renderTeam();});
   window.addEventListener('fiona-source',event=>{sources[event.detail.action]=event.detail;renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();});
   renderRankings();renderWA();renderTeam();renderCalendar();renderTraining();

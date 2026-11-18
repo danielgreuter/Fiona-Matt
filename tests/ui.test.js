@@ -104,3 +104,19 @@ test('Canton matching uses complete place names and recognises Biel/Bienne as Be
   assert.deepEqual(b.errors,[]);
  }finally{b.close();}
 });
+
+test('Two-day Biel meeting supplies the deadline despite different venue spelling; manual dates stay intact',async()=>{
+ const b=await boot();try{
+  const w=b.w,d=w.document,ui=w.FionaMigrationUI;ui.state.calendarPeriod='Alle';
+  const emit=(action,data)=>w.dispatchEvent(new w.CustomEvent('fiona-source',{detail:{action,data,status:'live',loadedAt:new Date().toISOString()}}));
+  const name='Biel/Bienne Athletics Hallenmeeting (WRC)';
+  emit('chcalendar',{updated:'2026-11-18T13:45:00Z',events:[{name,date:'30.01.2027',endDate:'31.01.2027',venue:'Magglingen/Macolin',deadline:'24.01.2027',stadium:'End der Welt'}]});
+  emit('calendar',[{id:1,name:'WK: '+name,date:'31.01.2027',venue:'Magglingen/Macolin (SUI)',deadline:'k.A.',isWettkampf:true},{id:2,name:'WK: '+name,date:'30.01.2027',venue:'Biel',deadline:'20.01.2027',isWettkampf:true},{id:3,name:'WK: '+name,date:'01.02.2027',venue:'Biel',isWettkampf:true}]);
+  const rows=[...d.querySelectorAll('#calendarContent .calendar-event-compact')];
+  assert(rows.find(r=>r.textContent.includes('31.01.2027')).textContent.includes('24.01.2027'));
+  assert(rows.find(r=>r.textContent.includes('30.01.2027')).textContent.includes('20.01.2027'));
+  assert(rows.find(r=>r.textContent.includes('01.02.2027')).textContent.includes('noch nicht veröffentlicht'));
+  assert(d.querySelector('#calendarContent').textContent.includes('18.11.26'));assert(d.querySelector('#calendarContent').textContent.includes('06:15 Winter / 07:15 Sommer'));
+  assert.deepEqual(b.errors,[]);
+ }finally{b.close();}
+});

@@ -13,3 +13,8 @@ test('Indoor and non-sprint events are retained for transparent UI filtering',()
  assert(rowToEvent(['01.02.2027','Stab Meeting','Basel','BS','Halle','LC Basel','']));
  assert.equal(rowToEvent(['kein Datum','Meeting','Basel']),null);
 });
+
+test('Calendar imports both days and deadline of the Biel meeting',()=>{
+ const e=rowToEvent(['30.01.2027 - 31.01.2027','Biel/Bienne Athletics Hallenmeeting (WRC)','Magglingen/Macolin','BE','End der Welt','Biel/Bienne Athletics','24.01.2027']);
+ assert.equal(e.date,'30.01.2027');assert.equal(e.endDate,'31.01.2027');assert.equal(e.deadline,'24.01.2027');
+});
