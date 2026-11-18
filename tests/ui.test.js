@@ -120,3 +120,18 @@ test('Two-day Biel meeting supplies the deadline despite different venue spellin
   assert.deepEqual(b.errors,[]);
  }finally{b.close();}
 });
+
+test('Actual Google Calendar Biel title and Leubringen geocoding receive Swiss Athletics metadata',async()=>{
+ const b=await boot();try{
+  const w=b.w,d=w.document,ui=w.FionaMigrationUI;ui.state.calendarPeriod='Alle';
+  const emit=(action,data)=>w.dispatchEvent(new w.CustomEvent('fiona-source',{detail:{action,data,status:'live',loadedAt:new Date().toISOString()}}));
+  const original={id:'6d1vch0l5nkofmf0dlpb66ijft',date:'30.01.2027',name:'Hallenmeeting Biel',venue:'Halle End of the World, Leubringen',venueCity:'Leubringen',venueRaw:'Halle End of the World, End der Welt-Strasse 21, 2532 Leubringen, Schweiz',disciplines:['60m'],fionaStarting:true,deadline:'',isWettkampf:true,comment:'60m\nNicht angemeldet\nAnmeldeschluss: tbd',canton:'NE'};
+  emit('chcalendar',{events:[{date:'30.01.2027',endDate:'31.01.2027',name:'Biel/Bienne Athletics Hallenmeeting (WRC)',venue:'Magglingen/Macolin',canton:'BE',stadium:'End der Welt',organizer:'Biel/Bienne Athletics',deadline:'24.01.2027'}]});
+  emit('calendar',[original,{...original,id:'sm',name:'SM Nachwuchs',date:'27.02.2027'}]);
+  const row=d.querySelector('#calendarContent .calendar-event-compact');
+  assert.equal(row.querySelector('.event-emblem').alt,'Kantonswappen BE');assert(row.textContent.includes('24.01.2027'));assert(row.textContent.includes('End der Welt'));assert(row.textContent.includes('✕ Nicht angemeldet'));
+  const sm=[...d.querySelectorAll('#calendarContent .calendar-event-compact')].find(row=>row.textContent.includes('SM Nachwuchs'));assert.equal(sm.querySelector('.event-emblem').alt,'Kantonswappen BE');assert(sm.textContent.includes('noch nicht veröffentlicht'));
+  [...row.querySelectorAll('button')].find(btn=>btn.textContent==='Details').click();assert(d.querySelector('#detailContent').textContent.includes('Biel/Bienne Athletics'));assert(d.querySelector('#detailContent').textContent.includes('24.01.2027'));
+  assert.equal(original.canton,'NE');assert.equal(original.deadline,'');assert.deepEqual(b.errors,[]);
+ }finally{b.close();}
+});
