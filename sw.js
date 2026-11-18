@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261118-calendar-magglingen';
+const CACHE_NAME='fiona-matt-v2-20261118-sprint-calendar';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',

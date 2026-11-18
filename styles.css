@@ -160,3 +160,19 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 #liveTraining .training-event-clickable:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
 
 .dakar-results{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;list-style:none;padding:0;margin:0}.dakar-results li{display:grid;gap:3px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.dakar-results a,.dakar-results small{font-size:11px;color:inherit}.dakar-results strong{font-size:17px;font-variant-numeric:tabular-nums}
+
+/* Compact calendar discovery, with full context available on demand. */
+.registration-status{font-size:12px;font-weight:700;margin:6px 0}.not-registered{color:#b91c1c}.registered{color:#166534}
+.event-stadium{font-size:12px;color:#1e3a8a}
+.sprint-calendar{margin-top:24px;border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;overflow:hidden}
+.sprint-calendar>summary{padding:16px;color:#1e3a8a;font-weight:750;cursor:pointer}
+.sprint-calendar-body{padding:0 14px 14px;min-width:0}
+.sprint-event{border-top:1px solid #dbe3ef}
+.sprint-event>summary{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;list-style-position:inside}
+.sprint-event>summary>div:first-of-type{flex:1;min-width:0;display:grid;gap:4px}
+.sprint-event strong{font-size:13px;color:#1e3a8a;overflow-wrap:anywhere}
+.sprint-venue{font-size:11px;color:#64748b;overflow-wrap:anywhere}
+.sprint-badges{display:flex;flex-wrap:wrap;gap:5px;max-width:40%;justify-content:flex-end}
+.sprint-event-body{padding:0 8px 10px}
+.sprint-event-body .calendar-event{border:0;margin:0;padding:8px 0}
+@media(max-width:600px){.sprint-event>summary{flex-wrap:wrap}.sprint-badges{max-width:100%;width:100%;justify-content:flex-start;padding-left:38px}.sprint-calendar-body{padding:0 10px 10px}}

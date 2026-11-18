@@ -6,6 +6,9 @@ env:
 on:
   schedule:
     - cron: '15 5 * * *'
+  push:
+    branches: [main]
+    paths: ['scrape_chcalendar.js', 'calendar-parser.js', '.github/workflows/chcalendar.yml']
   workflow_dispatch:
 
 jobs:
