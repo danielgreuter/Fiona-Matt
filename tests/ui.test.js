@@ -45,3 +45,21 @@ test('Public gallery opens photo zoom, album filter and clearly indicates upload
 test('Training plans toggle on click and remain open after source refresh',async()=>{const b=await boot();try{const w=b.w,d=w.document,date=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Vaduz',day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()).replaceAll('/','.');const record={action:'calendar',status:'live',loadedAt:new Date().toISOString(),data:[{id:'toggle-test',name:'Sprint',date,comment:'6 × 30 m · Pause 3 Minuten',isWettkampf:false}]};w.dispatchEvent(new w.CustomEvent('fiona-source',{detail:record}));let toggle=d.querySelector('#liveTraining .training-details-toggle');assert(toggle);assert.equal(toggle.getAttribute('aria-expanded'),'false');assert(d.querySelector('#liveTraining .event-comment').hidden);d.querySelector('#liveTraining .calendar-event h3').click();assert.equal(toggle.getAttribute('aria-expanded'),'true');assert(!d.querySelector('#liveTraining .event-comment').hidden);w.dispatchEvent(new w.CustomEvent('fiona-source',{detail:record}));toggle=d.querySelector('#liveTraining .training-details-toggle');assert.equal(toggle.getAttribute('aria-expanded'),'true');assert(!d.querySelector('#liveTraining .event-comment').hidden);d.querySelector('#liveTraining .calendar-event').click();assert(d.querySelector('#liveTraining .event-comment').hidden);assert.deepEqual(b.errors,[]);}finally{b.close();}});
 
 test('Dakar races are listed and the wind-assisted final has a separate chart marker',async()=>{const b=await boot({offline:true});try{const d=b.w.document;const rows=[...d.querySelectorAll('#allResults .result')].filter(row=>row.textContent.includes('Dakar'));assert.equal(rows.length,2);assert(rows.some(row=>row.textContent.includes('12.15')&&row.textContent.includes('Halbfinale')));assert(rows.some(row=>row.textContent.includes('11.93')&&row.textContent.includes('Finale')));const latest=[...d.querySelectorAll('#latestResults .result')].find(row=>row.textContent.includes('Dakar'));assert(latest);latest.click();assert.equal(d.querySelector('#detailContent .result-location-emblem')?.alt,'Senegal');d.querySelector('#closeDetail').click();const chart=d.querySelector('#progressChart');chart.click();const detail=d.querySelector('#detailContent').textContent;assert(detail.includes('12.15'));assert(detail.includes('11.93 (windunterstützt)'));assert.equal(chart.querySelectorAll('.dakar-final-marker').length,1);assert.equal(d.querySelectorAll('#zoomProgressChart .dakar-final-marker').length,1);assert.equal(chart.querySelectorAll('circle title').length,chart.querySelectorAll('circle').length);assert(![...chart.querySelectorAll('circle title')].some(dot=>dot.textContent.includes('11.93')));}finally{b.close();}});
+
+test('Calendar recognises Magglingen and Macolin in titles when location or canton is absent',async()=>{
+  const b=await boot();try{
+    const d=b.w.document;
+    const examples=[
+      {name:'WK: Hallenmeeting Magglingen'},
+      {name:'WK: Meeting Macolin',canton:'CH'},
+      {name:'WK: Meeting',venue:'Magglingen / Macolin',canton:' '},
+      {name:'WK: Meeting Magglingen',venue:'Basel',canton:'BS'}
+    ];
+    b.w.dispatchEvent(new b.w.CustomEvent('fiona-source',{detail:{action:'calendar',status:'live',loadedAt:new Date().toISOString(),data:examples.map((e,i)=>({...e,id:900+i,date:'01.02.2027',isWettkampf:true}))}}));
+    const emblems=[...d.querySelectorAll('#calendarContent .event-emblem')];
+    assert.equal(emblems.length,4);
+    for(const img of emblems.slice(0,3)){assert.equal(img.alt,'Kantonswappen BE');assert(img.src.endsWith('/assets/bern-coat.svg'));}
+    assert.equal(emblems[3].alt,'Kantonswappen BS');
+    assert.deepEqual(b.errors,[]);
+  }finally{b.close();}
+});
