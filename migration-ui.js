@@ -197,12 +197,26 @@
     const scores=[...new Set(matches.map(p=>M.number(p.score)).filter(n=>n>0))];
     return {score:scores.length===1?scores[0]:null,tablePoints};
   }
+  function renderWARefresh(parent){
+    const record=sources.results;
+    const toolbar=node('div',null,'wa-refresh-row');
+    const refresh=button('↻ Aktualisieren',async()=>{
+      refresh.disabled=true;
+      await window.FionaSources.loadOne('results',{force:true});
+    });
+    let label=record?'Quelle nicht erreichbar':'Daten werden geladen …';
+    if(record?.loadedAt){
+      const date=new Date(record.loadedAt).toLocaleString('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'});
+      label=record.status==='cache'?'Gespeicherter Abruf '+date+' · Quelle nicht erreichbar':'Abruf '+date;
+    }
+    toolbar.append(refresh,node('span',label,'data-note'));
+    parent.append(toolbar);
+  }
   function renderWA(){
-    const root=$('#waContent'),c=card('WA-Punkte & Entwicklung','Leistungswerte pro Resultat · Zeit, Wind und Wettkampf im direkten Vergleich.');waBrand(c);
-    const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.waDisc,v=>{state.waDisc=v;renderWA();}),select('Zeitraum',['Alle','2026','2025','2024'],state.waYear,v=>{state.waYear=v;renderWA();}));c.append(controls);status(c,'results');
+    const root=$('#waContent'),c=card('WA-Punkte & Entwicklung');waBrand(c);
+    const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.waDisc,v=>{state.waDisc=v;renderWA();}),select('Zeitraum',['Alle','2026','2025','2024'],state.waYear,v=>{state.waYear=v;renderWA();}));c.append(controls);renderWARefresh(c);
     const pbs=sources.results?.data?.pbs||sources['wa-pbs']?.data?.pbs;
     const live=waResults(),latest=live.filter(r=>M.discipline(r.discipline||r.name)===state.waDisc).map(r=>M.dateKey(r.date)).filter(Boolean).sort().at(-1);
-    if(latest)c.append(node('p','Neuester Einzelresultat-Eintrag der WA-Quelle: '+latest+' · Ein erfolgreicher Abruf bestätigt keinen vollständigen Saisonbestand.','data-note'));
     const raw=M.scoreRows(live,[],state.waDisc);
     const rows=raw.filter(r=>r.dateISO&&(state.waYear==='Alle'||r.dateISO.startsWith(state.waYear)));
     const filtered=live.filter(r=>M.discipline(r.discipline||r.name)===state.waDisc&&(state.waYear==='Alle'||M.dateKey(r.date).startsWith(state.waYear))).map(r=>({...r,origin:'World Athletics'}));

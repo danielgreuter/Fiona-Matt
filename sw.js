@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261119-compact-rankings';
+const CACHE_NAME='fiona-matt-v2-20261119-compact-wa';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
