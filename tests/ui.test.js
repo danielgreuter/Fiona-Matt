@@ -147,3 +147,20 @@ test('Competition calendar has one inline refresh and shows only the next five e
  assert.equal(d.querySelectorAll('#calendarContent .calendar-event-compact').length,8);assert.deepEqual(b.errors,[]);
  }finally{b.close();}
 });
+
+test('Fiona profile uses U20 and career count buttons open their exact season results',async()=>{
+ const b=await boot();try{
+  const d=b.w.document,profile=d.querySelector('#view-profile');
+  assert(d.querySelector('#fionaProfileCategory').textContent.startsWith('U20'));assert(!profile.textContent.includes('Nächstes Highlight'));
+  for(const year of ['2026','2025','Alle']){
+   [...d.querySelectorAll('#fionaCareerStats .tabs button')].find(btn=>btn.textContent===year).click();
+   for(const label of ['Läufe · 100 m','Läufe · 60 m','Weitsprung · Wettkampfresultate']){
+    const button=[...d.querySelectorAll('#fionaCareerStats .stats-zoom-button')].find(btn=>btn.textContent.startsWith(label)),count=Number(button.querySelector('strong').textContent);
+    button.click();assert(d.querySelector('#resultDetail').open);assert.equal(d.querySelectorAll('#detailContent .stats-detail-row').length,count);
+    assert(d.querySelector('#detailContent h2').textContent.includes(year));d.querySelector('#closeDetail').click();
+   }
+   const meetings=[...d.querySelectorAll('#fionaCareerStats .stats-zoom-button')].find(btn=>btn.textContent.startsWith('Wettkämpfe')),count=Number(meetings.querySelector('strong').textContent);meetings.click();assert.equal(d.querySelectorAll('#detailContent .stats-detail-row').length,count);d.querySelector('#closeDetail').click();
+  }
+  assert.deepEqual(b.errors,[]);
+ }finally{b.close();}
+});
