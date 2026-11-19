@@ -372,20 +372,20 @@
     parent.append(disclosure);
   }
   function renderCalendar(){
-    const root=$('#calendarContent'),c=card('Wettkämpfe','Fionas Wettkampfplanung · Termine, Anmeldung und Wettkampfstätten.');const controls=node('div',null,'filters');controls.append(select('Quelle',['Fiona','Schweiz'],state.calendarSource,v=>{state.calendarSource=v;renderCalendar();}),select('Zeitraum',['Kommende','Alle','Vergangene'],state.calendarPeriod,v=>{state.calendarPeriod=v;renderCalendar();}));
+    const root=$('#calendarContent'),c=card('Wettkämpfe');const controls=node('div',null,'filters');controls.append(select('Quelle',['Fiona','Schweiz'],state.calendarSource,v=>{state.calendarSource=v;renderCalendar();}),select('Zeitraum',['Kommende','Alle','Vergangene'],state.calendarPeriod,v=>{state.calendarPeriod=v;renderCalendar();}));
     const search=node('input',null,'select');search.type='search';search.placeholder='Ort oder Wettkampf suchen';search.setAttribute('aria-label','Ort oder Wettkampf suchen');search.value=state.calendarSearch;search.onchange=()=>{state.calendarSearch=search.value;renderCalendar();};controls.append(search,button('Wettkampf hinzufügen',()=>eventEditor()));c.append(controls);
-    const action=state.calendarSource==='Fiona'?'calendar':'chcalendar';status(c,action);
-    const sourceUpdated=sources.chcalendar?.data?.updated;
-    if(sourceUpdated&&Number.isFinite(Date.parse(sourceUpdated)))c.append(node('p','Swiss Athletics · Datenstand: '+new Date(sourceUpdated).toLocaleString('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'})+' · Automatischer Abruf täglich 05:15 UTC (06:15 Winter / 07:15 Sommer).','data-note'));
-    else c.append(node('p','Swiss Athletics · Datenstand nicht verfügbar. Automatischer Abruf täglich 05:15 UTC (06:15 Winter / 07:15 Sommer).','data-note'));
-    const reload=button('Kalenderdaten neu laden',async()=>{reload.disabled=true;await refreshSwissCalendar();},'tab');
-    c.append(reload,node('p','Lädt den letzten gespeicherten Swiss-Athletics-Abruf. Die Quelle selbst wird täglich automatisch geprüft.','data-note'));
-
+    const action=state.calendarSource==='Fiona'?'calendar':'chcalendar',record=sources[action];
+    const toolbar=node('div',null,'calendar-refresh-row');
+    const refresh=button('↻ Aktualisieren',async()=>{refresh.disabled=true;await Promise.allSettled([refreshCalendar(),refreshSwissCalendar()]);},'tab');refresh.disabled=!!calendarRefresh;
+    const stamp=action==='chcalendar'?record?.data?.updated||record?.loadedAt:record?.loadedAt;
+    const valid=stamp&&Number.isFinite(Date.parse(stamp));
+    const label=calendarRefresh?'Wird aktualisiert …':valid?(record?.status==='cache'?'Gespeichert · ':'Stand: ')+new Date(stamp).toLocaleString('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'})+(record?.status==='cache'?' · Quelle nicht erreichbar':''):record?.status==='unavailable'?'Quelle nicht erreichbar':'Daten werden geladen …';
+    toolbar.append(refresh,node('span',label,'data-note'));c.append(toolbar);
     let events=state.calendarSource==='Fiona'?(sources.calendar?.data||H.athlete.upcoming||[]):(sources.chcalendar?.data?.events||[]);
     if(state.calendarSource==='Fiona'&&sources.calendar?.data)events=events.filter(M.isCompetition);
     if(state.calendarSource==='Fiona'&&!sources.calendar?.data)c.append(node('p','Historischer V1-Kalender · Termine und Teilnahmestatus können überholt sein.','data-note'));
     events=events.filter(e=>{const d=M.dateKey(e.date||e.start);return state.calendarPeriod==='Alle'||d&&(state.calendarPeriod==='Kommende'?d>=today():d<today());}).filter(e=>JSON.stringify(e).toLocaleLowerCase('de').includes(state.calendarSearch.toLocaleLowerCase('de'))).slice().sort((a,b)=>M.dateKey(a.date||a.start).localeCompare(M.dateKey(b.date||b.start)));
-    const future=events.filter(e=>M.dateKey(e.date||e.start)>=today());c.append(node('p',events.length+' Wettkämpfe in dieser Ansicht · '+future.length+' kommende.','data-note'));
+    if(state.calendarPeriod==='Kommende')events=events.slice(0,5);
     const liveEditable=state.calendarSource==='Fiona'&&sources.calendar?.status==='live';for(const e of events)eventRow(c,state.calendarSource==='Fiona'?calendarEnrich(e):{...e,isWettkampf:true},liveEditable,false,true);if(!events.length)c.append(node('p','Keine Wettkämpfe für diesen Filter.'));
     renderSprintCalendar(c);root.replaceChildren(c);
   }

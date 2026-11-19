@@ -116,7 +116,7 @@ test('Two-day Biel meeting supplies the deadline despite different venue spellin
   assert(rows.find(r=>r.querySelector('.event-date').textContent.startsWith('31.01.2027')).textContent.includes('24.01.2027'));
   assert(rows.find(r=>r.textContent.includes('30.01.2027')).textContent.includes('20.01.2027'));
   assert(rows.find(r=>r.textContent.includes('01.02.2027')).textContent.includes('noch nicht veröffentlicht'));
-  assert(d.querySelector('#calendarContent').textContent.includes('18.11.26'));assert(d.querySelector('#calendarContent').textContent.includes('06:15 Winter / 07:15 Sommer'));
+  assert(d.querySelector('.calendar-refresh-row').textContent.includes('Stand:'));
   assert.deepEqual(b.errors,[]);
  }finally{b.close();}
 });
@@ -133,5 +133,17 @@ test('Actual Google Calendar Biel title and Leubringen geocoding receive Swiss A
   const sm=[...d.querySelectorAll('#calendarContent .calendar-event-compact')].find(row=>row.textContent.includes('SM Nachwuchs'));assert.equal(sm.querySelector('.event-emblem').alt,'Kantonswappen BE');assert(sm.textContent.includes('noch nicht veröffentlicht'));
   [...row.querySelectorAll('button')].find(btn=>btn.textContent==='Details').click();assert(d.querySelector('#detailContent').textContent.includes('Biel/Bienne Athletics'));assert(d.querySelector('#detailContent').textContent.includes('24.01.2027'));
   assert.equal(original.canton,'NE');assert.equal(original.deadline,'');assert.deepEqual(b.errors,[]);
+ }finally{b.close();}
+});
+
+test('Competition calendar has one inline refresh and shows only the next five events',async()=>{
+ const b=await boot();try{const w=b.w,d=w.document;
+ w.dispatchEvent(new w.CustomEvent('fiona-source',{detail:{action:'calendar',status:'live',loadedAt:'2026-11-19T09:15:00Z',data:Array.from({length:8},(_,i)=>({id:i,name:'WK: Meeting '+i,date:'0'+(i+1)+'.01.2099',isWettkampf:true}))}}));
+ assert.equal(d.querySelectorAll('#calendarContent .calendar-event-compact').length,5);
+ assert(d.querySelector('.calendar-refresh-row').textContent.includes('19.11.26'));
+ assert(!d.querySelector('#calendarContent').textContent.includes('Kalenderdaten neu laden'));
+ assert(!d.querySelector('#calendarContent').textContent.includes('Lädt den letzten gespeicherten'));
+ w.FionaMigrationUI.state.calendarPeriod='Alle';w.FionaMigrationUI.renderCalendar();
+ assert.equal(d.querySelectorAll('#calendarContent .calendar-event-compact').length,8);assert.deepEqual(b.errors,[]);
  }finally{b.close();}
 });
