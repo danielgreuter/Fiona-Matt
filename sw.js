@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261119-stats-performance-sort';
+const CACHE_NAME='fiona-matt-v2-20261119-stats-wind-mark';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',

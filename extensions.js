@@ -8,6 +8,12 @@
     const n=el('div',null,'result');const main=el('div',null,'result-main');
     const heading=el('strong',label);const emblem=performance&&window.FionaMigrationUI?.eventEmblem(performance);if(emblem){emblem.classList.add('result-location-emblem');heading.prepend(emblem);}main.append(heading,el('span',note));n.append(main,el('strong',value));parent.append(n);
   }
+  const isWindAssisted=r=>!r.indoor&&(Number(String(r.wind??'').replace(',','.'))>2||r.windAssisted===true);
+  function performanceMark(r){
+    const mark=el('span',r.result+(/long jump|weitsprung/i.test(r.discipline)?' m':' s'));
+    if(isWindAssisted(r)){const w=el('i','w','wind-marker');w.style.fontSize='0.72em';w.style.fontWeight='400';w.style.marginLeft='2px';w.title='Windunterstützt';w.setAttribute('aria-label','windunterstützt');mark.append(w);}
+    return mark;
+  }
   function render(record){
     records[record.action]=record;
     const card=el('section',null,'card span-12');card.append(el('h2',record.title));
@@ -59,11 +65,11 @@
           const r=group.items[0],item=el('li',null,'stats-detail-row');
           const top=el('div',null,'stats-detail-heading'),emblem=window.FionaMigrationUI?.eventEmblem(r);
           if(emblem){emblem.classList.add('result-location-emblem');top.append(emblem);}
-          top.append(el('strong',meetingsOnly?r.competition||r.venue||'Wettkampf':r.result+(/long jump|weitsprung/i.test(r.discipline)?' m':' s')));
+          const mark=el('strong');if(meetingsOnly)mark.textContent=r.competition||r.venue||'Wettkampf';else mark.append(performanceMark(r));top.append(mark);
           top.append(el('span',meetingsOnly?group.dates.join(' – '):r.date,'stats-detail-date'));item.append(top);
           if(meetingsOnly){
             item.append(el('p',[r.venue,group.items.length+' Resultate'].filter(Boolean).join(' · ')));
-            item.append(el('p',group.items.map(x=>x.discipline+' '+x.result).join(' · ')));
+            const marks=el('p');group.items.forEach((x,i)=>{if(i)marks.append(document.createTextNode(' · '));marks.append(document.createTextNode(x.discipline+' '),performanceMark(x));});item.append(marks);
           }else{
             item.append(el('p',[r.competition,r.venue].filter(Boolean).join(' · ')));
             const wind=r.indoor?'Indoor':r.wind!=null&&String(r.wind).trim()!==''?'Wind '+r.wind+' m/s':'';
