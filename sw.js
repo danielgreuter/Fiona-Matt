@@ -1,4 +1,4 @@
-const CACHE_NAME='fiona-matt-v2-20261119-dakar-top-five';
+const CACHE_NAME='fiona-matt-v2-20261119-season-stories';
 const ASSETS=[
   '/Fiona-Matt/assets/switzerland-flag.svg',
   '/Fiona-Matt/assets/swiss-athletics-logo.svg',
@@ -6,9 +6,10 @@ const ASSETS=[
   '/Fiona-Matt/',
   '/Fiona-Matt/index.html',
   '/Fiona-Matt/styles.css',
-  '/Fiona-Matt/styles.css?v=20261111-portrait-larger',
+  '/Fiona-Matt/styles.css?v=20261119-season-stories',
   '/Fiona-Matt/config.js',
   '/Fiona-Matt/app.js',
+  '/Fiona-Matt/stories.js',
   '/Fiona-Matt/gallery.js',
   '/Fiona-Matt/profile-photo.js',
   '/Fiona-Matt/personal-ui.js',

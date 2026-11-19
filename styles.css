@@ -240,3 +240,43 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
  #view-home .dakar-results li{padding:5px 7px}
  #view-home .dakar-results a,#view-home .dakar-results small{font-size:9px}
 }
+
+/* Saisonreise */
+.story-home-link{display:flex;justify-content:flex-end;margin:8px 0 0}
+.story-heading{background:linear-gradient(122deg,#102249,#214c9f);color:#fff;border-radius:var(--radius);padding:clamp(18px,4vw,36px);margin-bottom:14px}
+.story-heading h2{font-size:clamp(26px,5vw,44px);line-height:1.05;letter-spacing:-.045em;margin:0 0 18px}
+.story-nav,.story-actions{display:flex;flex-wrap:wrap;gap:8px}
+.story-nav .tab{color:#fff;background:#ffffff19;border-color:#ffffff48}
+.story-nav .tab.active{color:#132d62;background:#fff;border-color:#fff}
+.story-section{padding:clamp(14px,3vw,25px)}
+.story-section h3,.story-section h4{margin:0}
+.story-season{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.story-season h3{margin-right:auto}
+.story-season label{font-size:12px;color:var(--muted)}
+.story-timeline{list-style:none;margin:18px 0 0;padding:0}
+.story-timeline li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;position:relative;padding:0 0 20px}
+.story-timeline li:last-child{padding-bottom:0}
+.story-timeline li:not(:last-child)::before{content:"";position:absolute;top:34px;bottom:0;left:16px;border-left:2px solid var(--line)}
+.story-timeline img{width:34px;height:34px;padding:5px;border-radius:10px;background:#edf3ff;object-fit:contain}
+.story-timeline time{color:var(--muted);font-size:12px}
+.story-timeline h4{margin:3px 0}
+.story-timeline p,.story-round p{margin:4px 0 10px;color:var(--muted);font-size:14px;line-height:1.45}
+.story-timeline p{white-space:pre-line}
+.story-timeline .story-note{color:var(--warn)}
+.story-timeline a:not(.tab),.story-round a{color:#194ba1;text-decoration:underline;text-underline-offset:3px;font-size:13px;font-weight:650}
+.story-recap-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:clamp(14px,3vw,24px);background:#edf3ff;color:#172f62;border-radius:14px;border-left:4px solid #dc394d}
+.story-recap-hero p{margin:0 0 5px;font-size:13px}
+.story-recap-hero h3{font-size:clamp(25px,6vw,40px);letter-spacing:-.045em}
+.story-recap-hero .story-finish{margin:4px 0 0;font-size:17px}
+.story-recap-hero img{width:44px;height:auto;border-radius:3px}
+.story-rounds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.story-round{background:var(--panel-2);border:1px solid var(--line);padding:clamp(10px,3vw,18px);border-radius:14px}
+.story-section h3{scroll-margin-top:84px}
+.story-reflection{margin:14px 0}
+.story-reflection p{white-space:pre-line;line-height:1.55}
+.story-round strong{display:block;font-size:clamp(21px,5vw,32px);margin-top:4px;font-variant-numeric:tabular-nums}
+.story-export{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:clamp(14px,4vw,36px);align-items:center}
+.story-export canvas{display:block;width:100%;height:auto;max-width:360px;background:#0c1c3d;border-radius:14px}
+.story-export p{margin:6px 0 12px;color:var(--muted);font-size:14px}
+.story-export p:empty{display:none}
+@media(max-width:620px){.story-export{grid-template-columns:minmax(0,1fr)}}

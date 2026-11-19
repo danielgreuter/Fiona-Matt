@@ -8,7 +8,7 @@
   <title>Fiona Matt Athletics · V2</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-192-fixed.png">
-  <link rel="stylesheet" href="./styles.css?v=20261111-portrait-larger">
+  <link rel="stylesheet" href="./styles.css?v=20261119-season-stories">
 </head>
 <body>
   <div id="splash-screen" aria-label="Fiona Matt Athletics Intro">
@@ -53,7 +53,7 @@
                 <text x="24" y="45" text-anchor="middle" font-size="12" fill="#5A2A08" font-family="sans-serif" font-weight="bold">3</text>
               </svg></span><span><strong>SM Halle U18 · Bronze</strong><small>60 m · Magglingen 2026</small></span></div></div>
     </section>
-    <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="gallery">Fotos</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
+    <nav class="section-nav" aria-label="Weitere Bereiche"><button class="tab" data-goto="stories">Saisonreise</button><button class="tab" data-goto="rankings">Rankings</button><button class="tab" data-goto="wa">WA-Punkte</button><button class="tab" data-goto="team">Team LIE</button><button class="tab" data-goto="calendar">Wettkämpfe</button><button class="tab" data-goto="gallery">Fotos</button><button class="tab" data-goto="sources">Datenstatus</button><a class="tab" href="./legacy.html">V1</a></nav>
     <section id="view-home" class="view active">
       <section class="dakar-card" aria-label="Fionas Resultate in Dakar">
         <div class="dakar-highlight">
@@ -66,6 +66,7 @@
           <li><a href="https://worldathletics.org/results/youth-olympic-games/2026/youth-olympic-games-7147638/women/100-metres/final/result">Finale</a><strong>11,93 s</strong><small>6. Platz · +2,4 m/s</small></li>
         </ul>
       </section>
+      <div class="story-home-link"><button class="tab" data-goto="stories" data-story-panel="recap">Dakar-Rückblick &amp; Erfolgskarte <span aria-hidden="true">→</span></button></div>
       <p class="data-note" id="dataWarning">Datenstand wird geprüft …</p>
 
       <div class="section-title">Performance</div>
@@ -95,7 +96,7 @@
         </section>
 
         <section class="card span-4">
-          <div class="card-head"><div><h2 class="card-title">Meilensteine</h2><p class="card-sub">sportliche Entwicklung</p></div></div>
+          <div class="card-head"><div><h2 class="card-title">Meilensteine</h2></div><button class="tab" data-goto="stories" data-story-panel="journey">Saisonreise</button></div>
           <div class="timeline" id="milestones"></div>
         </section>
       </div>
@@ -158,6 +159,62 @@
     </section>
 
     
+    <section id="view-stories" class="view" aria-labelledby="stories-title">
+      <section class="story-heading">
+        <h2 id="stories-title" tabindex="-1">Fionas Saisonreise</h2>
+        <div class="story-nav" aria-label="Saisonreise">
+          <button type="button" class="tab" data-story-tab="journey" aria-controls="story-journey">Saisonreise</button>
+          <button type="button" class="tab" data-story-tab="recap" aria-controls="story-recap">Wettkampf-Rückblick</button>
+          <button type="button" class="tab" data-story-tab="card" aria-controls="story-card">Erfolgskarte</button>
+        </div>
+      </section>
+
+      <section id="story-journey" class="card story-section">
+        <div class="story-season">
+          <h3>Meilensteine</h3>
+          <label for="story-year">Saison</label>
+          <select id="story-year" class="select"></select>
+        </div>
+        <ol class="story-timeline" id="story-timeline"></ol>
+      </section>
+
+      <section id="story-recap" class="card story-section" hidden>
+        <div class="story-recap-hero">
+          <div>
+            <p>Youth Olympic Games · 8. November 2026</p>
+            <h3>Dakar 2026</h3>
+            <p class="story-finish"><strong>6. Platz</strong> · 100 m</p>
+          </div>
+          <img src="./assets/senegal-flag.svg" width="60" height="40" alt="Flagge Senegals">
+        </div>
+        <div id="story-rounds" class="story-rounds"></div>
+        <section id="story-reflection" class="story-reflection" hidden>
+          <h4>Fionas Rückblick</h4>
+          <p></p>
+        </section>
+        <div class="story-actions">
+          <button type="button" class="tab" data-story-panel="card">Erfolgskarte ansehen</button>
+          <a id="story-video" class="tab" hidden>Finalvideo ansehen</a>
+          <button type="button" class="tab" data-goto="gallery">Zur Fotogalerie</button>
+        </div>
+      </section>
+
+      <section id="story-card" class="card story-section" hidden>
+        <div class="story-export">
+          <canvas id="story-preview" width="1080" height="1350" role="img" aria-label="Erfolgskarte für Fiona Matt bei den Youth Olympic Games in Dakar"></canvas>
+          <div>
+            <h3>Dakar 2026 als Erfolgskarte</h3>
+            <p>Fionas 6. Platz über 100 m als PNG im Hochformat.</p>
+            <div class="story-actions">
+              <button id="story-share" class="tab" type="button" hidden>Als Bild teilen</button>
+              <a id="story-download" class="tab" download="Fiona-Matt-Dakar-2026.png" hidden>PNG herunterladen</a>
+            </div>
+            <p id="story-export-status" role="status"></p>
+          </div>
+        </div>
+      </section>
+    </section>
+
     <section id="view-gallery" class="view"><div class="section-title">Fionas Fotogalerie</div><section class="card"><div class="card-head"><div><h2>Momente auf und neben der Bahn</h2><p class="card-sub">Wettkämpfe, Training und Erinnerungen.</p></div><button type="button" class="tab" id="galleryManage">Fotos verwalten</button></div><div class="tabs" id="galleryAlbums"></div><p id="galleryMessage" class="data-note" role="status" aria-live="polite"></p><div id="galleryManagement" hidden><form id="galleryLoginForm" class="gallery-form"><label>Upload-Schlüssel<input id="galleryKey" type="password" autocomplete="off" required></label><button class="tab" type="submit">Anmelden</button><p class="card-sub">Nur berechtigte Personen können Fotos veröffentlichen oder löschen.</p></form><button id="galleryLogout" class="tab" type="button" hidden>Abmelden</button><form id="galleryUploadForm" class="gallery-form" hidden><label>Fotos auswählen<input id="galleryFiles" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple required></label><label>Album<input id="galleryAlbum" type="text" value="Momente" maxlength="40" list="galleryAlbumSuggestions" required></label><datalist id="galleryAlbumSuggestions"><option value="Dakar 2026"><option value="Wettkämpfe"><option value="Training"><option value="Momente"></datalist><label>Titel (optional)<input id="galleryTitle" type="text" maxlength="100"></label><label>Datum (optional)<input id="galleryDate" type="date"></label><label>Beschreibung (optional)<textarea id="galleryCaption" maxlength="300" rows="2"></textarea></label><p class="card-sub">Ausgewählte Fotos werden öffentlich veröffentlicht. Album, Titel und Datum gelten für die ganze Auswahl. Bilder werden vor dem Upload verkleinert.</p><button type="submit" class="tab" id="gallerySend">Fotos veröffentlichen</button></form></div><div class="gallery-grid" id="galleryGrid"></div><div class="tabs"><button class="tab" id="galleryMore" type="button" hidden>Weitere Fotos laden</button><button class="tab" id="galleryRefresh" type="button">Aktualisieren</button></div></section></section>
 
     <section id="view-rankings" class="view"><div class="section-title">Rankings</div><div id="rankingsContent"></div></section>
@@ -182,6 +239,7 @@
   <script src="./data-models.js"></script>
   <script src="./data-adapters.js"></script>
   <script src="./personal-ui.js"></script>
+  <script src="./stories.js"></script>
   <script src="./app.js"></script>
   <script src="./migration-ui.js"></script>
   <script src="./extensions.js"></script>
