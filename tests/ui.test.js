@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');const {JSDOM}=require('jsdom');
-const scripts=['config.js','historical-data.js','data-models.js','data-adapters.js','personal-ui.js','app.js','migration-ui.js','extensions.js','gallery.js','profile-photo.js'];
+const scripts=['config.js','historical-data.js','data-models.js','data-adapters.js','personal-ui.js','stories.js','app.js','migration-ui.js','extensions.js','gallery.js','profile-photo.js'];
 const fixtures=require('./fixtures');
 const baseResultCount=fixtures['sa-results'].results.length+2;
 const liveResultCount=baseResultCount+(fixtures['sa-results'].results.some(r=>r.discipline==='150m'&&String(r.result)==='18.44'&&r.dateISO==='2026-05-09')?0:1);
@@ -177,4 +177,60 @@ test('Both Dakar zooms show official top five, with Fiona appended in sixth plac
   }
   assert.deepEqual(b.errors,[]);
  }finally{b.close();}
+});
+
+test('Saisonreise filters milestones and exports the wind-assisted Dakar result as a shareable PNG', async () => {
+  const b = await boot({ offline: true });
+  try {
+    const { document: d } = b.w;
+    d.querySelector('#view-home [data-story-panel="journey"]').click();
+    assert(d.querySelector('#view-stories').classList.contains('active'));
+    assert.match(d.querySelector('#story-timeline').textContent, /Verletzungsbedingter Startverzicht/);
+
+    const season = d.querySelector('#story-year');
+    season.value = '2024';
+    season.dispatchEvent(new b.w.Event('change'));
+    assert.match(d.querySelector('#story-timeline').textContent, /Schweizer Meisterin U16/);
+    assert.doesNotMatch(d.querySelector('#story-timeline').textContent, /Dakar/);
+
+    d.querySelector('[data-view="home"]').click();
+    d.querySelector('#view-home [data-story-panel="recap"]').click();
+    const recap = d.querySelector('#story-recap');
+    assert(!recap.hidden);
+    assert.match(recap.textContent, /12,15 s.*−1,1 m\/s/s);
+    assert.match(recap.textContent, /11,93 s.*\+2,4 m\/s · windunterstützt/s);
+
+    const lines = [];
+    const canvas = d.querySelector('#story-preview');
+    b.w.HTMLImageElement.prototype.decode = async () => {};
+    const noop = () => {};
+    canvas.getContext = () => ({
+      fillRect: noop, save: noop, beginPath: noop, rect: noop, clip: noop, drawImage: noop, restore: noop,
+      createLinearGradient: () => ({ addColorStop: noop }),
+      fillText: line => lines.push(line)
+    });
+    const blob = new b.w.Blob(['png'], { type: 'image/png' });
+    canvas.toBlob = (done, type) => { assert.equal(type, blob.type); done(blob); };
+    b.w.URL.createObjectURL = () => 'blob:https://example.test/dakar';
+    let shared;
+    b.w.navigator.canShare = () => true;
+    b.w.navigator.share = async data => { shared = data.files[0]; };
+
+    recap.querySelector('[data-story-panel="card"]').click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert(!d.querySelector('#story-card').hidden);
+    assert(recap.hidden);
+    assert(lines.includes('6. Platz'));
+    assert(lines.includes('100 m Finale · 11,93 s · +2,4 m/s'));
+    const link = d.querySelector('#story-download');
+    assert(!link.hidden);
+    assert.equal(link.href, 'blob:https://example.test/dakar');
+    assert.equal(link.download, 'Fiona-Matt-Dakar-2026.png');
+    d.querySelector('#story-share').click();
+    assert.equal(shared.name, link.download);
+    assert.equal(shared.type, 'image/png');
+    assert.deepEqual(b.errors, []);
+  } finally {
+    b.close();
+  }
 });

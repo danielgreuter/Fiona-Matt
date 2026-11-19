@@ -18,6 +18,11 @@ window.FIONA_APP_CONFIG = {
     date: "2026-11-08T00:00:00+00:00",
     location: "Dakar, Senegal"
   },
+  dakarStory: { reflection: "", videoUrl: "", cardPhoto: "./assets/fiona-portrait.jpg" },
+  dakarResults: [
+      {result:'12.15',place:'3sf1',fionaRank:3,wind:-1.1,windAssisted:false,top5:[{"rank":1,"name":"Dana SALEM","club":"QAT","result":"11.75","wind":-1.1},{"rank":2,"name":"Ieva MALNAČA","club":"LAT","result":"11.99","wind":-1.1},{"rank":3,"name":"Fiona MATT","club":"LIE","result":"12.15","wind":-1.1},{"rank":4,"name":"Khylinn PRENTICE","club":"SKN","result":"12.41","wind":-1.1},{"rank":5,"name":"Astghik PANOSYAN","club":"ARM","result":"12.83","wind":-1.1}]},
+      {result:'11.93',place:'6f',fionaRank:6,wind:2.4,windAssisted:true,top5:[{"rank":1,"name":"Rosemary NWANKWO","club":"NGR","result":"11.16","wind":2.4},{"rank":2,"name":"Arwa ALI","club":"UAE","result":"11.41","wind":2.4},{"rank":3,"name":"Dana SALEM","club":"QAT","result":"11.48","wind":2.4},{"rank":4,"name":"Alma Børregaard RAVN","club":"DEN","result":"11.75","wind":2.4},{"rank":5,"name":"Ieva MALNAČA","club":"LAT","result":"11.82","wind":2.4}]}
+    ],
   milestones: [
     {date:"2024-08-31", title:"Schweizer Meisterin U16", detail:"80 m · 9.97 s · Lausanne", emblem:"./assets/vaud-coat.svg", emblemAlt:"Kantonswappen Waadt"},
     {date:"2024-09-22", title:"Silber UBS Kids Cup- und Visana Sprint-Finale - W15", detail:"Visana Sprint: Gesamtzweite · 80 m in 9.99 s · Bern, Bundesplatz.\n07.09.2024 · UBS Kids Cup: Gesamtzweite · 2’426 Punkte · Zürich, Letzigrund.", emblem:"./assets/switzerland-flag.svg", emblemAlt:"Flagge Schweiz", source:"https://www.ostschweiz-athletics.ch/post/schweizerfinals-2024"},
