@@ -43,7 +43,7 @@
         body.classList.remove('team-result-detail');body.replaceChildren(el('h2',label+' · '+statsYear));
         body.append(el('p',meetingsOnly?meetingCount+' Wettkämpfe · '+items.length+' Einzelresultate':items.length+' Resultate','data-note'));
         const list=el('ol',null,'stats-detail-list');
-        const sorted=items.slice().sort((a,b)=>window.FionaModels.dateKey(b.dateISO||b.date).localeCompare(window.FionaModels.dateKey(a.dateISO||a.date))||(/long jump|weitsprung/i.test(a.discipline)?b.numResult-a.numResult:a.numResult-b.numResult));
+        const sorted=items.slice().sort((a,b)=>(/long jump|weitsprung/i.test(a.discipline)?b.numResult-a.numResult:a.numResult-b.numResult)||window.FionaModels.dateKey(b.dateISO||b.date).localeCompare(window.FionaModels.dateKey(a.dateISO||a.date)));
         const groups=[];
         if(meetingsOnly){
           for(const [key,dates]of events){
