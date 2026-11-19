@@ -204,3 +204,39 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 
 .stats-zoom-button{text-align:left;font:inherit;cursor:pointer;color:inherit;width:100%}.stats-zoom-button:hover{border-color:#7298d3;background:#edf3ff}.stats-zoom-button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
 .stats-detail-list{list-style:none;margin:12px 0 0;padding:0}.stats-detail-row{padding:9px 0;border-bottom:1px solid var(--line)}.stats-detail-heading{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:#1e3a8a}.stats-detail-heading strong{font-size:15px}.stats-detail-date{margin-left:auto;font-size:11px;color:#64748b}.stats-detail-row p{margin:3px 0;font-size:11px;line-height:1.4}.stats-detail-row .result-location-emblem{margin:0;width:18px;height:21px}
+
+/* Dakar recap: about one quarter smaller, with results in focus. */
+#view-home .dakar-card{padding:16px 21px 10px;gap:8px 15px;grid-template-columns:minmax(0,1fr) 165px;border-radius:17px}
+#view-home .dakar-highlight{gap:16px}
+#view-home .dakar-highlight .dakar-mascot{flex-basis:75px}
+#view-home .dakar-highlight .dakar-mascot img{width:75px;height:108px;transform:scale(1.25)}
+#view-home .dakar-main h2{font-size:30px}
+#view-home .dakar-kicker{font-size:8px;margin-bottom:6px}
+#view-home .dakar-main .senegal-flag{width:36px;height:24px;margin:5px 0 5px auto}
+#view-home .dakar-sub{font-size:11px;margin:4px 0 6px}
+#view-home .dakar-date{font-size:12px}
+#view-home .dakar-count{padding-left:18px}
+#view-home .countdown{font-size:45px;margin:5px 0 9px}
+#view-home .dakar-clocks{gap:10px}
+#view-home .dakar-clocks strong{font-size:15px;margin-top:2px}
+#view-home .dakar-results{gap:6px}
+#view-home .dakar-results li{padding:6px 8px;gap:2px;border-radius:8px}
+#view-home .dakar-results strong{font-size:15px}
+#view-home .dakar-results a,#view-home .dakar-results small{font-size:10px}
+@media(max-width:600px){
+ #view-home .dakar-card{grid-template-columns:minmax(0,1fr);padding:12px;gap:6px}
+ #view-home .dakar-highlight{gap:10px}
+ #view-home .dakar-highlight .dakar-mascot{flex-basis:49px}
+ #view-home .dakar-highlight .dakar-mascot img{width:49px;height:81px}
+ #view-home .dakar-main{flex-basis:155px}
+ #view-home .dakar-main h2{font-size:25px}
+ #view-home .dakar-kicker{font-size:7px;margin-bottom:4px}
+ #view-home .dakar-main .senegal-flag{width:30px;height:20px;margin:4px 0 3px auto}
+ #view-home .dakar-sub{font-size:9px;margin:3px 0 4px}
+ #view-home .dakar-date{font-size:10px}
+ #view-home .dakar-count{padding:7px 0 0;gap:0 12px}
+ #view-home .countdown{font-size:33px;margin:2px 0}
+ #view-home .dakar-clocks strong{font-size:13px}
+ #view-home .dakar-results li{padding:5px 7px}
+ #view-home .dakar-results a,#view-home .dakar-results small{font-size:9px}
+}
