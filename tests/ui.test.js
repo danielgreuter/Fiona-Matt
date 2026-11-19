@@ -164,3 +164,17 @@ test('Fiona profile uses U20 and career count buttons open their exact season re
   assert.deepEqual(b.errors,[]);
  }finally{b.close();}
 });
+
+test('Both Dakar zooms show official top five, with Fiona appended in sixth place for the final',async()=>{
+ const b=await boot();try{
+  const d=b.w.document,rows=[...d.querySelectorAll('#allResults .result')].filter(row=>row.textContent.includes('Dakar'));assert.equal(rows.length,2);
+  for(const row of rows){
+   row.click();const table=d.querySelector('#detailContent .data-table'),resultRows=[...table.querySelectorAll('tbody tr')],final=d.querySelector('.detail-performance').textContent==='11.93';
+   assert.equal(resultRows.length,final?6:5);assert.equal(table.querySelectorAll('.fiona-result-row').length,1);assert(table.textContent.includes('Athletin / Land'));
+   if(final){assert(resultRows[0].textContent.includes('Rosemary NWANKWO'));assert(resultRows[4].textContent.includes('Ieva MALNAČA'));assert(resultRows[5].textContent.includes('Fiona Matt'));assert.equal(resultRows[5].firstChild.textContent,'6');assert(resultRows[5].textContent.includes('LIE'));}
+   else{assert(resultRows[0].textContent.includes('Dana SALEM'));assert(resultRows[2].textContent.includes('Fiona MATT'));assert(resultRows[4].textContent.includes('Astghik PANOSYAN'));}
+   d.querySelector('#closeDetail').click();
+  }
+  assert.deepEqual(b.errors,[]);
+ }finally{b.close();}
+});

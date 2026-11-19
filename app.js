@@ -81,8 +81,8 @@
   }
   // Official Dakar results: retain these when the Swiss feed omits international meets.
   const dakarResults=window.FionaModels.normalizeResults({results:[
-    {result:'12.15',place:'3sf1',wind:-1.1,windAssisted:false},
-    {result:'11.93',place:'6f',wind:2.4,windAssisted:true}
+    {result:'12.15',place:'3sf1',fionaRank:3,wind:-1.1,windAssisted:false,top5:[{"rank":1,"name":"Dana SALEM","club":"QAT","result":"11.75","wind":-1.1},{"rank":2,"name":"Ieva MALNAČA","club":"LAT","result":"11.99","wind":-1.1},{"rank":3,"name":"Fiona MATT","club":"LIE","result":"12.15","wind":-1.1},{"rank":4,"name":"Khylinn PRENTICE","club":"SKN","result":"12.41","wind":-1.1},{"rank":5,"name":"Astghik PANOSYAN","club":"ARM","result":"12.83","wind":-1.1}]},
+    {result:'11.93',place:'6f',fionaRank:6,wind:2.4,windAssisted:true,top5:[{"rank":1,"name":"Rosemary NWANKWO","club":"NGR","result":"11.16","wind":2.4},{"rank":2,"name":"Arwa ALI","club":"UAE","result":"11.41","wind":2.4},{"rank":3,"name":"Dana SALEM","club":"QAT","result":"11.48","wind":2.4},{"rank":4,"name":"Alma Børregaard RAVN","club":"DEN","result":"11.75","wind":2.4},{"rank":5,"name":"Ieva MALNAČA","club":"LAT","result":"11.82","wind":2.4}]}
   ].map(r=>({...r,discipline:'100m',disciplineLabel:'100 m',date:'08.11.2026',
     competition:'Youth Olympic Games',venue:'Dakar',country:'SEN',source:'world-athletics',indoor:false}))}).results;
   function withExtraResults(data){
