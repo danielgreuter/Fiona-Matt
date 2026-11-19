@@ -22,13 +22,27 @@
   function details(parent,record){const d=node('details');d.append(node('summary','Vollständige Details'),node('pre',JSON.stringify(record,null,2)));parent.append(d);}
   function openDetail(title){const dialog=$('#resultDetail');const body=$('#detailContent');body.classList.remove('team-result-detail');body.replaceChildren(node('h2',title));$('#closeDetail').onclick=()=>dialog.close();dialog.showModal();return body;}
   function renderRankings(){
-    const root=$('#rankingsContent'),c=card('Schweiz / Liechtenstein · U18 Frauen','Historische Listen bleiben separat von aktuellen Saisonlisten.');
-    const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.rankDisc,v=>{state.rankDisc=v;renderRankings();}),select('Saison',['2026','2025','2024'],state.rankYear,v=>{state.rankYear=v;renderRankings();}));c.append(controls);status(c,'bestenliste');
-    const rank=M.ranking(sources.bestenliste?.data,H.athlete,state.rankDisc,state.rankYear);
-    if(rank.historical)c.append(node('p','Historischer eingebetteter V1-Stand · kein aktueller Rangnachweis','badge info'));
-    if(rank.fiona)c.append(node('h3','Fiona · Rang '+(rank.fiona.rank||'nicht verfügbar')+' · '+value(rank.fiona)));
-    if(rank.gapAhead)c.append(node('p','Abstand zu '+rank.ahead.name+' (Rang '+rank.ahead.rank+'): '+rank.gapAhead+(state.rankDisc==='Long Jump'?' m':' s')));
-    if(rank.gapBehind)c.append(node('p','Vorsprung gegenüber '+rank.behind.name+': '+rank.gapBehind+(state.rankDisc==='Long Jump'?' m':' s')));
+    const root=$('#rankingsContent'),c=card('Schweiz / Liechtenstein · U18 Frauen');
+    const controls=node('div',null,'filters');controls.append(select('Disziplin',discs,state.rankDisc,v=>{state.rankDisc=v;renderRankings();}),select('Saison',['2026','2025','2024'],state.rankYear,v=>{state.rankYear=v;renderRankings();}));c.append(controls);
+    const record=sources.bestenliste;
+    const rank=M.ranking(record?.data,H.athlete,state.rankDisc,state.rankYear);
+    const toolbar=node('div',null,'ranking-refresh-row');
+    const refresh=button('↻ Aktualisieren',async()=>{
+      refresh.disabled=true;
+      await window.FionaSources.loadOne('bestenliste',{force:true});
+    });
+    const stamp=record?.data?.updated;
+    const cached=record?.status==='cache';
+    const unavailable=cached||record?.status==='unavailable';
+    let label=rank.historical?'Historischer Stand':'Stand unbekannt';
+    if(!record)label='Daten werden geladen …';
+    if(unavailable)label+=' · Quelle nicht erreichbar';
+    if(!rank.historical&&stamp&&Number.isFinite(Date.parse(stamp))){
+      const formatted=new Date(stamp).toLocaleString('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'});
+      label=cached?'Gespeichert · '+formatted+' · Quelle nicht erreichbar':'Stand '+formatted;
+    }
+    toolbar.append(refresh,node('span',label,'data-note'));
+    c.append(toolbar);
     if(rank.rows.length)table(c,['Rang','Athletin / Verein','Jahrgang','Leistung','Wind','Ort / Datum'],rank.rows.map(r=>{const isFiona=M.isFionaName(r.name)||r.isFiona||r.fiona;const person=node('div',null,'ranking-person');person.append(node('strong',r.name,'ranking-name'));if(r.club)person.append(node('span',r.club,'ranking-club'));const born=M.birthYear(r.born||r.birthDate||r.birthYear)||(isFiona?M.birthYear(window.FIONA_APP_CONFIG.athlete.birthDate):'');return{fiona:isFiona,cells:[r.rank,person,born||'—',value(r),r.wind??'—',[r.location||r.venue,r.date||r.comp_date].filter(Boolean).join(' · ')]};}));
     else c.append(node('p','Für diese Kombination sind keine Rangdaten vorhanden.'));
     root.replaceChildren(c);
