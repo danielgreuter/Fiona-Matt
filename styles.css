@@ -201,3 +201,6 @@ body{position:relative;isolation:isolate}body::before{position:absolute;inset:0;
 
 #waContent .data-table th,#waContent .data-table td{padding-block:6px}
 #waContent .wa-source-brand{margin:6px 0 8px}
+
+.stats-zoom-button{text-align:left;font:inherit;cursor:pointer;color:inherit;width:100%}.stats-zoom-button:hover{border-color:#7298d3;background:#edf3ff}.stats-zoom-button:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+.stats-detail-list{list-style:none;margin:12px 0 0;padding:0}.stats-detail-row{padding:9px 0;border-bottom:1px solid var(--line)}.stats-detail-heading{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:#1e3a8a}.stats-detail-heading strong{font-size:15px}.stats-detail-date{margin-left:auto;font-size:11px;color:#64748b}.stats-detail-row p{margin:3px 0;font-size:11px;line-height:1.4}.stats-detail-row .result-location-emblem{margin:0;width:18px;height:21px}

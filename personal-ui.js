@@ -32,7 +32,7 @@
     const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Vaduz',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),born=window.FIONA_APP_CONFIG.athlete.birthDate,year=Number(date.slice(0,4));
     const age=year-Number(born.slice(0,4))-(date.slice(5)<born.slice(5)?1:0);
     document.querySelector('#fionaProfileAge').textContent=age+' Jahre';
-    document.querySelector('#fionaProfileCategory').textContent=window.FionaModels.ageCategory(born,year)+' · Saison '+year;
+    document.querySelector('#fionaProfileCategory').textContent=window.FionaModels.ageCategory(born,Math.max(2027,year))+' · Saison '+Math.max(2027,year);
   };
   document.querySelector('#fionaProfileBests').onclick=()=>window.FionaMigrationUI.openAthleteProfile('Fiona Matt');
   updateProfile();setInterval(updateProfile,60000);
